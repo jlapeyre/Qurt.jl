@@ -1,6 +1,6 @@
-using QuantumCircuits
 using Test
 
-@testset "QuantumCircuits.jl" begin
-    # Write your tests here.
-end
+include("test_aqua.jl")
+include("test_quantumdags.jl")
+include("test_remove_node.jl")
+include("test_jet.jl")
