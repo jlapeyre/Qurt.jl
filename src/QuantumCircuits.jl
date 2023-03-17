@@ -1,5 +1,7 @@
 module QuantumCircuits
 
-# Write your package code here.
+export Circuit, numqubits, wire
+
+include("circuits.jl")
 
 end
