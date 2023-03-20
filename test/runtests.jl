@@ -1,6 +1,6 @@
-using QuantumCircuits
+using QuantumDAGs
 using Test
 
-@testset "QuantumCircuits.jl" begin
+@testset "QuantumDAGs.jl" begin
     # Write your tests here.
 end
