@@ -121,7 +121,7 @@ a rotation parameter into memory for each gate. These are poked one at a time. O
 
 * `Rx` gates. Need to support explicit parameter. Float and exact rational. Units of angle should be such that one rotation is `1` or maybe `2`. For example in Julia, you can have `Rx(1//4)`. (could use zero-cost units in Julia, but probably introduces unneeded complexity, unless it is converted to canonical form immediately) Need to support symbolic and/or lazy parameter. Tempting to use parametric type in Julia. But maybe not the best approach. Also need to support different implementations in the same way that we do for `X`.
 
-* For `enum` representation. An `Int64` is probably sufficient. Reserve ranges for different things. The numeric ranges are like block 1 = (1,...,1000). etc. Or limits are
+* For `enum` representation: `Int64` is probably best choice. Reserve ranges for different classes of ops. The numeric ranges are like block 1 = (1,...,1000). etc. Or limits are
 powers of 2, etc.
     * block 1: 1q built-in parameterless gates with no implementation information. Check value. If it is $<1000$, you don't need to look anything up.
         * barriers etc can be contiguous with these, but separated from unitaries.
