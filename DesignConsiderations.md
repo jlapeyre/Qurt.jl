@@ -124,7 +124,7 @@ a rotation parameter into memory for each gate. These are poked one at a time. O
 * For `enum` representation: `Int64` is probably best choice. Reserve ranges for different classes of ops. The numeric ranges are like block 1 = (1,...,1000). etc. Or limits are
 powers of 2, etc.
     * block 1: 1q built-in parameterless gates with no implementation information. Check value. If it is $<1000$, you don't need to look anything up.
-        * barriers etc can be contiguous with these, but separated from unitaries.
+        * barriers etc can be contiguous with these, but separated from unitaries. Or elsewhere.
     * block 2: User defined 1q parameterless gates.
     * block 3: Builtin 1q single param gates
     * block 4: Builtin 1q two param gates
