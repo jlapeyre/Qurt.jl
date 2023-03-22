@@ -149,8 +149,14 @@ If blocks with a characteristic are separated, you need conjunctions of inequali
 
 ## Challenges
 
+#### Visualization
+
+This is needed even for developing
+
 * Packages for plotting graphs in Julia are not very well maintained or developed. I can get something kind of working a bit with `GraphPlot`. But this would likely
-take a bit of engineering on our part. Maybe a graphviz driver.
+take a bit of engineering on our part.
+* The graphviz driver for rustworkx is pretty simple and makes decent plots. It writes a description of the graph in the graphviz-langugage (or whatever) to
+a text file.
 
 <!--  LocalWords:  Qiskit ok ldots multigraph acyclic unitaries tket unitarily
 <!--  LocalWords:  qubits DAGs metadata multigraphs qubit 1q 2q DAGCircuit 'h

@@ -1,6 +1,6 @@
 module QuantumDAGs
 
-export Circuit, numqubits, wire
+export Circuit, numqubits, check
 export input_vertex, output_vertex
 export Node, add_1q!, add_2q!, node
 export draw
