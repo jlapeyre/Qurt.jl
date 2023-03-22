@@ -21,7 +21,7 @@ The inputs and outputs to operations are *ports*. The are ordered and enumerated
 
 ## Observations relevant to choosing data structures
 
-Below is some musing about choosing good data structures. But in the interst of getting something that is proven, compatible, and working, I am implementing something similar to Qiskit's `DAGCircuit`. I hope we can make a solid abstraction layer so that data structures for representing the circuit and its DAG can be changed
+Below is some musing about choosing good data structures. But in the interest of getting something that is proven, compatible, and working, I am implementing something similar to Qiskit's `DAGCircuit`. I hope we can make a solid abstraction layer so that data structures for representing the circuit and its DAG can be changed
 easily.
 
 Suppose we want to represent just unitarily evolving qubits plus measurement to classical bits. We need more structure than just a DAG. What do we need, and what is practical?
@@ -158,5 +158,5 @@ take a bit of engineering on our part. Maybe a graphviz driver.
 <!--  LocalWords:  DAGInNode DAGOutNode clbits params qargs Qubit cargs qregs
 <!--  LocalWords:  QuantumRegister cregs eg Clbit indegree outdegree supertype
 <!--  LocalWords:  subtypes enum namespacing IIRC parameterized Int64 param Rz
-<!--  LocalWords:  parameterless Eg
+<!--  LocalWords:  parameterless Eg Qiskit's nparam GraphPlot graphviz
  -->
