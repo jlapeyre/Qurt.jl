@@ -1,44 +1,106 @@
 import MEnums
-using Graphs: Graphs, add_vertex!, add_vertices!, add_edge!
+using Graphs: Graphs, rem_edge!, add_edge!
+# add_vertex!, add_vertices!, add_edge!
 
+# Nodes are ops and
+MEnums.@menum Node X Y Z H CX Input Output
 
-MEnums.@menum Node Input Output X Y Z H
-
-(node::Node)(inds...) = (node, inds)
+# (node::Node)(inds...) = (node, inds)
 
 """
-    OutEdge
+    VertexPort
 
-Reference to an edge by vertex index and
-index in edge list.
+Reference to port on a vertex.
 """
-struct OutEdge
+struct VertexPort
     vertex::Int
-    edge::Int
+    port::Int
 end
 
 struct Circuit{V}
-    g::Graphs.DiGraph{V}
-    nodes::Vector{Node}
-    wireloc::Vector{OutEdge}
+    graph::Graphs.DiGraph{V}
+    nodes::Vector{Node} # data
+    portwires::Vector{Tuple{Vararg{Int}}}
     nqubits::Int
 end
 
 Circuit(nqubits) = Circuit{Int64}(nqubits)
 
-wire(qc::Circuit, wirenum::Integer) = qc.wireloc[wirenum]
+function input_vertex(c::Circuit, wire::Integer)
+    return wire
+end
+
+function output_vertex(c::Circuit, wire::Integer)
+    return wire + c.nqubits
+end
+
+node(circ, vertex) = circ.nodes[vertex]
 
 function Circuit{V}(nqubits) where V
-    qc = Circuit(Graphs.DiGraph{V}(nqubits), fill(Input, nqubits), [OutEdge(i, 1) for i in 1:nqubits], nqubits)
-    for list in qc.g.fadjlist
-        resize!(list, 1) # one forward edge on each input node
+    num_nodes = 2 * nqubits # input and output node for each qubit
+    nodes = Vector{Node}(undef, num_nodes)
+    fill!(view(nodes, 1:nqubits), Input)
+    fill!(view(nodes, nqubits+1:num_nodes), Output)
+    portwires = Vector{Tuple{Vararg{Int}}}(undef, nqubits)
+    for i in 1:nqubits
+        portwires[i] = (i,)
     end
+    graph = Graphs.DiGraph{V}(num_nodes)
+    qc = Circuit(graph, nodes, portwires, nqubits)
+    for i in 1:nqubits
+        push!(graph.fadjlist[i], i + nqubits)
+        push!(graph.badjlist[i + nqubits], i)
+    end
+    graph.ne = nqubits
     return qc
 end
 
 numqubits(qc::Circuit) = qc.nqubits
 
-# function add_op!(qc::Circuit, (node::Node, inds...))
-#     add_edge!(qc.g,
-# end
+"""
+    add_1q!(qc, op, wire)
+
+Add a one-qubit operation `op` after the last operation on `wire`.
+"""
+function add_1q!(qc::Circuit, op::Node, wire::Integer)
+    g = qc.graph
+    Graphs.add_vertex!(g)
+    push!(qc.nodes, op)
+    new_vert = Graphs.nv(g)
+    outvert = output_vertex(qc, wire)
+    prev = only(Graphs.all_neighbors(g, outvert))
+    Graphs.rem_edge!(g, prev, outvert)
+    Graphs.add_edge!(g, prev, new_vert)
+    Graphs.add_edge!(g, new_vert, outvert)
+end
+
+
+"""
+    add_2q!(qc, op, wire)
+
+Add a one-qubit operation `op` after the last operation on `wire`.
+"""
+function add_2q!(qc::Circuit, op::Node, wire1::Integer, wire2::Integer)
+    g = qc.graph
+    Graphs.add_vertex!(g)
+    push!(qc.nodes, op)
+    new_vert = Graphs.nv(g)
+
+    outvert1 = output_vertex(qc, wire1)
+    outvert2 = output_vertex(qc, wire2)
+
+    prev1 = only(Graphs.all_neighbors(g, outvert1))
+    prev2 = only(Graphs.all_neighbors(g, outvert2))
+
+    Graphs.rem_edge!(g, prev1, outvert1)
+    Graphs.rem_edge!(g, prev2, outvert2)
+
+    Graphs.add_edge!(g, prev1, new_vert)
+    Graphs.add_edge!(g, prev2, new_vert)
+
+    Graphs.add_edge!(g, new_vert, outvert1)
+    Graphs.add_edge!(g, new_vert, outvert2)
+end
+
+
 

@@ -21,6 +21,9 @@ The inputs and outputs to operations are *ports*. The are ordered and enumerated
 
 ## Observations relevant to choosing data structures
 
+Below is some musing about choosing good data structures. But in the interst of getting something that is proven, compatible, and working, I am implementing something similar to Qiskit's `DAGCircuit`. I hope we can make a solid abstraction layer so that data structures for representing the circuit and its DAG can be changed
+easily.
+
 Suppose we want to represent just unitarily evolving qubits plus measurement to classical bits. We need more structure than just a DAG. What do we need, and what is practical?
 
 * People tend to implement or reuse digraphs. The acyclic property is then enforced by construction. Functions for checking for cycles and topological ordering may be added. Are there better designs specifically for DAGs? I am unaware of any.
@@ -139,6 +142,15 @@ powers of 2, etc.
 If blocks with a characteristic are separated, you need conjunctions of inequalities. For up to several of these, it may not matter how ops are grouped. How complex will categorization of operations get? Like everywhere else, try to build leak-proof abstraction.
 
 * If the block scheme is too complex, can we make some of them compound with other data multiplying possibilities? We need indirection in any case for any operation that takes a parameter with a large range (eg. a float).
+
+* Another idea. Circuit carries an optional per-circuit array of gate definitions. These would require indirection.
+* Circuit can carry typed arrays of parameters for use in circuit. For example, a vertex payload could be $(gate, nparam)$
+
+
+## Challenges
+
+* Packages for plotting graphs in Julia are not very well maintained or developed. I can get something kind of working a bit with `GraphPlot`. But this would likely
+take a bit of engineering on our part. Maybe a graphviz driver.
 
 <!--  LocalWords:  Qiskit ok ldots multigraph acyclic unitaries tket unitarily
 <!--  LocalWords:  qubits DAGs metadata multigraphs qubit 1q 2q DAGCircuit 'h

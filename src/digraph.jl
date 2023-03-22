@@ -1,5 +1,9 @@
+# Unused at the moment
+
 # ne : number of edges
 # nv : number of vertice
+
+# Custom implementation. Could be used for optimization
 
 mutable struct DiGraph{T}
     ne::Int
