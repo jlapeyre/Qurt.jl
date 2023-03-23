@@ -6,6 +6,8 @@ version = "0.0.1"
 [deps]
 Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
+DictTools = "6033591e-aae9-4c88-8f5f-a341f9ca5325"
+Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 GraphPlot = "a2cc645c-3eea-5389-862e-a155d0052231"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"

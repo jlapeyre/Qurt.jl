@@ -1,9 +1,20 @@
-# Unused at the moment
+# NOT USED at the moment
+# Custom implementation. Could be used for optimization
 
 # ne : number of edges
 # nv : number of vertice
 
-# Custom implementation. Could be used for optimization
+
+"""
+    VertexPort
+
+Reference to port on a vertex.
+"""
+struct VertexPort
+    vertex::Int
+    port::Int
+end
+
 
 mutable struct DiGraph{T}
     ne::Int
