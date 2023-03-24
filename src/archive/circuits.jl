@@ -1,9 +1,8 @@
-import Graphs
 using Graphs: Graphs, rem_edge!, add_edge!
 using DictTools: DictTools
 using Dictionaries: Dictionaries
 
-using .Ops: Input, Output, ClInput, ClOutput, add_io_nodes!
+using .Ops: Input, Output, ClInput, ClOutput
 
 """
     Circuit{V}
@@ -12,7 +11,8 @@ Structure for representing a quantum circuit as a DAG, plus auxiliary informatio
 
 ### Fields
 * `graph` -- The DAG as a `Graphs.DiGraph`
-* `nodes` -- Operations and other nodes on vertices
+* `nodes` -- `Vector` of (enum-like) tags identifying the operation on each vertex
+* `portwires` --  `Vector` of `Tuple`s of the wires for the operation on each vertex.
 * `nqubits` -- Number of qubits.
 * `nclbits` -- Number of classical bits.
 
@@ -22,29 +22,24 @@ a positive integer. Each wire is identified by a positive integer.
 
 The edge lists for vertex `i` are given by the `i`th element of the `Vector` of edge lists stored in the DAG.
 
-The operation on vertex `i` is given by the `i`th element of the field `nodes`.
+The type of operation on vertex `i` is given by the `i`th element of the field `nodes`.
 
 There is no meaning in the order of neighboring vertices in the edge lists, in fact they are sorted.
 
+The identities of the wires on each port of the operation is given by a `Tuple` at the `i`th index
+of the field `portwire`.
+
 The number of wires is equal to `nqubits + nclbits`.
 """
-struct Circuit{VertexT, FloatT}
-    graph::Graphs.DiGraph{VertexT}
-    nodes::OpList{FloatT}
+struct Circuit{V}
+    graph::Graphs.DiGraph{V}
+    nodes::Vector{Node} # data
+    portwires::Vector{Tuple{Vararg{Int}}}
     nqubits::Int
     nclbits::Int
 end
 
 Circuit(nqubits, nclbits=0) = Circuit{Int64}(nqubits, nclbits)
-
-# Forward these methods from Circuit to Graphs
-for f in (:edges, :vertices, :nv, :ne)
-    @eval Graphs.$f(qc::Circuit, args...) = Graphs.$f(qc.graph, args...)
-end
-
-# Graphs does not define a method for this. The fallback is a bit slower, and in
-# any case seems to be broken now for some reason
-#Base.collect(itr::Graphs.AbstractEdgeIter) = [e for e in itr]
 
 struct CircuitError <: Exception
     msg::AbstractString
@@ -56,9 +51,9 @@ end
 Throw an `Exception` if any of a few checks on the integrity of `qc` fail.
 """
 function check(qc::Circuit)
-    # if length(qc.nodes) != length(qc.portwires)
-    #     throw(CircuitError("length(qc.nodes) != length(qc.portwires)"))
-    # end
+    if length(qc.nodes) != length(qc.portwires)
+        throw(CircuitError("length(qc.nodes) != length(qc.portwires)"))
+    end
     if Graphs.nv(qc.graph) != length(qc.nodes)
         throw(CircuitError("Number of nodes in DAG is not equal to length(qc.portwires)"))
     end
@@ -90,17 +85,42 @@ output_qnodes(qc) = @view qc.nodes[output_qnodes_idxs(qc)]
 input_cnodes(qc) = @view qc.nodes[input_cnodes_idxs(qc)]
 output_cnodes(qc) = @view qc.nodes[output_cnodes_idxs(qc)]
 
-
 function Circuit{V}(nqubits, nclbits=0) where V
-    nodes = OpList()
-    graph = Graphs.DiGraph{V}(0)
-    _add_io_vertices!(graph, nqubits, nclbits)
-    add_io_nodes!(nodes, nqubits, nclbits)
-    # add_noparam!.(Ref(nodes), Ref(Input), 1:nqubits) # Ref suppresses broadcasting
-    # add_noparam!.(Ref(nodes), Ref(Output), (1:nqubits) .+ nqubits)
-    # add_noparam!.(Ref(nodes), Ref(ClInput), (1:nclbits) .+ 2*nqubits)
-    # add_noparam!.(Ref(nodes), Ref(ClOutput), (1:nclbits) .+ (2*nqubits + nclbits))
-    qc = Circuit(graph, nodes, nqubits, nclbits)
+    init_num_qu_nodes = 2 * nqubits # input and output node for each qubit
+    init_num_cl_nodes = 2 * nclbits # input and output node for each bit
+    num_wires = nqubits + nclbits
+    init_num_nodes = init_num_qu_nodes + init_num_cl_nodes
+
+    nodes = Vector{Node}(undef, init_num_nodes)
+    portwires = Vector{Tuple{Vararg{Int}}}(undef, init_num_nodes)
+    graph = Graphs.DiGraph{V}(init_num_nodes)
+    qc = Circuit(graph, nodes, portwires, nqubits, nclbits)
+
+    for i in 1:nqubits
+        portwires[i + _first_in_qnode(qc) - 1] = (i,) # Wire numbers on corresponding input/output are same
+        portwires[i + _first_out_qnode(qc) - 1] = (i,) # Wire numbers on corresponding input/output are same
+    end
+
+    for i in 1:nclbits
+        portwires[i + _first_in_cnode(qc) - 1] = (i + nqubits,)
+        portwires[i + _first_out_cnode(qc) - 1] = (i + nqubits,)
+    end
+
+    fill!(input_qnodes(qc), Input)
+    fill!(output_qnodes(qc), Output)
+    fill!(input_cnodes(qc), ClInput)
+    fill!(output_cnodes(qc), ClOutput)
+
+    for i in 0:nqubits-1
+        push!(graph.fadjlist[i + _first_in_qnode(qc)], i + _first_out_qnode(qc)) # forward edge from input to output node
+        push!(graph.badjlist[i + _first_out_qnode(qc)], i + _first_in_qnode(qc)) # backward edges from output to input node
+    end
+    for i in 0:nclbits-1
+        push!(graph.fadjlist[i + _first_in_cnode(qc)], i + _first_out_cnode(qc))
+        push!(graph.badjlist[i + _first_out_cnode(qc)], i + _first_in_cnode(qc))
+    end
+
+    graph.ne = num_wires
     return qc
 end
 
@@ -125,29 +145,6 @@ function _new_op_vertex!(qc::Circuit, op::Node, wires::Tuple)
     new_vert = Graphs.nv(qc.graph)
     return new_vert
 end
-
-# Wrapper for Graphs.add_vertex! that throws exception on failure and
-# returns the index of the new vertex.
-function _add_vertex!(graph)
-    result = Graphs.add_vertex!(graph)
-    result || throw(CircuitError("Failed to add vertex to graph"))
-    return Graphs.nv(graph) # new vertex index
-end
-
-# Add `num_verts` vertices to `graph` and return Vector of new vertex inds
-_add_vertices!(graph, num_verts) = [_add_vertex!(graph) for _ in 1:num_verts]
-
-# 1. Add vertices to DAG for both quantum and classical input and output nodes.
-# 2. Add an edge from each input to each output node.
-function _add_io_vertices!(graph, num_qu_wires, num_cl_wires=0)
-    (in_qc, out_qc, in_cl, out_cl) =
-        _add_vertices!.(Ref(graph), (num_qu_wires, num_qu_wires, num_cl_wires, num_cl_wires))
-
-    for pairs in zip.((in_qc, in_cl), (out_qc, out_cl))
-        Graphs.add_edge!.(Ref(graph), pairs) # Wrap with `Ref` forces broadcast as a scalar.
-    end
-end
-
 
 """
     add_1q!(qc, op, wire)

@@ -6,8 +6,8 @@ export draw
 export input_qnodes_idxs, output_qnodes_idxs, input_cnodes_idxs, output_cnodes_idxs,
     input_qnodes, output_qnodes, input_cnodes, output_cnodes
 
-export OpList, Node, add_1q!, add_2q!, add_op!, node, count_ops, add_noparam!
-export X, Y, Z, H, CX, RX
+export OpList, OpListC, Node, add_1q!, add_2q!, add_op!, node, count_ops, add_noparam!, get_wires
+export X, Y, Z, H, CX, RX, Input, Output, ClOutput, ClInput
 
 function num_qubits end
 

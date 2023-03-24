@@ -2,6 +2,7 @@ using QuantumDAGs
 import Graphs
 using Test
 
+# This is broken
 @testset "QuantumDAGs.jl" begin
     for n in (1, 2, 3)
         qc = Circuit(n)
@@ -21,6 +22,4 @@ end
 
 @testset "OpList" begin
     ops = OpList()
-    
-
 end
