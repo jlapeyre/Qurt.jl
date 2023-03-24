@@ -10,6 +10,8 @@ export input_qnodes_idxs, output_qnodes_idxs, input_cnodes_idxs, output_cnodes_i
 # Custom digraph implementation
 #include("digraph.jl")
 
+include("ops.jl")
+using .Ops
 include("circuits.jl")
 include("visualization.jl")
 

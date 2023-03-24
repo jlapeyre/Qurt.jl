@@ -1,11 +1,6 @@
-import MEnums # For enumerating operations
 using Graphs: Graphs, rem_edge!, add_edge!
 using DictTools: DictTools
 using Dictionaries: Dictionaries
-
-# Nodes are ops, input/output, ... everything that
-# lives on a vertex
-MEnums.@menum Node X Y Z H CX Input Output ClInput ClOutput
 
 """
     Circuit{V}
