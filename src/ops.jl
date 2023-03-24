@@ -1,33 +1,18 @@
 module Ops
 
 import ..num_qubits
+#using MEnums: MEnums, @menum, addblocks!, @addinblock
 
-using MEnums: MEnums, @menum, addblocks!, @addinblock
+using ..Nodes
 
 export Node
-export X, Y, Z, H, SX
-export ClInput, ClOutput, Input, Output
+export Q1NoParam, X, Y, Z, H, SX
+export Q2NoParam, CX, CY, CZ, CH
+export Q1Params1Float, RX, RY, RZ
+export Q1Params3Float, U
+export IONodes, ClInput, ClOutput, Input, Output
+
 export OpList, OpListC, add_noparam!, get_wires
-
-# Nodes are ops, input/output, ... everything that lives on a vertex
-@menum (Node, blocklength=10^6, numblocks=8)
-
-@menum OpBlock begin
-    Q1NoParam=1
-    Q2NoParam
-    QNNoParam
-    UserNoParam
-    Q1Params1Float
-    Q1Params2Float
-    Q1Params3Float
-    IONodes
-end
-
-@addinblock Node Q1NoParam X Y Z H SX
-@addinblock Node Q2NoParam CX CY CZ CH
-@addinblock Node Q1Params1Float RX RY RZ
-@addinblock Node Q1Params3Float U
-@addinblock Node IONodes ClInput ClOutput Input Output
 
 function num_qubits(op::Node)
     blockind = MEnums.blockindex(op)

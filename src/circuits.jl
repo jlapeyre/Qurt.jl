@@ -90,18 +90,12 @@ output_qnodes(qc) = @view qc.nodes[output_qnodes_idxs(qc)]
 input_cnodes(qc) = @view qc.nodes[input_cnodes_idxs(qc)]
 output_cnodes(qc) = @view qc.nodes[output_cnodes_idxs(qc)]
 
-
 function Circuit{V}(nqubits, nclbits=0) where V
     nodes = OpList()
     graph = Graphs.DiGraph{V}(0)
     _add_io_vertices!(graph, nqubits, nclbits)
     add_io_nodes!(nodes, nqubits, nclbits)
-    # add_noparam!.(Ref(nodes), Ref(Input), 1:nqubits) # Ref suppresses broadcasting
-    # add_noparam!.(Ref(nodes), Ref(Output), (1:nqubits) .+ nqubits)
-    # add_noparam!.(Ref(nodes), Ref(ClInput), (1:nclbits) .+ 2*nqubits)
-    # add_noparam!.(Ref(nodes), Ref(ClOutput), (1:nclbits) .+ (2*nqubits + nclbits))
-    qc = Circuit(graph, nodes, nqubits, nclbits)
-    return qc
+    return Circuit(graph, nodes, nqubits, nclbits)
 end
 
 """
@@ -147,7 +141,6 @@ function _add_io_vertices!(graph, num_qu_wires, num_cl_wires=0)
         Graphs.add_edge!.(Ref(graph), pairs) # Wrap with `Ref` forces broadcast as a scalar.
     end
 end
-
 
 """
     add_1q!(qc, op, wire)
