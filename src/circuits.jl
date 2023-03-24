@@ -112,11 +112,11 @@ Return the number of qubits in `qc`.
 num_qubits(qc::Circuit) = qc.nqubits
 
 """
-    numclbits(qc::Circuit)
+    num_clbits(qc::Circuit)
 
 Return the number of classical bits in `qc`.
 """
-numclbits(qc::Circuit) = qc.nclbits
+num_clbits(qc::Circuit) = qc.nclbits
 
 function _new_op_vertex!(qc::Circuit, op::Node, wires::Tuple)
     Graphs.add_vertex!(qc.graph)

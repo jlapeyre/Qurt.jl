@@ -1,6 +1,6 @@
 module QuantumDAGs
 
-export Circuit, num_qubits, numclbits, check
+export Circuit, num_qubits, num_clbits, check
 export input_vertex, output_vertex
 export draw
 export input_qnodes_idxs, output_qnodes_idxs, input_cnodes_idxs, output_cnodes_idxs,
@@ -8,6 +8,9 @@ export input_qnodes_idxs, output_qnodes_idxs, input_cnodes_idxs, output_cnodes_i
 
 export OpList, OpListC, Node, add_1q!, add_2q!, add_op!, node, count_ops, add_noparam!, get_wires
 export X, Y, Z, H, CX, RX, Input, Output, ClOutput, ClInput
+
+using Graphs: Graphs, edges
+export edges
 
 function num_qubits end
 
