@@ -146,6 +146,15 @@ If blocks with a characteristic are separated, you need conjunctions of inequali
 * Another idea. Circuit carries an optional per-circuit array of gate definitions. These would require indirection.
 * Circuit can carry typed arrays of parameters for use in circuit. For example, a vertex payload could be $(gate, nparam)$
 
+### Arrays of inline data vs arrays of pointers to data
+
+* Data is inhomogeneous: For example, gates take have 1, 2, or n wires. Gates may take 0, 1, 2, or n parameters.
+* Two options are
+    * Store one kind of data via an array of pointers. In Julia, this is done automatically for an array of inhomogeneous data. An array of wires for gates might look like `[(1,), (1, 2), (4, 5, 6)]`. This will not store the data inline, but rather via indirection.
+    * Maintain several arrays, most of which have data inline. Wires for gates would be stored in arrays 1Q gates: `[1, 2, 3]`, 2Q gates `[(1, 2), (3, 4)]`. For larger numbers of wires, switch to inhomogeneous arrays `[(3, 4, 5), (3, 4, 5, 6)]`.
+* Storing data in array of pointers is easier to implement. You have fewer arrays to manage, and fewer and less complicated logic expressions to choose among the arrays.
+* Storing data in several arrays, but inline within each array might improve performance due to cache locality.
+* I guess one would have to benchmark to understand performance. I am leaning toward inline arrays. Does this depend on the type of circuit? A circuit with large numbers of parameterless 1q and 2q gates and 1q-1param gates might benefit from multiple arrays of inline data.
 
 ## Challenges
 

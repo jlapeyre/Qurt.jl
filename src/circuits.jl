@@ -123,11 +123,11 @@ function Circuit{V}(nqubits, nclbits=0) where V
 end
 
 """
-    numqubits(qc::Circuit)
+    num_qubits(qc::Circuit)
 
 Return the number of qubits in `qc`.
 """
-numqubits(qc::Circuit) = qc.nqubits
+num_qubits(qc::Circuit) = qc.nqubits
 
 """
     numclbits(qc::Circuit)

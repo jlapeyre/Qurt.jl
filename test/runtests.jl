@@ -18,3 +18,9 @@ using Test
     @test numqubits(qc) == n
     @test Graphs.nv(qc.graph) == 2 * n + n
 end
+
+@testset "OpList" begin
+    ops = OpList()
+    
+
+end
