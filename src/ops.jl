@@ -2,15 +2,9 @@ module Ops
 
 import ..num_qubits
 #using MEnums: MEnums, @menum, addblocks!, @addinblock
+import ..add_noparam!, ..count_ops
 
 using ..Nodes
-
-export Node
-export Q1NoParam, X, Y, Z, H, SX
-export Q2NoParam, CX, CY, CZ, CH
-export Q1Params1Float, RX, RY, RZ
-export Q1Params3Float, U
-export IONodes, ClInput, ClOutput, Input, Output
 
 export OpList, OpListC, add_noparam!, get_wires
 
@@ -95,7 +89,7 @@ Base.axes(ops::AbstractOpList) = (Base.oneto(length(ops)),)
 Base.length(ops::AbstractOpList) = length(ops.ops)
 Base.lastindex(ops::AbstractOpList) = last(eachindex(ops))
 
-function _add_noparam!(oplist, op, wires, wire_array)
+function _add_noparam!(oplist::OpList, op, wires, wire_array)
     push!(oplist.ops, op)
     push!(wire_array, wires)
     push!(oplist.wireind, length(wire_array))
@@ -195,6 +189,17 @@ function Base.getindex(ops::AbstractOpList, i::Integer)
     end
     return nothing
 end
+
+function count_ops(nodes::OpList; allnodes::Bool=false)
+    cmap = DictTools.count_map(nodes.ops)
+    if ! allnodes
+        for node in (Input, Output, ClInput, ClOutput)
+            Dictionaries.unset!(cmap, node)
+        end
+    end
+    return cmap
+end
+
 
 
 end # module Ops

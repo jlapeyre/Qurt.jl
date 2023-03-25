@@ -4,6 +4,7 @@ using DictTools: DictTools
 using Dictionaries: Dictionaries
 
 using .Ops: Input, Output, ClInput, ClOutput, add_io_nodes!
+using .Ops2: GNode
 
 """
     Circuit{V}
@@ -28,20 +29,30 @@ There is no meaning in the order of neighboring vertices in the edge lists, in f
 
 The number of wires is equal to `nqubits + nclbits`.
 """
-struct Circuit{VertexT, FloatT}
+struct Circuit{VertexT, NodesT}
     graph::Graphs.DiGraph{VertexT}
-    nodes::OpList{FloatT}
+    nodes::NodesT   # OpList{FloatT}
     nqubits::Int
     nclbits::Int
 end
 
 Circuit(nqubits, nclbits=0) = Circuit{Int64}(nqubits, nclbits)
 
+function Circuit{VertexT}(nqubits, nclbits=0) where VertexT
+#    nodes = OpList()
+    nodes = Vector{GNode}(undef, 0)
+    graph = Graphs.DiGraph{VertexT}(0)
+    _add_io_vertices!(graph, nqubits, nclbits)
+    add_io_nodes!(nodes, nqubits, nclbits)
+    return Circuit(graph, nodes, nqubits, nclbits)
+end
+
 # Forward these methods from Circuit to Graphs
 for f in (:edges, :vertices, :nv, :ne)
     @eval Graphs.$f(qc::Circuit, args...) = Graphs.$f(qc.graph, args...)
 end
 
+Base.getindex(qc::Circuit, inds...) = getindex(qc.nodes, inds...)
 # Graphs does not define a method for this. The fallback is a bit slower, and in
 # any case seems to be broken now for some reason
 #Base.collect(itr::Graphs.AbstractEdgeIter) = [e for e in itr]
@@ -73,30 +84,24 @@ output_vertex(c::Circuit, wire::Integer) = wire + c.nqubits
 
 Return the node type of vertex `vertex_ind`.
 """
-node(circ, vertex_ind) = circ.nodes[vertex_ind]
+node(circ, inds...) = getindex(circ.nodes, inds...)
+getnode(qc::Circuit, inds...) = getnode(qc.nodes, inds...)
 
-_first_in_qnode(qc) = 1
-_first_out_qnode(qc) = qc.nqubits + 1
-_first_in_cnode(qc) = 2 * qc.nqubits + 1
-_first_out_cnode(qc) = 2 * qc.nqubits + qc.nclbits + 1
 
-input_qnodes_idxs(qc::Circuit) = 1:qc.nqubits
-output_qnodes_idxs(qc::Circuit) = (qc.nqubits + 1):(2 * qc.nqubits)
-input_cnodes_idxs(qc::Circuit) = (2 * qc.nqubits + 1):(2 * qc.nqubits + qc.nclbits)
-output_cnodes_idxs(qc::Circuit) = (2 * qc.nqubits + qc.nclbits + 1):(2 * qc.nqubits + 2 * qc.nclbits)
+# _first_in_qnode(qc) = 1
+# _first_out_qnode(qc) = qc.nqubits + 1
+# _first_in_cnode(qc) = 2 * qc.nqubits + 1
+# _first_out_cnode(qc) = 2 * qc.nqubits + qc.nclbits + 1
 
-input_qnodes(qc) = @view qc.nodes[input_qnodes_idxs(qc)]
-output_qnodes(qc) = @view qc.nodes[output_qnodes_idxs(qc)]
-input_cnodes(qc) = @view qc.nodes[input_cnodes_idxs(qc)]
-output_cnodes(qc) = @view qc.nodes[output_cnodes_idxs(qc)]
+# input_qnodes_idxs(qc::Circuit) = 1:qc.nqubits
+# output_qnodes_idxs(qc::Circuit) = (qc.nqubits + 1):(2 * qc.nqubits)
+# input_cnodes_idxs(qc::Circuit) = (2 * qc.nqubits + 1):(2 * qc.nqubits + qc.nclbits)
+# output_cnodes_idxs(qc::Circuit) = (2 * qc.nqubits + qc.nclbits + 1):(2 * qc.nqubits + 2 * qc.nclbits)
 
-function Circuit{V}(nqubits, nclbits=0) where V
-    nodes = OpList()
-    graph = Graphs.DiGraph{V}(0)
-    _add_io_vertices!(graph, nqubits, nclbits)
-    add_io_nodes!(nodes, nqubits, nclbits)
-    return Circuit(graph, nodes, nqubits, nclbits)
-end
+# input_qnodes(qc) = @view qc.nodes[input_qnodes_idxs(qc)]
+# output_qnodes(qc) = @view qc.nodes[output_qnodes_idxs(qc)]
+# input_cnodes(qc) = @view qc.nodes[input_cnodes_idxs(qc)]
+# output_cnodes(qc) = @view qc.nodes[output_cnodes_idxs(qc)]
 
 """
     num_qubits(qc::Circuit)
@@ -141,6 +146,43 @@ function _add_io_vertices!(graph, num_qu_wires, num_cl_wires=0)
         Graphs.add_edge!.(Ref(graph), pairs) # Wrap with `Ref` forces broadcast as a scalar.
     end
 end
+
+function add_node!(qc::Circuit, op, wire)
+    g = qc.graph
+    new_vert = _add_vertex!(g)
+    add_node!(qc.nodes, op, wire)
+
+    outvert = output_vertex(qc, wire)
+    prev = only(Graphs.all_neighbors(g, outvert))
+
+    Graphs.rem_edge!(g, prev, outvert)
+    Graphs.add_edge!(g, prev, new_vert)
+    Graphs.add_edge!(g, new_vert, outvert)
+    return qc
+end
+
+function add_node!(qc::Circuit, op, wire1::Integer, wire2::Integer)
+    g = qc.graph
+    new_vert = _add_vertex!(g)
+    add_node!(qc.nodes, op, (wire1, wire2))
+
+    outvert1 = output_vertex(qc, wire1)
+    outvert2 = output_vertex(qc, wire2)
+
+    prev1 = only(Graphs.all_neighbors(g, outvert1))
+    prev2 = only(Graphs.all_neighbors(g, outvert2))
+
+    Graphs.rem_edge!(g, prev1, outvert1)
+    Graphs.rem_edge!(g, prev2, outvert2)
+    Graphs.add_edge!(g, prev1, new_vert)
+    Graphs.add_edge!(g, prev2, new_vert)
+    Graphs.add_edge!(g, new_vert, outvert1)
+    Graphs.add_edge!(g, new_vert, outvert2)
+
+    return qc
+end
+
+
 
 """
     add_1q!(qc, op, wire)
@@ -190,6 +232,7 @@ end
 function add_op!(qc::Circuit, op::Node, qwires, clwires)
 end
 
+# TODO: This *seriously* belongs at a lower level
 """
     count_ops(qc::Circuit; allnodes=false)
 
