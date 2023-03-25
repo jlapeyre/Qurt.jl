@@ -3,8 +3,11 @@ using Graphs: Graphs, rem_edge!, add_edge!
 using DictTools: DictTools
 using Dictionaries: Dictionaries
 
-using .Ops: Input, Output, ClInput, ClOutput, add_io_nodes!
-using .Ops2: GNode
+using .Ops: GNode, ParamNode
+
+using .Nodes:  Input, Output, ClInput, ClOutput
+#using .Ops2: add_io_nodes!
+#using .Ops: Input, Output, ClInput, ClOutput, add_io_nodes!
 
 """
     Circuit{V}
@@ -39,7 +42,6 @@ end
 Circuit(nqubits, nclbits=0) = Circuit{Int64}(nqubits, nclbits)
 
 function Circuit{VertexT}(nqubits, nclbits=0) where VertexT
-#    nodes = OpList()
     nodes = Vector{GNode}(undef, 0)
     graph = Graphs.DiGraph{VertexT}(0)
     _add_io_vertices!(graph, nqubits, nclbits)
@@ -53,9 +55,6 @@ for f in (:edges, :vertices, :nv, :ne)
 end
 
 Base.getindex(qc::Circuit, inds...) = getindex(qc.nodes, inds...)
-# Graphs does not define a method for this. The fallback is a bit slower, and in
-# any case seems to be broken now for some reason
-#Base.collect(itr::Graphs.AbstractEdgeIter) = [e for e in itr]
 
 struct CircuitError <: Exception
     msg::AbstractString
@@ -67,9 +66,6 @@ end
 Throw an `Exception` if any of a few checks on the integrity of `qc` fail.
 """
 function check(qc::Circuit)
-    # if length(qc.nodes) != length(qc.portwires)
-    #     throw(CircuitError("length(qc.nodes) != length(qc.portwires)"))
-    # end
     if Graphs.nv(qc.graph) != length(qc.nodes)
         throw(CircuitError("Number of nodes in DAG is not equal to length(qc.portwires)"))
     end
@@ -86,22 +82,6 @@ Return the node type of vertex `vertex_ind`.
 """
 node(circ, inds...) = getindex(circ.nodes, inds...)
 getnode(qc::Circuit, inds...) = getnode(qc.nodes, inds...)
-
-
-# _first_in_qnode(qc) = 1
-# _first_out_qnode(qc) = qc.nqubits + 1
-# _first_in_cnode(qc) = 2 * qc.nqubits + 1
-# _first_out_cnode(qc) = 2 * qc.nqubits + qc.nclbits + 1
-
-# input_qnodes_idxs(qc::Circuit) = 1:qc.nqubits
-# output_qnodes_idxs(qc::Circuit) = (qc.nqubits + 1):(2 * qc.nqubits)
-# input_cnodes_idxs(qc::Circuit) = (2 * qc.nqubits + 1):(2 * qc.nqubits + qc.nclbits)
-# output_cnodes_idxs(qc::Circuit) = (2 * qc.nqubits + qc.nclbits + 1):(2 * qc.nqubits + 2 * qc.nclbits)
-
-# input_qnodes(qc) = @view qc.nodes[input_qnodes_idxs(qc)]
-# output_qnodes(qc) = @view qc.nodes[output_qnodes_idxs(qc)]
-# input_cnodes(qc) = @view qc.nodes[input_cnodes_idxs(qc)]
-# output_cnodes(qc) = @view qc.nodes[output_cnodes_idxs(qc)]
 
 """
     num_qubits(qc::Circuit)
@@ -147,6 +127,22 @@ function _add_io_vertices!(graph, num_qu_wires, num_cl_wires=0)
     end
 end
 
+"""
+    add_io_nodes!(nodes, nqubits, nclbits)
+
+Add input and output nodes to `nodes`. Wires numbered 1 through `nqubits` are
+quantum wires. Wires numbered `nqubits + 1` through `nqubits + nclbits` are classical wires.
+"""
+function add_io_nodes!(nodes, nqubits, nclbits)
+    quantum_wires = 1:nqubits # the first `nqubits` wires
+    classical_wires = (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
+    for (node, wires) in ((Input, quantum_wires), (Output, quantum_wires),
+                          (ClInput, classical_wires), (ClOutput, classical_wires))
+        add_node!.(Ref(nodes), Ref(node), wires) # Ref suppresses broadcasting
+    end
+    return nothing
+end
+
 function add_node!(qc::Circuit, op, wire)
     g = qc.graph
     new_vert = _add_vertex!(g)
@@ -182,55 +178,53 @@ function add_node!(qc::Circuit, op, wire1::Integer, wire2::Integer)
     return qc
 end
 
+# """
+#     add_1q!(qc, op, wire)
 
+# Add a one-qubit operation `op` after the last operation on `wire`.
+# """
+# function add_1q!(qc::Circuit, op::Node, wire::Integer)
+#     g = qc.graph
 
-"""
-    add_1q!(qc, op, wire)
+#     new_vert = _new_op_vertex!(qc, op, (wire, ))
 
-Add a one-qubit operation `op` after the last operation on `wire`.
-"""
-function add_1q!(qc::Circuit, op::Node, wire::Integer)
-    g = qc.graph
+#     outvert = output_vertex(qc, wire)
+#     prev = only(Graphs.all_neighbors(g, outvert))
 
-    new_vert = _new_op_vertex!(qc, op, (wire, ))
+#     Graphs.rem_edge!(g, prev, outvert)
+#     Graphs.add_edge!(g, prev, new_vert)
+#     Graphs.add_edge!(g, new_vert, outvert)
+#     return qc
+# end
 
-    outvert = output_vertex(qc, wire)
-    prev = only(Graphs.all_neighbors(g, outvert))
+# """
+#     add_2q!(qc, op, wire1, wire2)
 
-    Graphs.rem_edge!(g, prev, outvert)
-    Graphs.add_edge!(g, prev, new_vert)
-    Graphs.add_edge!(g, new_vert, outvert)
-    return qc
-end
+# Add a two-qubit operation `op` after the last operation on wires `wire1` and `wire2`.
+# """
+# function add_2q!(qc::Circuit, op::Node, wire1::Integer, wire2::Integer)
+#     g = qc.graph
 
-"""
-    add_2q!(qc, op, wire1, wire2)
+#     new_vert = _new_op_vertex!(qc, op, (wire1, wire2))
 
-Add a two-qubit operation `op` after the last operation on wires `wire1` and `wire2`.
-"""
-function add_2q!(qc::Circuit, op::Node, wire1::Integer, wire2::Integer)
-    g = qc.graph
+#     outvert1 = output_vertex(qc, wire1)
+#     outvert2 = output_vertex(qc, wire2)
 
-    new_vert = _new_op_vertex!(qc, op, (wire1, wire2))
+#     prev1 = only(Graphs.all_neighbors(g, outvert1))
+#     prev2 = only(Graphs.all_neighbors(g, outvert2))
 
-    outvert1 = output_vertex(qc, wire1)
-    outvert2 = output_vertex(qc, wire2)
+#     Graphs.rem_edge!(g, prev1, outvert1)
+#     Graphs.rem_edge!(g, prev2, outvert2)
+#     Graphs.add_edge!(g, prev1, new_vert)
+#     Graphs.add_edge!(g, prev2, new_vert)
+#     Graphs.add_edge!(g, new_vert, outvert1)
+#     Graphs.add_edge!(g, new_vert, outvert2)
 
-    prev1 = only(Graphs.all_neighbors(g, outvert1))
-    prev2 = only(Graphs.all_neighbors(g, outvert2))
+#     return qc
+# end
 
-    Graphs.rem_edge!(g, prev1, outvert1)
-    Graphs.rem_edge!(g, prev2, outvert2)
-    Graphs.add_edge!(g, prev1, new_vert)
-    Graphs.add_edge!(g, prev2, new_vert)
-    Graphs.add_edge!(g, new_vert, outvert1)
-    Graphs.add_edge!(g, new_vert, outvert2)
-
-    return qc
-end
-
-function add_op!(qc::Circuit, op::Node, qwires, clwires)
-end
+# function add_op!(qc::Circuit, op::Node, qwires, clwires)
+# end
 
 # TODO: This *seriously* belongs at a lower level
 """
