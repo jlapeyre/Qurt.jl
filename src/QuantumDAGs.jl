@@ -39,11 +39,8 @@ export Q1Params1Float, RX, RY, RZ
 export Q1Params3Float, U
 export IONodes, ClInput, ClOutput, Input, Output
 
-include("absops.jl")
-#include("paramnodes.jl")
-#include("ops2.jl")
-include("ops.jl")
-using .Ops
+include("elements.jl")
+using .Elements
 include("circuits.jl")
 include("visualization.jl")
 

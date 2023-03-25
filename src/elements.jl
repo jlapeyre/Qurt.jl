@@ -1,4 +1,4 @@
-module Ops
+module Elements
 
 using ..Nodes
 import ..add_noparam!
@@ -36,4 +36,4 @@ end
 
 getnode(gnode::GNode) = gnode.node
 
-end # module Ops
+end # module Elements

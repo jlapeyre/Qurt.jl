@@ -3,11 +3,9 @@ using Graphs: Graphs, rem_edge!, add_edge!
 using DictTools: DictTools
 using Dictionaries: Dictionaries
 
-using .Ops: GNode, ParamNode
+using .Elements: GNode, ParamNode
 
 using .Nodes:  Input, Output, ClInput, ClOutput
-#using .Ops2: add_io_nodes!
-#using .Ops: Input, Output, ClInput, ClOutput, add_io_nodes!
 
 """
     Circuit{V}
