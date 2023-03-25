@@ -19,6 +19,12 @@ export edges, vertices
 # This reexporting *must* be moved elsewhere. To the to i think
 
 function num_qubits end
+function num_clbits end
+function add_noparam! end
+function add_param! end
+function add_node! end
+function count_ops end
+function getnode end
 
 # Custom digraph implementation
 #include("digraph.jl")
