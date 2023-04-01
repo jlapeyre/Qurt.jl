@@ -12,7 +12,7 @@ macro dev_export()
     Expr(:using, Expr(:(:), Expr(:., :QuantumDAGs), [Expr(:., x) for x in __dev_exports]...))
 end
 
-[:count_ops, :elementsym, :getelement, :getparams, :getwires, :input_cl_vertex, :input_vertex, :num_clbits, :num_qu_cl_bits, :num_qubits, :output_cl_vertex, :output_vertex, :topological_nodes, :topological_vertices]
+#[:count_ops, :elementsym, :getelement, :getparams, :getwires, :input_cl_vertex, :input_vertex, :num_clbits, :num_qu_cl_bits, :num_qubits, :output_cl_vertex, :output_vertex, :topological_nodes, :topological_vertices]
 
 #export getelement, elementsym, getwires, getparams
 #export Circuit, num_qubits, num_clbits, num_qu_cl_bits
@@ -34,6 +34,8 @@ using Graphs: Graphs, edges, vertices, nv, ne
 # export vertices, nv, ne
 
 using SnoopPrecompile    # this is a small dependency
+
+function draw end
 
 ###
 ### Include code
@@ -66,6 +68,10 @@ using .Circuits
 
 include("io_qdags.jl")
 
+# Can comment out to save ≈ 2s when compiling
+# include("visualization.jl")
+
+
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the
     # precompile file and potentially make loading faster.
@@ -75,14 +81,16 @@ include("io_qdags.jl")
         using QuantumDAGs.Elements
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
-        qc = Circuits.Circuit(2, 3)
+        qc = Circuits.Circuit(2)
         Circuits.add_node!(qc, Elements.X, (1,))
+        Circuits.add_node!(qc, Elements.Y, (2,))
         Circuits.add_node!(qc, Elements.CX, (1, 2))
         IOQDAGs.print_edges(devnull, qc) # stdout would precompile more
+        Circuits.check(qc)
+        Circuits.remove_node!(qc, 5)
+        Circuits.remove_node!(qc, 5)
+        Circuits.remove_node!(qc, 5)
     end
 end
-
-# Can comment out to save ≈ 2s when compiling
-include("visualization.jl")
 
 end

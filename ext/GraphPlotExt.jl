@@ -1,4 +1,6 @@
-module Visualization
+module GraphPlotsExt
+
+import QuantumDAGs
 
 import GraphPlot
 import Graphs
@@ -7,10 +9,8 @@ using Compose: cm
 # For plotting to PDF
 import Cairo, Fontconfig
 
-using ..Circuits: Circuit
-using ..Interface: getelement
-
-export draw
+using QuantumDAGs.Circuits: Circuit
+using QuantumDAGs.Interface: getelement
 
 function _compose(qc::Circuit)
     g = qc.graph
@@ -31,7 +31,7 @@ function _compose(qc::Circuit)
 end
 
 # Don't know how to check for success
-function draw(qc::Circuit, filename="circ.pdf")
+function QuantumDAGs.draw(qc::Circuit, filename="circ.pdf")
     composition = _compose(qc)
     if endswith(filename, ".pdf")
         Compose.draw(Compose.PDF(filename), composition)
@@ -43,4 +43,4 @@ function draw(qc::Circuit, filename="circ.pdf")
     return nothing
 end
 
-end # module Visualization
+end # module GraphPlotsExt
