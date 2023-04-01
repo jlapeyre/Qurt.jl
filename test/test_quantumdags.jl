@@ -11,7 +11,7 @@ using QuantumDAGs.Elements: Elements, Element, ParamElement, RX, X, Y, Input, Ou
 
 using QuantumDAGs: isapprox_turn, normalize_turn, equal_turn, cos_turn, sin_turn, tan_turn
 
-using QuantumDAGs.NodeStructs: Nodes
+using QuantumDAGs.NodeStructs: NodeVector
 
 using MEnums: @addinblock
 
@@ -77,8 +77,8 @@ end
 
 @testset "user gate" begin
     @addinblock Element UserNoParam MyGate
-#    for nodetype in (Vector{Node}, Nodes)
-    for nodetype in (Nodes,)
+#    for nodetype in (Vector{Node}, NodeVector)
+    for nodetype in (NodeVector,)
         qc = Circuit(DefaultGraphType, nodetype, 3)
         add_node!(qc, Elements.MyGate, (1, 2, 3))
         @test QuantumDAGs.nv(qc) == 7
@@ -111,8 +111,8 @@ end
 
 @testset "empty" begin
     (nq, nc) = (2, 2)
-#    for nodetype in (Vector{Node}, Nodes)
-    for nodetype in (Nodes,)
+#    for nodetype in (Vector{Node}, NodeVector)
+    for nodetype in (NodeVector,)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
         add_node!(qc, Elements.X, (1,))
         qc1 = empty(qc)
@@ -145,8 +145,8 @@ end
 end
 
 @testset "node structs" begin
-#    for nodetype in (Vector{Node}, Nodes)
-    for nodetype in (Nodes,)
+#    for nodetype in (Vector{Node}, NodeVector)
+    for nodetype in (NodeVector,)
         (nq, nc) = (3, 3)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
         add_node!(qc, Elements.H, (1,))

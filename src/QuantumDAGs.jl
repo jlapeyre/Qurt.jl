@@ -22,7 +22,6 @@ end
 # export topological_vertices, topological_nodes
 #export X, Y, Z, H, CX, RX, Input, Output, ClOutput, ClInput, Measure
 #export UserNoParam
-# export Nodes, nodevertex
 
 using Graphs: Graphs, edges, vertices, nv, ne
 # To bad "neighbor" is how you spell neighbor in English. How about "vecino"?
@@ -41,7 +40,8 @@ function draw end
 ### Include code
 ###
 
-include("permuted_vectors.jl")
+# Use view instead of following
+# include("permuted_vectors.jl")
 # Custom digraph implementation. Not working yet.
 # include("digraph.jl")
 
@@ -70,7 +70,6 @@ include("io_qdags.jl")
 
 # Can comment out to save ≈ 2s when compiling
 # include("visualization.jl")
-
 
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the

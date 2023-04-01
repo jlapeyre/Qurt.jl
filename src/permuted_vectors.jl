@@ -1,3 +1,5 @@
+# OBSOLETE. using view and SubArray is better and does the same thing.
+
 module PermutedVectors
 
 """

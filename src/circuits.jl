@@ -14,19 +14,19 @@ using Dictionaries: Dictionaries
 
 using ..Elements: Elements, Element, Input, Output, ClInput, ClOutput
 
-using ..NodeStructs: Nodes, Node, new_node_vector, NodeStructs,
+using ..NodeStructs: NodeVector, Node, new_node_vector, NodeStructs,
     wireset
 
 import ..NodeStructs: wireind, outneighborind, inneighborind, setoutwire_ind, setinwire_ind, getwires
 
 using ..GraphUtils: _add_vertex!, _add_vertices!, _replace_edge!, _empty_simple_graph!
 
-using ..PermutedVectors: PermutedVector
+#using ..PermutedVectors: PermutedVector
 
 export Circuit, add_node!, remove_node!, topological_nodes, topological_vertices
 
 const DefaultGraphType = SimpleDiGraph
-const DefaultNodesType = Nodes # Vector{Node}
+const DefaultNodesType = NodeVector # Vector{Node}
 
 struct CircuitError <: Exception
     msg::AbstractString
@@ -79,8 +79,7 @@ function Circuit(::Type{GraphT}, ::Type{NodesT}, nqubits::Integer,
                                   nclbits=0; global_phase=0) where {NodesT, GraphT}
     nodes = new_node_vector(NodesT) # Store operator and wire data
     graph = GraphT(0) # Assumption about constructor of graph.
-    _add_io_vertices!(graph, nqubits, nclbits) # Add io verts and edges to graph
-    add_io_nodes!(graph, nodes, nqubits, nclbits) # Add node type and wires
+    __add_io_nodes!(graph, nodes, nqubits, nclbits) # Add edges to graph and node type and wires
     # Store indices of io vertices
     input_qu_vertices = collect(1:nqubits)
     output_qu_vertices = collect((1:nqubits) .+ input_qu_vertices[end])
@@ -113,11 +112,11 @@ function Base.:(==)(c1::T, c2::T) where {T <: Circuit}
     return true
 end
 
-# TODO: make this more robust, no reference to Nodes
+# TODO: make this more robust, no reference to NodeVector
 function Base.show(io::IO, ::MIME"text/plain", qc::Circuit{GraphT, VertexT, NodesT}) where {GraphT, VertexT, NodesT}
     nq = num_qubits(qc)
     ncl = num_clbits(qc)
-    if NodesT <: Nodes
+    if NodesT <: NodeVector
           nodes_type = NodesT.name.name # Strip full path parents from name
     else
         nodes_type = NodesT
@@ -153,73 +152,10 @@ Base.empty(qc::Circuit) =
 function Base.empty!(qc::Circuit, nqu=num_qubits(qc), ncl=num_clbits(qc))
     _empty_simple_graph!(qc.graph) # nqu + ncl)
     empty!(qc.nodes) # , numnodes = 2*(nqu + ncl)
-    _add_io_vertices!(qc.graph, nqu, ncl)
-    add_io_nodes!(qc.graph, qc.nodes, nqu, ncl)
+    __add_io_nodes!(qc.graph, qc.nodes, nqu, ncl)
     return qc
 end
 
-# Evaluate `ex` and print the code `ex` if false. Return the value whether true or false
-macro shfail(ex)
-    quote
-        result::Bool = $(esc(ex))
-        if ! result
-            println($(sprint(Base.show_unquoted,ex)))
-        end
-        result
-    end
-end
-
-"""
-    check(qc::Circuit)
-
-Throw an `Exception` if any of a few checks on the integrity of `qc` fail.
-"""
-function check(qc::Circuit)
-    NodeStructs.check(qc.nodes)
-    num_fails = 0
-    function showfail(v)
-        num_fails += 1
-        println("fail $v: $(qc[v])")
-        println("outn=$(outneighbors(qc, v)), inn=$(inneighbors(qc, v))")
-        println()
-    end
-    if Graphs.nv(qc.graph) != length(qc.nodes)
-        throw(CircuitError("Number of nodes in DAG is not equal to length(qc.nodes)"))
-    end
-    for v in qc.input_qu_vertices
-        isquinput(qc, v) || throw(CircuitError("Expecting Input, got $(getelement(qc, v))."))
-    end
-    for v in qc.output_qu_vertices
-        isquoutput(qc, v) || throw(CircuitError("Expecting Output, got $(getelement(qc, v))."))
-    end
-    for v in vertices(qc)
-        indeg = indegree(qc, v)
-        outdeg = outdegree(qc, v)
-        outneigh = outneighbors(qc, v)
-        inneigh = inneighbors(qc, v)
-        if isinput(qc, v)
-            @shfail(indeg == 0) || showfail(v)
-            @shfail(outdeg == 1) || showfail(v)
-        elseif isoutput(qc, v)
-            @shfail(indeg == 1) || showfail(v)
-            @shfail(outdeg == 0) || showfail(v)
-        else
-            indeg == outdeg || showfail(v)
-        end
-        @shfail(all(<=(Graphs.nv(qc)), outneigh)) || showfail(v)
-        @shfail(all(<=(Graphs.nv(qc)), inneigh)) || showfail(v)
-        goutneigh = outneighbors(qc.graph, v)
-        ginneigh = inneighbors(qc.graph, v)
-        @shfail(all(in(outneigh), goutneigh)) || showfail(v)
-        @shfail(all(in(inneigh), ginneigh)) || showfail(v)
-    end
-    @shfail(!is_cyclic(qc)) || (num_fails += 1)
-    if num_fails > 0
-        @show num_fails
-        return false
-    end
-    return true
-end
 
 # Index into all Qu and Cl input vertex indices
 input_vertex(qc::Circuit, wireind::Integer) = qc.input_vertices[wireind]
@@ -258,9 +194,15 @@ num_clbits(qc::Circuit) = qc.nclbits
 ### adding vertices and nodes to the circuit and graph
 ###
 
+function __add_io_nodes!(graph::AbstractGraph, nodes::NodeVector, nqubits::Integer, nclbits::Integer)
+    __add_io_vertices!(graph, nqubits, nclbits)
+    __add_io_node_data!(graph, nodes, nqubits, nclbits)
+    return nothing
+end
+
 # 1. Add vertices to DAG for both quantum and classical input and output nodes.
 # 2. Add an edge from each input to each output node.
-function _add_io_vertices!(graph::SimpleDiGraph, num_qu_wires::Integer, num_cl_wires::Integer=0)
+function __add_io_vertices!(graph::SimpleDiGraph, num_qu_wires::Integer, num_cl_wires::Integer=0)
     (in_qc, out_qc, in_cl, out_cl) =
         _add_vertices!.(Ref(graph), (num_qu_wires, num_qu_wires, num_cl_wires, num_cl_wires))
 
@@ -270,12 +212,12 @@ function _add_io_vertices!(graph::SimpleDiGraph, num_qu_wires::Integer, num_cl_w
 end
 
 """
-    add_io_nodes!(graph, nodes, nqubits, nclbits)
+    __add_io_node_data!(graph, nodes, nqubits, nclbits)
 
 Add input and output nodes to `nodes`. Wires numbered 1 through `nqubits` are
 quantum wires. Wires numbered `nqubits + 1` through `nqubits + nclbits` are classical wires.
 """
-function add_io_nodes!(graph::AbstractGraph, nodes::Nodes, nqubits::Integer, nclbits::Integer)
+function __add_io_node_data!(graph::AbstractGraph, nodes::NodeVector, nqubits::Integer, nclbits::Integer)
     quantum_wires = qu_wire_range(nqubits) # 1:nqubits # the first `nqubits` wires
     classical_wires = cl_wire_range(nqubits, nclbits) # (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
     vertex_ind = 0
@@ -364,7 +306,8 @@ Return a topologically sorted vector of the vertices.
 
 The returned data is a vector-of-structs view of the underlying data.
 """
-topological_nodes(qc::Circuit) = PermutedVector(qc.nodes, topological_vertices(qc))
+topological_nodes(qc::Circuit) = view(qc.nodes, topological_vertices(qc))
+#topological_nodes(qc::Circuit) = PermutedVector(qc.nodes, topological_vertices(qc))
 
 ###
 ### Forwarded methods
@@ -373,7 +316,7 @@ topological_nodes(qc::Circuit) = PermutedVector(qc.nodes, topological_vertices(q
 # TODO, we need to define these in nodes if we want them.
 # But we will not want Vector...
 # Forward these methods from `Circuit` to the container of nodes.
-for f in (:keys, :lastindex, :axes, :size, :length, :getindex, :iterate, (:inneighbors, :Graphs),
+for f in (:keys, :lastindex, :axes, :size, :length, :getindex, :iterate, :view, (:inneighbors, :Graphs),
           (:outneighbors, :Graphs))
     (func, Mod) = isa(f, Tuple) ? f : (f, :Base)
     @eval ($Mod.$func)(qc::Circuit, args...) = $func(qc.nodes, args...)
@@ -391,6 +334,74 @@ for f in (:count_ops, :count_wires, :nodevertex, :wireind, :outneighborind, :inn
           :isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput,
           :isionode,:indegree, :outdegree)
     @eval $f(qc::Circuit, args...) = $f(qc.nodes, args...)
+end
+
+
+###
+### Check integrity of Circuit
+###
+
+# Evaluate `ex` and print the code `ex` if false. Return the value whether true or false
+macro __shfail(ex)
+    quote
+        result::Bool = $(esc(ex))
+        if ! result
+            println($(sprint(Base.show_unquoted,ex)))
+        end
+        result
+    end
+end
+
+"""
+    check(qc::Circuit)
+
+Throw an `Exception` if any of a few checks on the integrity of `qc` fail.
+"""
+function check(qc::Circuit)
+    NodeStructs.check(qc.nodes)
+    num_fails = 0
+    function showfail(v)
+        num_fails += 1
+        println("fail $v: $(qc[v])")
+        println("outn=$(outneighbors(qc, v)), inn=$(inneighbors(qc, v))")
+        println()
+    end
+    if Graphs.nv(qc.graph) != length(qc.nodes)
+        throw(CircuitError("Number of nodes in DAG is not equal to length(qc.nodes)"))
+    end
+    for v in qc.input_qu_vertices
+        isquinput(qc, v) || throw(CircuitError("Expecting Input, got $(getelement(qc, v))."))
+    end
+    for v in qc.output_qu_vertices
+        isquoutput(qc, v) || throw(CircuitError("Expecting Output, got $(getelement(qc, v))."))
+    end
+    for v in vertices(qc)
+        indeg = indegree(qc, v)
+        outdeg = outdegree(qc, v)
+        outneigh = outneighbors(qc, v)
+        inneigh = inneighbors(qc, v)
+        if isinput(qc, v)
+            @__shfail(indeg == 0) || showfail(v)
+            @__shfail(outdeg == 1) || showfail(v)
+        elseif isoutput(qc, v)
+            @__shfail(indeg == 1) || showfail(v)
+            @__shfail(outdeg == 0) || showfail(v)
+        else
+            indeg == outdeg || showfail(v)
+        end
+        @__shfail(all(<=(Graphs.nv(qc)), outneigh)) || showfail(v)
+        @__shfail(all(<=(Graphs.nv(qc)), inneigh)) || showfail(v)
+        goutneigh = outneighbors(qc.graph, v)
+        ginneigh = inneighbors(qc.graph, v)
+        @__shfail(all(in(outneigh), goutneigh)) || showfail(v)
+        @__shfail(all(in(inneigh), ginneigh)) || showfail(v)
+    end
+    @__shfail(!is_cyclic(qc)) || (num_fails += 1)
+    if num_fails > 0
+        @show num_fails
+        return false
+    end
+    return true
 end
 
 end # module Circuits
