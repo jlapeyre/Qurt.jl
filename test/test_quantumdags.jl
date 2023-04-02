@@ -1,23 +1,88 @@
 using Dictionaries: Dictionary
 
-using QuantumDAGs.Interface: count_wires, count_ops, num_qubits, num_clbits, getelement
+using QuantumDAGs.Interface: count_wires, count_ops, num_qubits, num_clbits, getelement, getwires, getparams
 
-using QuantumDAGs.Circuits: Circuit, DefaultGraphType, add_node!, remove_node!, outneighbors, inneighbors, nv,
-     check
+using QuantumDAGs.Circuits: Circuit, DefaultGraphType, DefaultNodesType, add_node!, remove_node!, outneighbors, inneighbors, nv,
+      check, substitute_node!, successors, predecessors
+
+using QuantumDAGs.Builders: @build
 
 using QuantumDAGs: edges
 
-using QuantumDAGs.Elements: Elements, Element, ParamElement, RX, X, Y, Input, Output, CX, CZ, CH, UserNoParam, Input, Output
+using QuantumDAGs.Elements: Elements, Element, ParamElement, RX, X, Y, Y, Input, Output, CX, CZ, CH, U, ClOutput, UserNoParam,
+       Measure
 
 using QuantumDAGs: isapprox_turn, normalize_turn, equal_turn, cos_turn, sin_turn, tan_turn
 
 using QuantumDAGs.NodeStructs: NodeVector
 
+using QuantumDAGs.Passes: cx_cancellation!
+using QuantumDAGs.NodesGraphs: find_runs_two_wires
+
 using MEnums: @addinblock
 
 import QuantumDAGs
 
+@testset "CX cancellation" begin
+    qc = Circuit(2)
+    @build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
+    @test find_runs_two_wires(qc, CX) == [[5, 6, 7], [8, 9], [10, 11]]
+    cx_cancellation!(qc)
+    @test find_runs_two_wires(qc, CX) == [[5]]
+end
 
+@testset "quantum and classical wires" begin
+    qc = Circuit(1, 1)
+    nM = add_node!(qc, Measure, (1,), (2,))
+    @test num_qubits(qc, nM) == 1
+    @test num_clbits(qc, nM) == 1
+    s = successors(qc, nM)
+    @test length(s) == 2
+    @test getelement(qc, s[1]) == Output
+    @test getelement(qc, s[2]) == ClOutput
+end
+
+@testset "macro builder interface" begin
+    qc = Circuit(2)
+    @test 5 == @build qc X(1)
+    @test [6, 7] == @build qc CX(1, 2) RX{3//2}(1)
+    @test [8, 9, 10] ==
+        @build qc begin
+            X(1)
+            CX(2, 1)
+            U{0, 0.5, 1}(1)
+        end
+    @test getparams(qc, 10) == (0, 0.5, 1)
+    qc = Circuit(1, 1)
+    @build qc Measure(1; 2)
+    qc1 = Circuit(1, 1)
+    add_node!(qc1, Measure, (1,), (2,))
+    @test qc == qc1
+end
+
+@testset "call builder interface" begin
+    qc = Circuit(2)
+    nX = qc(X()(1))
+    nY = qc(Y()(2))
+    nCX = qc(CX()(1, 2))
+    @test getelement(qc, nX) == X
+    @test getelement(qc, nY) == Y
+    @test getelement(qc, nCX) == CX
+    @test getwires(qc, nX) == (1,)
+    @test getwires(qc, nY) == (2,)
+    @test getwires(qc, nCX) == (1, 2)
+end
+
+@testset "circuit manipulation" begin
+    qc = Circuit(1)
+    nX = qc(X()(1))
+    substitute_node!(qc, Y, nX)
+    node = qc[nX]
+    @test getelement(node) == Y
+    @test getwires(node) === (1,)
+    @test successors(qc, nX) == [2]
+    @test predecessors(qc, nX) == [1]
+end
 
 @testset "wire mapping" begin
     inout(qc, node, wire) = (inneighbors(qc, node, wire), outneighbors(qc, node, wire))
@@ -75,10 +140,9 @@ import QuantumDAGs
 
 end
 
-@testset "user gate" begin
+@testset "user-defined gate" begin
     @addinblock Element UserNoParam MyGate
-#    for nodetype in (Vector{Node}, NodeVector)
-    for nodetype in (NodeVector,)
+    for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, 3)
         add_node!(qc, Elements.MyGate, (1, 2, 3))
         @test QuantumDAGs.nv(qc) == 7
@@ -111,8 +175,7 @@ end
 
 @testset "empty" begin
     (nq, nc) = (2, 2)
-#    for nodetype in (Vector{Node}, NodeVector)
-    for nodetype in (NodeVector,)
+    for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
         add_node!(qc, Elements.X, (1,))
         qc1 = empty(qc)
@@ -145,8 +208,7 @@ end
 end
 
 @testset "node structs" begin
-#    for nodetype in (Vector{Node}, NodeVector)
-    for nodetype in (NodeVector,)
+    for nodetype in (DefaultNodesType, NodeVector)
         (nq, nc) = (3, 3)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
         add_node!(qc, Elements.H, (1,))

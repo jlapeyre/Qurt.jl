@@ -4,7 +4,8 @@ using ConcreteStructs: @concrete
 
 using StructArrays: StructVector
 
-import ..Interface: num_qubits, num_clbits, getelement, count_wires, count_ops
+import ..Interface: num_qubits, num_clbits, getelement, getparams, getwires, count_wires, count_ops,
+    node, check
 
 import Graphs
 using Graphs: Graphs, rem_edge!, add_edge!, DiGraph, SimpleDiGraph, outneighbors, inneighbors, nv, ne,
@@ -15,20 +16,20 @@ using DictTools: DictTools
 using Dictionaries: Dictionaries
 
 using ..Elements: Elements, Element, Input, Output, ClInput, ClOutput
+using  ..Elements: ParamElement, WiresParamElement, WiresElement
 
-using ..NodeStructs: NodeVector, Node, new_node_vector, NodeStructs,
-    wireset
+using ..NodeStructs: Node, new_node_vector, NodeStructs, wireset
 
-import ..NodeStructs: wireind, outneighborind, inneighborind, setoutwire_ind, setinwire_ind, getwires
+import ..NodeStructs: wireind, outneighborind, inneighborind, setoutwire_ind, setinwire_ind, wirenodes,
+    setelement!, substitute_node!
 
-using ..GraphUtils: _add_vertex!, _add_vertices!, _replace_edge!, _empty_simple_graph!
+using ..GraphUtils: _add_vertex!, _add_vertices!, _replace_one_edge_with_two!, _empty_simple_graph!,
+    remove_vertices!
 
-#using ..PermutedVectors: PermutedVector
-
-export Circuit, add_node!, remove_node!, topological_nodes, topological_vertices
+export Circuit, add_node!, remove_node!, remove_block!, topological_nodes,
+    topological_vertices, predecessors, successors, quantum_successors
 
 const DefaultGraphType = SimpleDiGraph
-#const DefaultNodesType = NodeVector # Vector{Node}
 const DefaultNodesType = StructVector{Node{Int}}
 
 struct CircuitError <: Exception
@@ -103,28 +104,25 @@ function Circuit(::Type{GraphT}, ::Type{NodesT}, nqubits::Integer,
                    nqubits, nclbits, global_phase)
 end
 
-qu_wire_range(nqu, _ncl=nothing) = 1:nqu
-cl_wire_range(nqu, ncl) = (1:ncl) .+ nqu
-wire_range(nqu, ncl) = 1:(nqu + ncl)
+qu_wire_indices(nqu, _ncl=nothing) = 1:nqu
+cl_wire_indices(nqu, ncl) = (1:ncl) .+ nqu
+wire_indices(nqu, ncl) = 1:(nqu + ncl)
+wire_indices(qc::Circuit) = wire_indices(num_qubits(qc), num_clbits(qc))
 
 function Base.:(==)(c1::T, c2::T) where {T <: Circuit}
     c1 === c2 && return true
-    for field in fieldnames(T) # is this efficient?
+    for field in fieldnames(T)
         getfield(c1, field) == getfield(c2, field) || return false
     end
     return true
 end
 
-# TODO: make this more robust, no reference to NodeVector
-function Base.show(io::IO, ::MIME"text/plain", qc::Circuit{GraphT, VertexT, NodesT}) where {GraphT, VertexT, NodesT}
+function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
     nq = num_qubits(qc)
     ncl = num_clbits(qc)
-    if NodesT <: NodeVector
-          nodes_type = NodesT.name.name # Strip full path parents from name
-    else
-        nodes_type = NodesT
-    end
-    println(io, "circuit {nq=$nq, ncl=$ncl, nv=$(Graphs.nv(qc)), ne=$(Graphs.ne(qc))} $VertexT $nodes_type")
+    nv = Graphs.nv(qc)
+    ne = Graphs.ne(qc)
+    println(io, "circuit {nq=$nq, ncl=$ncl, nv=$nv, ne=$ne} $(typeof(qc.graph)) $(eltype(qc.nodes))")
 end
 
 function Base.copy(qc::Circuit)
@@ -135,6 +133,14 @@ function Base.copy(qc::Circuit)
         qc.input_vertices, qc.output_vertices)]
     return Circuit(copies..., qc.nqubits, qc.nclbits, qc.global_phase)
 end
+
+###
+### Call builder interface. "Callable" object methods for building the circuit
+###
+
+(qc::Circuit)(el::WiresElement) = add_node!(qc, el.element, el.wires)
+(qc::Circuit)(els::WiresElement...) = [add_node!(qc, el.element, el.wires) for el in els]
+(qc::Circuit)(el::WiresParamElement) = add_node!(qc, (el.element, el.params), el.wires)
 
 """
     empty(qc::Circuit)
@@ -158,7 +164,6 @@ function Base.empty!(qc::Circuit, nqu=num_qubits(qc), ncl=num_clbits(qc))
     __add_io_nodes!(qc.graph, qc.nodes, nqu, ncl)
     return qc
 end
-
 
 # Index into all Qu and Cl input vertex indices
 input_vertex(qc::Circuit, wireind::Integer) = qc.input_vertices[wireind]
@@ -221,8 +226,8 @@ Add input and output nodes to `nodes`. Wires numbered 1 through `nqubits` are
 quantum wires. Wires numbered `nqubits + 1` through `nqubits + nclbits` are classical wires.
 """
 function __add_io_node_data!(graph::AbstractGraph, nodes, nqubits::Integer, nclbits::Integer)
-    quantum_wires = qu_wire_range(nqubits) # 1:nqubits # the first `nqubits` wires
-    classical_wires = cl_wire_range(nqubits, nclbits) # (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
+    quantum_wires = qu_wire_indices(nqubits) # 1:nqubits # the first `nqubits` wires
+    classical_wires = cl_wire_indices(nqubits, nclbits) # (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
     vertex_ind = 0
     for (node, wires) in ((Input, quantum_wires), (Output, quantum_wires),
                           (ClInput, classical_wires), (ClOutput, classical_wires))
@@ -248,27 +253,41 @@ Add `op` or `(op, params)` to the back of `qcircuit` with the specified classica
 
 The new node is inserted between the output nodes and their current predecessor nodes.
 """
-function add_node!(qc::Circuit, op::Element, wires::NTuple{<:Any, <:Integer},
-                   clwires=Tuple{}())
+function add_node!(qc::Circuit, op::Element, wires, clwires=Tuple{}())
     return add_node!(qc, (op, nothing), wires, clwires)
 end
 
-function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
-                   wires::NTuple{<:Any, <:Integer}, clwires=Tuple{}())
+# function add_node!(qc::Circuit, op::Element, wires::NTuple{<:Any, <:Integer},
+#                    clwires=Tuple{}())
+#     return add_node!(qc, (op, nothing), wires, clwires)
+# end
+# function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
+#                    wires::NTuple{<:Any, <:Integer}, clwires=Tuple{}())
 
+# We could require wires::Tuple. This typically makes construction faster than wires::Vector
+function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
+                   wires, clwires=Tuple{}())
+
+    allwires = (wires..., clwires...)
     new_vert = _add_vertex!(qc.graph)
-    back_wire_map = Vector{Int}(undef, length(wires))
-    forward_wire_map = Vector{Int}(undef, length(wires))
-    for (i, wire) in enumerate(wires)
-        outvert = output_vertex(qc, wire)
-        prev = only(Graphs.inneighbors(qc.graph, outvert))
-        _replace_edge!(qc.graph, prev, outvert, new_vert)
-        qc.nodes.forward_wire_map[prev][NodeStructs.wireind(qc.nodes, prev, wire)] = new_vert
-        qc.nodes.back_wire_map[outvert][1] = new_vert
-        @inbounds back_wire_map[i] = prev
-        @inbounds forward_wire_map[i] = outvert
+    inwiremap = Vector{Int}(undef, length(allwires))
+    outwiremap = Vector{Int}(undef, length(allwires))
+    # Each wire terminates at an output node.
+    wr = wire_indices(qc)
+    for wire in allwires
+        wire in wr || throw(CircuitError("Wire $wire is not in circuit"))
     end
-    NodeStructs.add_node!(qc.nodes, op, wireset(wires, clwires), back_wire_map, forward_wire_map, params)
+    for (i, wire) in enumerate(allwires)
+        outvert = output_vertex(qc, wire) # Output node for wire
+        prev = only(Graphs.inneighbors(qc.graph, outvert)) # Output node has one inneighbor
+        # Replace prev -> outvert with prev -> new_vert -> outvert
+        _replace_one_edge_with_two!(qc.graph, prev, outvert, new_vert)
+        setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
+        setinwire_ind(qc.nodes, outvert, 1, new_vert)
+        inwiremap[i] = prev
+        outwiremap[i] = outvert
+    end
+    NodeStructs.add_node!(qc.nodes, op, wireset(wires, clwires), inwiremap, outwiremap, params)
     return new_vert
 end
 
@@ -295,6 +314,27 @@ function remove_node!(qc::Circuit, vind::Integer)
 end
 
 """
+    remove_block!(qc::Circuit, vinds)
+
+Remove the nodes in the block given by collection `vinds` and connect incoming and outgoing
+neighbors of the block on each wire. Assume the first and last elements are on incoming and outgoing
+wires to the block, respectively.
+"""
+function remove_block!(qc::Circuit, vinds)
+    # Connect in- and out-neighbors of vertex to be removed
+    # rem_vertex! will remove existing edges for us below.
+    for (from, to) in zip(inneighbors(qc, vinds[1]), outneighbors(qc, vinds[end]))
+        Graphs.add_edge!(qc.graph, from, to)
+    end
+    # Reconnect wire directly from in- to out-neighbor of vind
+    NodeStructs.rewire_across_nodes!(qc.nodes, vinds[1], vinds[end])
+    remove_vertices!(qc.graph, vinds)
+    # Analogue of rem_vertex! for nodes
+    (vmap, ivmap) = remove_vertices!(qc.nodes, vinds, NodeStructs.rem_node!)
+    return (vmap, ivmap)
+end
+
+"""
     topological_vertices(qc::Circuit)::Vector{<:Integer}
 
 Return a topologically sorted vector of the vertices.
@@ -312,6 +352,48 @@ The returned data is a vector-of-structs view of the underlying data.
 topological_nodes(qc::Circuit) = view(qc.nodes, topological_vertices(qc))
 #topological_nodes(qc::Circuit) = PermutedVector(qc.nodes, topological_vertices(qc))
 
+"""
+    wirenodes(qc::Circuit, wire::Integer)
+
+Return an iterator over vertices on `wire`.
+"""
+wirenodes(qc::Circuit, wire) = wirenodes(qc.nodes, input_vertex(qc, wire), wire)
+
+"""
+    predecessors(qc::Circuit, vert)
+
+Return the predecessors of `vert` in `qc`. This does not return a copy, so mutation will mutate
+the graph as well.
+"""
+predecessors(qc::Circuit, vert) = Graphs.inneighbors(qc.graph, vert)
+
+"""
+    successors(qc::Circuit, vert)
+
+Return the successors of `vert` in `qc`. This does not return a copy, so mutation will mutate
+the graph as well.
+"""
+successors(qc::Circuit, vert) = Graphs.outneighbors(qc.graph, vert)
+
+"""
+    quantum_successors(qc::Circuit, vert)
+
+Return the successors of `vert` in `qc` that are connnected by at least one quantum wire.
+
+The return value is not guaranteed to be a copy.
+"""
+function quantum_successors(qc::Circuit, vert)
+    owmap = qc.nodes.outwiremap[vert]
+    length(owmap) == 1 && return owmap
+    if length(owmap) == 2
+        @inbounds (owmap[1] != owmap[2]) && return owmap
+    end
+    s = qc.nodes.outwiremap[vert][1:qc.nodes.numquwires[vert]]
+    return unique!(s)
+end
+
+
+
 ###
 ### Forwarded methods
 ###
@@ -319,11 +401,14 @@ topological_nodes(qc::Circuit) = view(qc.nodes, topological_vertices(qc))
 # TODO, we need to define these in nodes if we want them.
 # But we will not want Vector...
 # Forward these methods from `Circuit` to the container of nodes.
-for f in (:keys, :lastindex, :axes, :size, :length, :getindex, :iterate, :view, (:inneighbors, :Graphs),
+for f in (:keys, :lastindex, :axes, :size, :length, :iterate, :view, (:inneighbors, :Graphs),
           (:outneighbors, :Graphs))
     (func, Mod) = isa(f, Tuple) ? f : (f, :Base)
     @eval ($Mod.$func)(qc::Circuit, args...) = $func(qc.nodes, args...)
 end
+
+Base.getindex(qc::Circuit, ind::Integer) = qc.nodes[ind]
+Base.getindex(qc::Circuit, inds::AbstractVector) = @view qc.nodes[inds]
 
 # Forward these methods from Circuit to Graphs
 for f in (:edges, :vertices, :nv, :ne, :is_cyclic)
@@ -335,15 +420,19 @@ import .Elements: isinput, isoutput, isquinput, isquoutput, isclinput, iscloutpu
 for f in (:count_ops, :count_wires, :nodevertex, :wireind, :outneighborind, :inneighborind,
           :setoutwire_ind, :setinwire_ind,
           :isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput,
-          :isionode,:indegree, :outdegree)
+          :isionode,:indegree, :outdegree,
+          :substitute_node!, :setelement!, :node)
     @eval $f(qc::Circuit, args...) = $f(qc.nodes, args...)
 end
+
+num_qubits(qc::Circuit, vert) = num_qubits(qc.nodes, vert)
+num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
 
 
 # TODO: Do we really want to forward all of this stuff? Or just provide an accessor to the
 # nodes field of `Circuit`?
-NodeStructs.find_nodes(testfunc::F, qc::Circuit, fieldname::Symbol) where {F} =
-    NodeStructs.find_nodes(testfunc, qc.nodes, Val(fieldname))
+# NodeStructs.find_nodes(testfunc::F, qc::Circuit, fieldname::Symbol) where {F} =
+#     NodeStructs.find_nodes(testfunc, qc.nodes, Val(fieldname))
 
 ###
 ### Check integrity of Circuit

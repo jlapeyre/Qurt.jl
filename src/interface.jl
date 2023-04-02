@@ -11,6 +11,12 @@
 
 module Interface
 
+export num_qubits, num_clbits, num_qu_cl_bits, count_ops, count_wires, check,
+    getelement, getwires, getquwires, getclwires, getparams,
+    node
+
+export nodevertex
+
 ## TODO: we could include an export list for no reason than for the REPL to allow completion
 ## There must be another way to do this.
 
@@ -63,6 +69,15 @@ function getwires end
 function getquwires end
 function getclwires end
 function getparams end
+
+"""
+    node(qc, vert)
+    node(nodes, vert)
+    node(nodes, verts)
+
+Return the node on vertex `vert`, or collection `verts`.
+"""
+function node end
 
 # Return object with info about eh node/vertex
 function nodevertex end

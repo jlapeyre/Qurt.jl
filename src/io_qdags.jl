@@ -4,15 +4,19 @@ using Graphs: Graphs, edges
 using ..Interface: getelement, getclwires, getquwires
 using ..Circuits: Circuit
 
+using ..GraphUtils: edges_topological
+
 export print_edges
 
 _get_edge_data(edge::Graphs.SimpleGraphs.SimpleEdge) = (edge.src, edge.dst, 1)
 
 print_edges(qc::Circuit) = print_edges(stdout, qc)
 
+# function topological_edgs(qc::Circuit)
+
 function print_edges(io::IO, qc::Circuit)
     nodes = qc.nodes
-    for edge in edges(qc)
+    for edge in edges_topological(qc.graph)
         (src, dst, mul) = _get_edge_data(edge)
         sn = getelement(nodes, src)
         swq = getquwires(nodes, src)

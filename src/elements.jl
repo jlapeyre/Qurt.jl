@@ -14,8 +14,7 @@ using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
 using ..Interface
 
-
-export Element, ParamElement
+export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
 export Q1NoParam, X, Y, Z, H, SX
 export Q2NoParam, CX, CY, CZ, CH
 export Q1Params1Float, RX, RY, RZ
@@ -48,12 +47,28 @@ end
 @addinblock Element IONodes ClInput ClOutput Input Output
 
 # Element with parameters (not Julia parameters, params from the QC domain)
+
+# abstract type ElementCombo end
+
 struct ParamElement{ParamsT}
-    node::Element
+    element::Element
+    params::ParamsT
+end
+struct NoParamElement
+    element::Element
+end
+
+struct WiresElement{WiresT}
+    element::Element
+    wires::WiresT
+end
+struct WiresParamElement{WiresT, ParamsT}
+    element::Element
+    wires::WiresT
     params::ParamsT
 end
 
-Base.:(==)(x::ParamElement, y::ParamElement) = x.node == y.node && x.params == y.params
+Base.:(==)(x::ParamElement, y::ParamElement) = x.element == y.element && x.params == y.params
 
 isquinput(x::Element) = x === Input
 isclinput(x::Element) = x === ClInput
@@ -64,29 +79,35 @@ isinput(x::Element) = isquinput(x) || isclinput(x)
 isoutput(x::Element) = isquoutput(x) || iscloutput(x)
 isionode(x::Element) = isinput(x) || isoutput(x)
 
-
 # Lexical order, not mathematical
 function Base.isless(x::ParamElement, y::ParamElement)
-    x.node == y.node || return isless(x.node, y.node)
+    x.element == y.element || return isless(x.element, y.element)
     return isless(x.params, y.params)
 end
 
 # Calling an instance of an `Element` wraps the arguments as parameters.
+# (element::Element)(wires::Tuple{T, Vararg{T}}) where {T<:Integer} = WiresElement(element, wires)
+# (element::Element)(params::Tuple, wires::Tuple{T, Vararg{T}}) where {T<:Integer} =
+#     WiresParamElement(element, wires, params)
+
+(element::Element)() = NoParamElement(element)
 (element::Element)(param) = ParamElement(element, param)
 (element::Element)(params...) = ParamElement(element, params)
+(pelement::ParamElement)(wires::Int...) = WiresParamElement(pelement.element, wires, pelement.params)
+(npelement::NoParamElement)(wires::Int...) = WiresElement(npelement.element, wires)
 
-Interface.getelement(x::ParamElement) = x.node
+Interface.getelement(x::ParamElement) = x.element
 Interface.getparams(x::ParamElement) = x.params
 Interface.getelement(x::Element) = x
 Interface.getparams(x::Element) = nothing
 
 ### Angle functions
 
-Angle.normalize_turn(x::ParamElement) = (x.node)(Angle.normalize_turn.(x.params)...)
+Angle.normalize_turn(x::ParamElement) = (x.element)(Angle.normalize_turn.(x.params)...)
 
 function Angle.equal_turn(x::ParamElement, y::ParamElement, eqfun = Angle.equal_turn)
     # x === y && return true # Might save time.
-    x.node == y.node || return false
+    x.element == y.element || return false
     length(x.params) == length(y.params) || return false
     for (px, py) in zip(x.params, y.params)
         eqfun(px, py) || return false

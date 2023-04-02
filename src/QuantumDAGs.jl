@@ -45,6 +45,8 @@ function draw end
 # Custom digraph implementation. Not working yet.
 # include("digraph.jl")
 
+include("utils.jl")
+
 include("interface.jl")
 
 include("angle.jl")
@@ -58,18 +60,21 @@ include("elements.jl")
 using .Elements: Elements, Element
 export Element
 
-include("graph_utils.jl")
-
 include("node_structs.jl")
 using .NodeStructs
+
+include("graph_utils.jl")
 
 include("circuits.jl")
 using .Circuits
 
+include("nodes_graphs.jl")
+
+include("passes/passes.jl")
+
 include("io_qdags.jl")
 
-# Can comment out to save ≈ 2s when compiling
-# include("visualization.jl")
+include("builders.jl")
 
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the
@@ -89,6 +94,8 @@ include("io_qdags.jl")
         Circuits.remove_node!(qc, 5)
         Circuits.remove_node!(qc, 5)
         Circuits.remove_node!(qc, 5)
+        Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
+#        @build qc X(1) RX{1.5}(2) RX{3//2}(1)
     end
 end
 
