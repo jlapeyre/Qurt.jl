@@ -7,7 +7,7 @@ are on the wires.
 """
 module NodeStructs
 
-using StructArrays: StructArray
+using StructArrays: StructArray, StructVector
 using ConcreteStructs: @concrete
 import MEnums
 using Dictionaries: Dictionaries
@@ -58,6 +58,17 @@ struct Node{IntT <: Integer}
     params::Any
 end
 
+function _empty_node_storage()
+    return (
+        Element[],
+        Tuple{Int, Vararg{Int}}[],
+        Int32[],
+        Vector{Int}[],
+        Vector{Int}[],
+        Any[]
+    )
+end
+
 function Base.:(==)(n1::Node, n2::Node)
 #function Base.:(==)(n1::T, n2::T) where {T <: Node}
     n1.element == n2.element || return false
@@ -76,15 +87,17 @@ getelement(node::Node) = node.element
 ###
 
 struct NodeArray{NodeT<:Node, N, IntT<:Integer} <: AbstractArray{NodeT, N}
-    elements::Array{Element, N}
+    element::Array{Element, N}
     wires::Array{Tuple{IntT, Vararg{IntT}}, N}
     numquwires::Array{Int32, N}
-    back_wire_maps::Array{Vector{Int}, N}
-    forward_wire_maps::Array{Vector{Int}, N}
+    back_wire_map::Array{Vector{Int}, N}
+    forward_wire_map::Array{Vector{Int}, N}
     params::Array{Any, N}
 end
 
 const NodeVector{NodeT, IntT} = NodeArray{NodeT, 1, IntT}
+
+const ANodeArrays = Union{NodeArray, StructVector{<:Node}}
 
 function NodeArray{Node{IntT}}() where IntT
     return NodeArray{Node{IntT}, 1, IntT}(
@@ -101,9 +114,10 @@ Nodes() = NodeArray{Node{Int}}()
 new_node_vector(::Type{<:NodeArray{Node{IntT}}}) where IntT = NodeArray{Node{IntT}}()
 new_node_vector(::Type{<:NodeArray}) = Nodes()
 new_node_vector(::Type{NodeVector}) = Nodes()
+new_node_vector(::Type{StructVector{NodeT}}) where NodeT = StructVector{NodeT}(_empty_node_storage())
 
 # Follow semantics of Base.pop!
-Base.pop!(ns::NodeArray{NodeT}) where NodeT = NodeT((pop!(getfield(ns, fn)) for fn in fieldnames(typeof(ns)))...)
+Base.pop!(ns::ANodeArrays) = Node((pop!(getproperty(ns, fn)) for fn in propertynames(ns))...)
 
 function Base.show(io::IO, node::Node{IntT}) where IntT
     print(io, "Node{$IntT}(el=$(node.element), wires=$(node.wires), nq=$(node.numquwires), " *
@@ -111,41 +125,42 @@ function Base.show(io::IO, node::Node{IntT}) where IntT
 end
 
 function Base.copy(ns::NodeArray{NodeT, N, IntT}) where {NodeT, N, IntT}
-    return NodeArray{NodeT, N, IntT}((copy(x) for x in (ns.elements, ns.wires, ns.numquwires, ns.back_wire_maps,
-                                                        ns.forward_wire_maps, ns.params))...)
+    return NodeArray{NodeT, N, IntT}((copy(x) for x in (ns.element, ns.wires, ns.numquwires, ns.back_wire_map,
+                                                        ns.forward_wire_map, ns.params))...)
 end
 
 # If `nkeep` is greater than zero, then just resize, which keeps the first `nkeep` elements
-function Base.empty!(nodes::NodeArray, nkeep=0)
-    arrays = (nodes.elements, nodes.wires, nodes.numquwires, nodes.back_wire_maps,
-              nodes.forward_wire_maps, nodes.params)
+function Base.empty!(nodes::ANodeArrays, nkeep=0)
+    arrays = (nodes.element, nodes.wires, nodes.numquwires, nodes.back_wire_map,
+              nodes.forward_wire_map, nodes.params)
     nkeep == 0 ? empty!.(arrays) : resize!.(arrays, nkeep)
     return nodes
 end
 
 #for f in (:keys, :lastindex, :axes, :size) Some follow from others
 for f in (:axes, :size)
-    @eval Base.$f(nv::NodeArray, args...) = $f(nv.elements, args...)
+    @eval Base.$f(nv::NodeArray, args...) = $f(nv.element, args...)
 end
 
 for f in (:isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput, :isionode)
-    @eval (Elements.$f)(nv::NodeArray, ind) = (Elements.$f)(getelement(nv, ind))
+    @eval (Elements.$f)(nv::ANodeArrays, ind) = (Elements.$f)(getelement(nv, ind))
 end
 
 function Base.getindex(ns::NodeArray, i::Integer)
-    return Node(ns.elements[i], ns.wires[i], ns.numquwires[i],
-                ns.back_wire_maps[i], ns.forward_wire_maps[i], ns.params[i])
+    return Node(ns.element[i], ns.wires[i], ns.numquwires[i],
+                ns.back_wire_map[i], ns.forward_wire_map[i], ns.params[i])
 end
 
 # Base.getindex(nv::NodeArray, i::Integer) =
-#     (element=nv.elements[i], wires=nv.wires[i], numquwires=nv.numquwires[i], params=nv.params[i])
+#     (element=nv.element[i], wires=nv.wires[i], numquwires=nv.numquwires[i], params=nv.params[i])
 
 """
     wireind(circuit, node_ind, wire::Integer)
 
 Return the index of wire number `wire` in the list of wires for node `node_ind`.
 """
-@inline function wireind(nodes::NodeArray, node_ind::Integer, wire::Integer)
+@inline function wireind(nodes, node_ind::Integer, wire::Integer)
+#@inline function wireind(nodes::NodeArray, node_ind::Integer, wire::Integer)
     wires = nodes.wires[node_ind]
     _cerror(wire, node_ind) = NodesError(string("Wire $wire is not on node $node_ind."))
     if length(wires) == 1 # 100x faster branch
@@ -164,16 +179,16 @@ Return the index of wire number `wire` in the list of wires for node `node_ind`.
     return wire_ind
 end
 
-function setoutwire_ind(nodes::NodeArray, vind_src::Integer, wireind::Integer, vind_dst::Integer)
-    nodes.forward_wire_maps[vind_src][wireind] = vind_dst
+function setoutwire_ind(nodes::ANodeArrays, vind_src::Integer, wireind::Integer, vind_dst::Integer)
+    nodes.forward_wire_map[vind_src][wireind] = vind_dst
 end
 
-function setinwire_ind(nodes::NodeArray, vind_src::Integer, wireind::Integer, vind_dst::Integer)
-    nodes.back_wire_maps[vind_src][wireind] = vind_dst
+function setinwire_ind(nodes::ANodeArrays, vind_src::Integer, wireind::Integer, vind_dst::Integer)
+    nodes.back_wire_map[vind_src][wireind] = vind_dst
 end
 
 # 1wire and 2wire are ≈ 5ns. 3wire and greater use generic branch: 380ns
-@inline function _dineighbors(nodes::NodeArray, diwiremaps, node_ind::Integer, wire::Integer)
+@inline function _dineighbors(nodes::ANodeArrays, diwiremaps, node_ind::Integer, wire::Integer)
     return diwiremaps[node_ind][wireind(nodes, node_ind, wire)]
 end
 
@@ -184,7 +199,7 @@ Return collection of incoming neighbor nodes in wire order.
 
 Nodes may appear more than once if they are connected by multiple wires.
 """
-inneighbors(nodes::NodeArray, node_ind::Integer) = nodes.back_wire_maps[node_ind]
+inneighbors(nodes::ANodeArrays, node_ind::Integer) = nodes.back_wire_map[node_ind]
 
 """
     outneighbors(circuit, node_ind::Integer)
@@ -193,26 +208,26 @@ Return collection of outgoing neighbor nodes in wire order.
 
 Nodes may appear more than once if they are connected by multiple wires.
 """
-outneighbors(nodes::NodeArray, node_ind::Integer) = nodes.forward_wire_maps[node_ind]
+outneighbors(nodes::ANodeArrays, node_ind::Integer) = nodes.forward_wire_map[node_ind]
 
-indegree(nodes::NodeArray, node_ind::Integer) = length(inneighbors(nodes, node_ind))
-outdegree(nodes::NodeArray, node_ind::Integer) = length(outneighbors(nodes, node_ind))
+indegree(nodes::ANodeArrays, node_ind::Integer) = length(inneighbors(nodes, node_ind))
+outdegree(nodes::ANodeArrays, node_ind::Integer) = length(outneighbors(nodes, node_ind))
 
 """
     inneighbors(circuit, node_ind::Integer, wire::Integer)
 
 Return the node index connected to `node_ind` by incoming wire number `wire`.
 """
-inneighbors(nodes::NodeArray, node_ind::Integer, wire::Integer) =
-    _dineighbors(nodes, nodes.back_wire_maps, node_ind, wire)
+inneighbors(nodes::ANodeArrays, node_ind::Integer, wire::Integer) =
+    _dineighbors(nodes, nodes.back_wire_map, node_ind, wire)
 
 """
     outneighbors(circuit, node_ind::Integer, wire::Integer)
 
 Return the node index connected to `node_ind` by outgoing wire number `wire`.
 """
-outneighbors(nodes::NodeArray, node_ind::Integer, wire::Integer) =
-    _dineighbors(nodes, nodes.forward_wire_maps, node_ind, wire)
+outneighbors(nodes::ANodeArrays, node_ind::Integer, wire::Integer) =
+    _dineighbors(nodes, nodes.forward_wire_map, node_ind, wire)
 
 function _neighborind(fneighbor::Func, nodes, node_ind, wire) where Func
     v = fneighbor(nodes, node_ind, wire)
@@ -220,111 +235,124 @@ function _neighborind(fneighbor::Func, nodes, node_ind, wire) where Func
 end
 
 """
-    outneighborind(nodes::NodeArray, node_ind::Integer, wire::Integer)
+    outneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer)
 
 Return a `Tuple{T,T}` of the out-neighbor of node `node_ind` on wire `wire` and the wire
 index of `wire` on that out-neighbor.
 """
-outneighborind(nodes::NodeArray, node_ind::Integer, wire::Integer) =
+outneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer) =
     _neighborind(outneighbors, nodes, node_ind, wire)
 
 """
-    inneighborind(nodes::NodeArray, node_ind::Integer, wire::Integer)
+    inneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer)
 
 Return a `Tuple{T,T}` of the in-neighbor of node `node_ind` on wire `wire` and the wire
 index of `wire` on that in-neighbor.
 """
-inneighborind(nodes::NodeArray, node_ind::Integer, wire::Integer) =
+inneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer) =
     _neighborind(inneighbors, nodes, node_ind, wire)
 
 """
-    nodevertex(nv::NodeArray, i::Integer)
+    nodevertex(nv::ANodeArrays, i::Integer)
 
 Return (nested) `NamedTuple` of information on node at index `i`.
 """
-function nodevertex(nv::NodeArray, i::Integer)
-    back = nv.back_wire_maps[i]
-    fore = nv.forward_wire_maps[i]
+function nodevertex(nv::ANodeArrays, i::Integer)
+    back = nv.back_wire_map[i]
+    fore = nv.forward_wire_map[i]
     wires = nv.wires[i]
     _collect(verts) = isempty(verts) ? wires : Tuple((w=w_, v=v_) for (w_, v_) in  zip(wires, verts))
     vwpair_back = _collect(back)
     vwpair_fore = _collect(fore)
-    return (els=nv.elements[i], back=vwpair_back, fore=vwpair_fore, nqu=nv.numquwires[i], params=nv.params[i])
+    return (els=nv.element[i], back=vwpair_back, fore=vwpair_fore, nqu=nv.numquwires[i], params=nv.params[i])
 end
 
-Base.iterate(nodes::NodeArray, i=1) = i > length(nodes.elements) ? nothing : (nodes[i], i+1)
+Base.iterate(nodes::NodeArray, i=1) = i > length(nodes.element) ? nothing : (nodes[i], i+1)
 
 # TODO: I changed the definition of `struct NodeArray` and JET now insists
 # that comparing `wires` field can return missing. So I have to check for it.
 # I would rather get rid of this possibility.
 function Base.:(==)(s1::NodeVector, s2::NodeVector)
     s1 === s2 && return true
-    s1.elements == s2.elements || return false
+    s1.element == s2.element || return false
     s1.numquwires == s2.numquwires || return false
-    s1.back_wire_maps == s2.back_wire_maps
-    s1.forward_wire_maps == s2.forward_wire_maps
+    s1.back_wire_map == s2.back_wire_map
+    s1.forward_wire_map == s2.forward_wire_map
     s1.params == s2.params
     wire_cmp = s1.wires == s2.wires
     (ismissing(wire_cmp) || !wire_cmp) && return false
     return true
 end
 
-function check(nodes::NodeArray)
+function check(nodes::ANodeArrays)
     (ne, nw, np, nb, nf, nn) =[ length(x) for x in (
-        nodes.elements, nodes.wires,
-        nodes.params, nodes.back_wire_maps, nodes.forward_wire_maps,
+        nodes.element, nodes.wires,
+        nodes.params, nodes.back_wire_map, nodes.forward_wire_map,
         nodes.numquwires
     )]
     if !(ne == nw == np == nb == nf == nn )
         println("$ne, $nw, $np, $nb, $nf, $nn")
-        throw(NodesError("Vectors in NodeArray of differing length"))
+        throw(NodesError("Vectors in ANodeArrays of differing length"))
     end
     return nothing
 end
 
 function Base.deleteat!(nodes::NodeArray, i::Integer)
-    for v in (nodes.elements, nodes.wires, nodes.numquwires, nodes.params,
-              nodes.back_wire_maps, nodes.forward_wire_maps)
+    for v in (nodes.element, nodes.wires, nodes.numquwires, nodes.params,
+              nodes.back_wire_map, nodes.forward_wire_map)
         deleteat!(v, i)
     end
     return nodes
 end
 
-function add_node!(nodes::NodeArray, element::Element, (wires, numquwires),
+function add_node!(nodes::StructVector{<:Node}, element::Element, (wires, numquwires),
                    back_wire_map, forward_wire_map,
                    params=nothing)
-    push!(nodes.elements, element)
+    push!(nodes.element, element)
     push!(nodes.wires, wires)
     push!(nodes.numquwires, numquwires)
-    push!(nodes.back_wire_maps, back_wire_map)
-    push!(nodes.forward_wire_maps, forward_wire_map)
+    push!(nodes.back_wire_map, back_wire_map)
+    push!(nodes.forward_wire_map, forward_wire_map)
+    push!(nodes.params, params)
+    return nothing
+end
+
+
+function add_node!(nodes::ANodeArrays, element::Element, (wires, numquwires),
+                   back_wire_map, forward_wire_map,
+                   params=nothing)
+    push!(nodes.element, element)
+    push!(nodes.wires, wires)
+    push!(nodes.numquwires, numquwires)
+    push!(nodes.back_wire_map, back_wire_map)
+    push!(nodes.forward_wire_map, forward_wire_map)
     push!(nodes.params, params)
     return nothing
 end
 # TODO: Maybe we should make these views.
-getelement(nodes::NodeArray, inds...) = getindex(nodes.elements, inds...)
-getwires(nodes::NodeArray, inds...) = getindex(nodes.wires, inds...)
+getelement(nodes::ANodeArrays, inds...) = getindex(nodes.element, inds...)
+getwires(nodes::ANodeArrays, inds...) = getindex(nodes.wires, inds...)
 
-getquwires(nodes::NodeArray, i) = nodes.wires[i][1:(nodes.numquwires[i])]
-getclwires(nodes::NodeArray, i) = nodes.wires[i][(nodes.numquwires[i]+1):length(nodes.wires[i])]
+getquwires(nodes::ANodeArrays, i) = nodes.wires[i][1:(nodes.numquwires[i])]
+getclwires(nodes::ANodeArrays, i) = nodes.wires[i][(nodes.numquwires[i]+1):length(nodes.wires[i])]
 
-num_qubits(nodes::NodeArray, i) = nodes.numquwires[i]
-num_clbits(nodes::NodeArray, i) = length(getwires(nodes, i)) - nodes.numquwires[i]
+num_qubits(nodes::ANodeArrays, i) = nodes.numquwires[i]
+num_clbits(nodes::ANodeArrays, i) = length(getwires(nodes, i)) - nodes.numquwires[i]
 
 # Get numbers of qu and cl bits in one call.
-function num_qu_cl_bits(nodes::NodeArray, i)
+function num_qu_cl_bits(nodes::ANodeArrays, i)
     nqubits = nodes.numquwires[i]
     nclbits = length(getwires(nodes,i)) - nqubits
     return (nqubits, nclbits)
 end
 
-function rem_node!(nodes::NodeArray, ind)
+function rem_node!(nodes::ANodeArrays, ind)
     ind in eachindex(nodes) || throw(NodesError("Node index to remove, $ind, is out of bounds."))
     _move_wires!(nodes, length(nodes), ind)
     return pop!(nodes)
 end
 
-function rewire_across_node!(nodes::NodeArray, vind::Integer)
+function rewire_across_node!(nodes::ANodeArrays, vind::Integer)
     for wire in getwires(nodes, vind)
         from = inneighborind(nodes, vind, wire)
         to = outneighborind(nodes, vind, wire)
@@ -334,20 +362,20 @@ function rewire_across_node!(nodes::NodeArray, vind::Integer)
     return nothing
 end
 
-# NodeArray analog of swap and pop for graph edges. This belongs with nodes code
+# ANodeArrays analog of swap and pop for graph edges. This belongs with nodes code
 # Move wires from vertex src to dst. Also move wires on neighbors of src
 # to make move consistent.
-function _move_wires!(nodes::NodeArray, src::Integer, dst::Integer)
+function _move_wires!(nodes::ANodeArrays, src::Integer, dst::Integer)
     src == dst && return
     # Copy inwires from src to dst
-    srcback = nodes.back_wire_maps[src]
-    dstback = nodes.back_wire_maps[dst]
+    srcback = nodes.back_wire_map[src]
+    dstback = nodes.back_wire_map[dst]
     resize!(dstback, length(srcback))
     copy!(dstback, srcback)
 
     # Copy outwires from src to dst
-    srcforward = nodes.forward_wire_maps[src]
-    dstforward = nodes.forward_wire_maps[dst]
+    srcforward = nodes.forward_wire_map[src]
+    dstforward = nodes.forward_wire_map[dst]
     resize!(dstforward, length(srcforward))
     copy!(dstforward, srcforward)
 
@@ -360,13 +388,13 @@ function _move_wires!(nodes::NodeArray, src::Integer, dst::Integer)
     end
 
     # Swap all other fields.
-    for v in (nodes.elements, nodes.wires, nodes.numquwires, nodes.params)
+    for v in (nodes.element, nodes.wires, nodes.numquwires, nodes.params)
         v[dst] = v[src]
     end
 end
 
-#function count_wires(nodes::Union{NodeArray, Vector{Node}})
-function count_wires(nodes::NodeArray)
+#function count_wires(nodes::Union{ANodeArrays, Vector{Node}})
+function count_wires(nodes::ANodeArrays)
     dict = Dictionaries.Dictionary{Tuple{Int32, Int}, Int}()
     for i in eachindex(nodes)
         DictTools.add_counts!(dict, num_qu_cl_bits(nodes, i))
@@ -377,16 +405,16 @@ end
 # For some reason, counting type `Element` is four times slower than counting the "underlying" `Int32`s.
 # So we reinterpret the array as `Int32`, which takes no time. Then count, and then convert back to `Element`.
 # This is as fast as counting `Int32`s directly.
-function count_ops(nodes::NodeArray)
-    isempty(nodes.elements) && return Dictionaries.Dictionary{Element, Int}()
-    intels = reinterpret(MEnums.basetype(Element), nodes.elements)
+function count_ops(nodes::ANodeArrays)
+    isempty(nodes.element) && return Dictionaries.Dictionary{Element, Int}()
+    intels = reinterpret(MEnums.basetype(Element), nodes.element)
     d = DictTools.count_map(intels)
     return Dictionaries.Dictionary(Element.(keys(d)), values(d))
 end
 
 
 # This is rather slow
-find_nodes_all_fields(testfunc::F, nodes::NodeArray) where {F} = @view nodes[findall(testfunc, nodes)]
+find_nodes_all_fields(testfunc::F, nodes::ANodeArrays) where {F} = @view nodes[findall(testfunc, nodes)]
 
 find_nodes(testfunc::F, nodes::NodeVector, fieldname::Symbol) where {F} =
     find_nodes(testfunc, nodes, Val((fieldname,)))
@@ -422,7 +450,7 @@ end
 ### Use some existing Qiskit names for functions below
 ###
 
-named_nodes(nodes::NodeVector, names...) = find_nodes(x -> x.elements in names, nodes, :elements)
+named_nodes(nodes::NodeVector, names...) = find_nodes(x -> x.element in names, nodes, :element)
 two_qubit_ops(nodes::NodeVector) = find_nodes(x -> x.numquwires == 2, nodes, :numquwires)
 multi_qubit_ops(nodes::NodeVector) = find_nodes(x -> x.numquwires == 2, nodes, :numquwires)
 

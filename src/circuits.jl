@@ -2,6 +2,8 @@ module Circuits
 
 using ConcreteStructs: @concrete
 
+using StructArrays: StructVector
+
 import ..Interface: num_qubits, num_clbits, getelement, count_wires, count_ops
 
 import Graphs
@@ -26,7 +28,8 @@ using ..GraphUtils: _add_vertex!, _add_vertices!, _replace_edge!, _empty_simple_
 export Circuit, add_node!, remove_node!, topological_nodes, topological_vertices
 
 const DefaultGraphType = SimpleDiGraph
-const DefaultNodesType = NodeVector # Vector{Node}
+#const DefaultNodesType = NodeVector # Vector{Node}
+const DefaultNodesType = StructVector{Node{Int}}
 
 struct CircuitError <: Exception
     msg::AbstractString
@@ -194,7 +197,7 @@ num_clbits(qc::Circuit) = qc.nclbits
 ### adding vertices and nodes to the circuit and graph
 ###
 
-function __add_io_nodes!(graph::AbstractGraph, nodes::NodeVector, nqubits::Integer, nclbits::Integer)
+function __add_io_nodes!(graph::AbstractGraph, nodes, nqubits::Integer, nclbits::Integer)
     __add_io_vertices!(graph, nqubits, nclbits)
     __add_io_node_data!(graph, nodes, nqubits, nclbits)
     return nothing
@@ -217,7 +220,7 @@ end
 Add input and output nodes to `nodes`. Wires numbered 1 through `nqubits` are
 quantum wires. Wires numbered `nqubits + 1` through `nqubits + nclbits` are classical wires.
 """
-function __add_io_node_data!(graph::AbstractGraph, nodes::NodeVector, nqubits::Integer, nclbits::Integer)
+function __add_io_node_data!(graph::AbstractGraph, nodes, nqubits::Integer, nclbits::Integer)
     quantum_wires = qu_wire_range(nqubits) # 1:nqubits # the first `nqubits` wires
     classical_wires = cl_wire_range(nqubits, nclbits) # (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
     vertex_ind = 0
@@ -260,8 +263,8 @@ function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
         outvert = output_vertex(qc, wire)
         prev = only(Graphs.inneighbors(qc.graph, outvert))
         _replace_edge!(qc.graph, prev, outvert, new_vert)
-        qc.nodes.forward_wire_maps[prev][NodeStructs.wireind(qc.nodes, prev, wire)] = new_vert
-        qc.nodes.back_wire_maps[outvert][1] = new_vert
+        qc.nodes.forward_wire_map[prev][NodeStructs.wireind(qc.nodes, prev, wire)] = new_vert
+        qc.nodes.back_wire_map[outvert][1] = new_vert
         @inbounds back_wire_map[i] = prev
         @inbounds forward_wire_map[i] = outvert
     end
