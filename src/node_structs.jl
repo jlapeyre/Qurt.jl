@@ -7,6 +7,7 @@ are on the wires.
 """
 module NodeStructs
 
+using StructArrays: StructArray
 using ConcreteStructs: @concrete
 import MEnums
 using Dictionaries: Dictionaries
@@ -68,7 +69,7 @@ function Base.:(==)(n1::Node, n2::Node)
     return true
 end
 
-
+getelement(node::Node) = node.element
 
 ###
 ### NodeArray
@@ -102,29 +103,16 @@ new_node_vector(::Type{<:NodeArray}) = Nodes()
 new_node_vector(::Type{NodeVector}) = Nodes()
 
 # Follow semantics of Base.pop!
-# TODO: check efficiency of constructing with comprehension, Vector, Tuple...
-function Base.pop!(ns::NodeArray{NodeT}) where NodeT
-    NodeT((pop!(getfield(ns, fn)) for fn in fieldnames(typeof(ns)))...)
-    # vals = Any[]
-    # for v in fieldnames(typeof(ns))
-    #     push!(vals, pop!(getfield(ns, v)))
-    # end
-    # return NodeT(vals...)
-end
+Base.pop!(ns::NodeArray{NodeT}) where NodeT = NodeT((pop!(getfield(ns, fn)) for fn in fieldnames(typeof(ns)))...)
 
 function Base.show(io::IO, node::Node{IntT}) where IntT
     print(io, "Node{$IntT}(el=$(node.element), wires=$(node.wires), nq=$(node.numquwires), " *
           "in=$(node.back_wire_map), out=$(node.forward_wire_map), params=$(node.params))")
 end
 
-# function Base.copy(ns::NodeVector{NodeT, IntT}) where {NodeT, IntT}
-#     return NodeVector{NodeT, IntT}([copy(x) for x in (ns.elements, ns.wires, ns.numquwires, ns.back_wire_maps,
-#                            ns.forward_wire_maps, ns.params)]...)
-# end
-
 function Base.copy(ns::NodeArray{NodeT, N, IntT}) where {NodeT, N, IntT}
-    return NodeArray{NodeT, N, IntT}([copy(x) for x in (ns.elements, ns.wires, ns.numquwires, ns.back_wire_maps,
-                           ns.forward_wire_maps, ns.params)]...)
+    return NodeArray{NodeT, N, IntT}((copy(x) for x in (ns.elements, ns.wires, ns.numquwires, ns.back_wire_maps,
+                                                        ns.forward_wire_maps, ns.params))...)
 end
 
 # If `nkeep` is greater than zero, then just resize, which keeps the first `nkeep` elements
@@ -135,8 +123,9 @@ function Base.empty!(nodes::NodeArray, nkeep=0)
     return nodes
 end
 
-for f in (:keys, :lastindex, :axes, :size, :length)
-    @eval (Base.$f)(nv::NodeArray, args...) = (Base.$f)(nv.elements, args...)
+#for f in (:keys, :lastindex, :axes, :size) Some follow from others
+for f in (:axes, :size)
+    @eval Base.$f(nv::NodeArray, args...) = $f(nv.elements, args...)
 end
 
 for f in (:isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput, :isionode)
@@ -394,5 +383,47 @@ function count_ops(nodes::NodeArray)
     d = DictTools.count_map(intels)
     return Dictionaries.Dictionary(Element.(keys(d)), values(d))
 end
+
+
+# This is rather slow
+find_nodes_all_fields(testfunc::F, nodes::NodeArray) where {F} = @view nodes[findall(testfunc, nodes)]
+
+find_nodes(testfunc::F, nodes::NodeVector, fieldname::Symbol) where {F} =
+    find_nodes(testfunc, nodes, Val((fieldname,)))
+
+find_nodes(testfunc::F, nodes::NodeVector, fieldnames::Tuple) where {F} =
+    find_nodes(testfunc, nodes, Val(fieldnames))
+
+"""
+    find_nodes(testfunc::F, nodes::NodeVector, fieldname::Symbol) where {F}
+    find_nodes(testfunc::F, nodes::NodeVector, fieldnames::Tuple) where {F}
+    find_nodes(testfunc::F, nodes::NodeVector, ::Val{fieldnames}) where {F, fieldnames}
+
+Return a view of `nodes` filtered by `testfunc`.
+
+`testfunc` must take a single argument. It will be passed an structure with fields `fieldnames`.
+Only nodes for which `testfunc` returns `true` will be kept.
+
+Calling `find_nodes` with fewer fields is more performant.
+
+# Examples
+Find two qubit operations.
+```julia
+julia> find_nodes(x -> x.numquwires == 2, nodes, :numquwires)
+```
+"""
+function find_nodes(testfunc::F, nodes::NodeVector, ::Val{fieldnames}) where {F, fieldnames}
+    tup = ((getfield(nodes, field) for field in fieldnames)...,)
+    nt = NamedTuple{fieldnames, typeof(tup)}(tup)
+    return @view nodes[findall(testfunc, StructArray(nt))]
+end
+
+###
+### Use some existing Qiskit names for functions below
+###
+
+named_nodes(nodes::NodeVector, names...) = find_nodes(x -> x.elements in names, nodes, :elements)
+two_qubit_ops(nodes::NodeVector) = find_nodes(x -> x.numquwires == 2, nodes, :numquwires)
+multi_qubit_ops(nodes::NodeVector) = find_nodes(x -> x.numquwires == 2, nodes, :numquwires)
 
 end # module Elements

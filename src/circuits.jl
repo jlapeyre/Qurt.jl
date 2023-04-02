@@ -337,6 +337,11 @@ for f in (:count_ops, :count_wires, :nodevertex, :wireind, :outneighborind, :inn
 end
 
 
+# TODO: Do we really want to forward all of this stuff? Or just provide an accessor to the
+# nodes field of `Circuit`?
+NodeStructs.find_nodes(testfunc::F, qc::Circuit, fieldname::Symbol) where {F} =
+    NodeStructs.find_nodes(testfunc, qc.nodes, Val(fieldname))
+
 ###
 ### Check integrity of Circuit
 ###

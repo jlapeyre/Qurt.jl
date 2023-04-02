@@ -28,7 +28,7 @@ using Compose
             report_pass=MayThrowIsOk(), # TODO have something more fine grained than a generic "do not care about thrown errors"
             ignored_modules=( # TODO fix issues with these modules or report them upstrem
                 AnyFrameModule(Compose),
-                AnyFrameModule(Base),
+#                AnyFrameModule(Base),
               )
             )
         @show rep
