@@ -442,6 +442,12 @@ function remove_vertices!(g, vertices, remove_func!::F=Graphs.rem_vertex!) where
     return (vmap, ivmap)
 end
 
+function apply_vmap!(vector, vmap)
+    @inbounds for i in eachindex(vector)
+        vector[i] = get(vmap, vector[i], vector[i])
+    end
+end
+
 function _dict_remove_vertices!(g::SimpleDiGraph{IntT}, vertices) where {IntT}
     vmap = Dict{IntT, IntT}()
     ivmap = Dict{IntT, IntT}()
