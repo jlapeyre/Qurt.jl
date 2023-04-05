@@ -74,6 +74,4 @@ function find_runs_one_wire(qc::Circuit, element::Element)
     _find_runs(qc, element, Val(1), check_wires)
 end
 
-
-
 end # module NodesGraphs

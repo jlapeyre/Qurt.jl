@@ -12,7 +12,7 @@ function copyresize!(dst, src)
     return copy!(dst, src)
 end
 
-# Probably don't need this.
+# TODO: Probably don't need this.
 function _node(expr)
     if expr.head === :call
         length(expr.args) > 2 || throw(ArgumentError("@node expecting a function call with two or more arguments."))
@@ -26,7 +26,7 @@ function _node(expr)
     :(node($nodeobj, $expr))
 end
 
-# Probably don't need this.
+# TODO: Probably don't need this.
 # You can just do qc[successors(qc, 5)]
 # For example:
 # @node successors(qc, 5)

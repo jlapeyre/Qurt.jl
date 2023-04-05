@@ -47,9 +47,6 @@ end
 @addinblock Element IONodes ClInput ClOutput Input Output
 
 # Element with parameters (not Julia parameters, params from the QC domain)
-
-# abstract type ElementCombo end
-
 struct ParamElement{ParamsT}
     element::Element
     params::ParamsT
@@ -84,11 +81,6 @@ function Base.isless(x::ParamElement, y::ParamElement)
     x.element == y.element || return isless(x.element, y.element)
     return isless(x.params, y.params)
 end
-
-# Calling an instance of an `Element` wraps the arguments as parameters.
-# (element::Element)(wires::Tuple{T, Vararg{T}}) where {T<:Integer} = WiresElement(element, wires)
-# (element::Element)(params::Tuple, wires::Tuple{T, Vararg{T}}) where {T<:Integer} =
-#     WiresParamElement(element, wires, params)
 
 (element::Element)() = NoParamElement(element)
 (element::Element)(param) = ParamElement(element, param)
@@ -125,11 +117,10 @@ be equal. `Angle.isapprox_turn` must return `true` element-wise on the parameter
 Angle.isapprox_turn(x::ParamElement, y::ParamElement; kw...) =
     Angle.equal_turn(x, y, (a, b) -> Angle.isapprox_turn(a, b; kw...))
 
-### `rand(X:Z)` works if the following are defined. They probably allow other similar things.
-### These methods should be defined as an option in MEnums.jl. But for now, they are here.
-
 const IntT = MEnums.basetype(Element)
 
+### `rand(X:Z)` works if the following are defined. They probably allow other similar things.
+### These methods should be defined as an option in MEnums.jl. But for now, they are here.
 Base.convert(::Type{Element}, x::Integer) = Element(x)
 Base.convert(::Type{Element}, x::Element) = x
 Element(x::Element) = x

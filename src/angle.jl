@@ -5,11 +5,11 @@ export normalize_turn, equal_turn, isapprox_turn, cos_turn, sin_turn, sincos_tur
 
 export Turn  # normalize will conflict with LinearAlgebra
 
-# I am almost certain we want to measure angles in "turn"s rather than radians.
-# But beyond that, what approach?
-# Do we want to use someting like `Turn` below? or UnitfulAngles.jl ?
-# I think the following few things will are best because they are less complicated and don't
-# set off a chain of required implementations and modifications
+## I am almost certain we want to measure angles in "turn"s rather than radians.
+## But beyond that, what approach?  Do we want to use someting like `Turn` below?
+## or UnitfulAngles.jl ?  I think the following few things will are best because
+## they are less complicated and don't set off a chain of required
+## implementations and modifications
 
 # Testing first if we need to mod is much faster if we don't need it.
 normalize_turn(x) = zero(x) <= x < one(x) ? x : mod(x, one(x))

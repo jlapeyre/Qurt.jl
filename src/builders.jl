@@ -7,7 +7,7 @@ module Builders
 
 export @build
 
-function _parse_builds!(circ, addgates, ex)
+function __parse_builds!(circ, addgates, ex)
     isa(ex, LineNumberNode) && return
     ex.head === :call || throw(ArgumentError("expecting call, got $(ex.head)"))
     gate = ex.args[1]
@@ -34,17 +34,17 @@ function _parse_builds!(circ, addgates, ex)
     push!(addgates, :(add_node!($circ, $gatetup, $(wires...,), $(clwires...,))))
 end
 
-function _build(exprs)
+function __build(exprs)
     circ = first(exprs)
     exprs = exprs[2:end]
     addgates = Any[]
     for ex in exprs
         if ex.head === :block
             for exb in ex.args
-                _parse_builds!(circ, addgates, exb)
+                __parse_builds!(circ, addgates, exb)
             end
         else
-            _parse_builds!(circ, addgates, ex)
+            __parse_builds!(circ, addgates, ex)
         end
     end
     if length(addgates) == 1
@@ -54,7 +54,7 @@ function _build(exprs)
 end
 
 macro build(exprs...)
-    :($(esc(_build(exprs))))
+    :($(esc(__build(exprs))))
 end
 
 end # module Builders

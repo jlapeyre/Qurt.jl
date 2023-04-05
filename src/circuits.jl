@@ -2,16 +2,15 @@ module Circuits
 
 using ConcreteStructs: @concrete
 using StructArrays: StructVector
+using Graphs: Graphs, rem_edge!, add_edge!, DiGraph, SimpleDiGraph, outneighbors, inneighbors, nv, ne,
+    edges, vertices, AbstractGraph
+import Graphs: Graphs, indegree, outdegree, is_cyclic
+using DictTools: DictTools
+using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
 
 import ..Interface: num_qubits, num_clbits, getelement, getparams, getwires, count_wires, count_ops,
     node, check
 
-using Graphs: Graphs, rem_edge!, add_edge!, DiGraph, SimpleDiGraph, outneighbors, inneighbors, nv, ne,
-    edges, vertices, AbstractGraph
-
-import Graphs: Graphs, indegree, outdegree, is_cyclic
-using DictTools: DictTools
-using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
 using ..Elements: Elements, Element, Input, Output, ClInput, ClOutput
 using  ..Elements: ParamElement, WiresParamElement, WiresElement
 using ..NodeStructs: Node, new_node_vector, NodeStructs, wireset
@@ -253,13 +252,6 @@ function add_node!(qc::Circuit, op::Element, wires, clwires=Tuple{}())
     return add_node!(qc, (op, nothing), wires, clwires)
 end
 
-# function add_node!(qc::Circuit, op::Element, wires::NTuple{<:Any, <:Integer},
-#                    clwires=Tuple{}())
-#     return add_node!(qc, (op, nothing), wires, clwires)
-# end
-# function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
-#                    wires::NTuple{<:Any, <:Integer}, clwires=Tuple{}())
-
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector
 function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
                    wires, clwires=Tuple{}())
@@ -391,7 +383,7 @@ end
 ### remove_vertices!
 ###
 
-# TODO: Move this to utils.jl. Document. Maybe clean it up.
+# TODO: Move this very generic util to utils.jl. Document. Maybe clean it up.
 function _follow_map(dict, ind)
     new1 = ind
     ct = 0
@@ -462,6 +454,7 @@ function _dict_remove_vertices!(g::SimpleDiGraph{IntT}, vertices) where {IntT}
     return (vmap, ivmap)
 end
 
+# TODO: following used in devel. Are they needed?
 # backward map
 function __map_edges(g, vmap::AbstractVector)
     [Graphs.Edge(vmap[e.src], vmap[e.dst]) for e in Graphs.edges(g)]
@@ -496,11 +489,12 @@ function __map_edges(g, vmap::AbstractDictionary)
     [Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for e in Graphs.edges(g)]
 end
 
-
 ###
 ### Forwarded methods
 ###
 
+# TODO: Do we really want to forward all of this stuff? Or just provide an accessor to the
+# nodes field of `Circuit`? Some should be forwarded. Audit them.
 # TODO, we need to define these in nodes if we want them.
 # But we will not want Vector...
 # Forward these methods from `Circuit` to the container of nodes.
@@ -530,12 +524,6 @@ end
 
 num_qubits(qc::Circuit, vert) = num_qubits(qc.nodes, vert)
 num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
-
-
-# TODO: Do we really want to forward all of this stuff? Or just provide an accessor to the
-# nodes field of `Circuit`?
-# NodeStructs.find_nodes(testfunc::F, qc::Circuit, fieldname::Symbol) where {F} =
-#     NodeStructs.find_nodes(testfunc, qc.nodes, Val(fieldname))
 
 ###
 ### Check integrity of Circuit

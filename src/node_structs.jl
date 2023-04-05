@@ -17,19 +17,15 @@ using ConcreteStructs: @concrete
 import MEnums
 using Dictionaries: Dictionaries
 import DictTools
+# TODO: Import these symbols from elsewhere?
+# Too bad "neighbor" is the English word (or worse "neighbour"). How about "vecino"?
+import Graphs: Graphs, outneighbors, inneighbors, indegree, outdegree
 
 using ..Elements: Elements, Element
-import ..Interface: count_ops, count_wires, check, num_qubits, num_clbits,
-    num_qu_cl_bits, nodevertex, getelement, getwires, getparams, getquwires,
-    getclwires, node
+import ..Interface: count_ops, count_wires, check, num_qubits, num_clbits, num_qu_cl_bits,
+    nodevertex, getelement, getwires, getparams, getquwires, getclwires, node
 
 using ..Utils: copyresize!
-
-# Imported from Graphs into DAGCircuits
-using Graphs: Graphs # inneighbors, outneighbors
-
-# Too bad "neighbor" is the English word (or worse "neighbour"). How about "vecino"?
-import Graphs: outneighbors, inneighbors, indegree, outdegree
 
 export Node, new_node_vector, count_wires, nodevertex, wireind, outneighborind,
     inneighborind, setoutwire_ind, setinwire_ind, two_qubit_ops, multi_qubit_ops,
@@ -156,9 +152,6 @@ Set the inneighbor of `vind_src` on `wireind` to `vind_dst`.
 function setinwire_ind(nodes::ANodeArrays, vind_src::Integer, wireind::Integer, vind_dst::Integer)
     nodes.inwiremap[vind_src][wireind] = vind_dst
 end
-
-# function wire_next_vertex(nodes, this_ind, wire)
-# end
 
 # 1wire and 2wire are ≈ 5ns. 3wire and greater use generic branch: 380ns
 @inline function _dineighbors(nodes::ANodeArrays, diwiremaps, node_ind::Integer, wire::Integer)
