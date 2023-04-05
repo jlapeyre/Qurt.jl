@@ -63,9 +63,9 @@ end
 
 Base.iterate(nodes::NodeArray, i=1) = i > length(nodes.element) ? nothing : (nodes[i], i+1)
 
-# TODO: I changed the definition of `struct NodeArray` and JET now insists
-# that comparing `wires` field can return missing. So I have to check for it.
-# I would rather get rid of this possibility.
+# TODO: I changed the definition of `struct NodeArray` and JET now insists that
+# comparing `wires` field can return missing. So I have to check for it.  I
+# would rather get rid of this possibility.
 function Base.:(==)(s1::NodeVector, s2::NodeVector)
     s1 === s2 && return true
     s1.element == s2.element || return false

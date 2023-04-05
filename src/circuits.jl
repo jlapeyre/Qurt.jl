@@ -1,23 +1,19 @@
 module Circuits
 
 using ConcreteStructs: @concrete
-
 using StructArrays: StructVector
 
 import ..Interface: num_qubits, num_clbits, getelement, getparams, getwires, count_wires, count_ops,
     node, check
 
-import Graphs
 using Graphs: Graphs, rem_edge!, add_edge!, DiGraph, SimpleDiGraph, outneighbors, inneighbors, nv, ne,
-    vertices, AbstractGraph
-import Graphs: indegree, outdegree, is_cyclic
+    edges, vertices, AbstractGraph
 
+import Graphs: Graphs, indegree, outdegree, is_cyclic
 using DictTools: DictTools
 using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
-
 using ..Elements: Elements, Element, Input, Output, ClInput, ClOutput
 using  ..Elements: ParamElement, WiresParamElement, WiresElement
-
 using ..NodeStructs: Node, new_node_vector, NodeStructs, wireset
 
 import ..NodeStructs: wireind, outneighborind, inneighborind, setoutwire_ind, setinwire_ind, wirenodes,

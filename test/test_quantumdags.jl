@@ -1,18 +1,19 @@
 using Dictionaries: Dictionary
 
-using QuantumDAGs.Interface: count_wires, count_ops, num_qubits, num_clbits, getelement, getwires, getparams
+using QuantumDAGs.Interface: count_wires, count_ops, num_qubits, num_clbits, getelement, getwires,
+      getparams
 
-using QuantumDAGs.Circuits: Circuit, DefaultGraphType, DefaultNodesType, add_node!, remove_node!, outneighbors, inneighbors, nv,
-      check, substitute_node!, successors, predecessors
+using QuantumDAGs.Circuits: Circuits, Circuit, DefaultGraphType, DefaultNodesType, add_node!,
+      remove_node!, outneighbors, inneighbors, nv, check, substitute_node!, successors,
+      predecessors, edges
 
 using QuantumDAGs.Builders: @build
 
-using QuantumDAGs: edges
+using QuantumDAGs.Elements: Elements, Element, ParamElement, RX, X, Y, Y, Input, Output, CX, CZ, CH,
+       U, ClOutput, UserNoParam, Measure
 
-using QuantumDAGs.Elements: Elements, Element, ParamElement, RX, X, Y, Y, Input, Output, CX, CZ, CH, U, ClOutput, UserNoParam,
-       Measure
-
-using QuantumDAGs: isapprox_turn, normalize_turn, equal_turn, cos_turn, sin_turn, tan_turn
+# TODO: import from proper place
+using QuantumDAGs.Angle: isapprox_turn, normalize_turn, equal_turn, cos_turn, sin_turn, tan_turn
 
 using QuantumDAGs.NodeStructs: NodeVector
 
@@ -145,8 +146,8 @@ end
     for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, 3)
         add_node!(qc, Elements.MyGate, (1, 2, 3))
-        @test QuantumDAGs.nv(qc) == 7
-        @test QuantumDAGs.ne(qc) == 6
+        @test Circuits.nv(qc) == 7
+        @test Circuits.ne(qc) == 6
         @test count_wires(qc) == Dictionary([(1, 0), (3, 0)], [6, 1])
         @test count_ops(qc) == Dictionary([Input, Output, Elements.MyGate], [3, 3, 1])
     end
@@ -179,7 +180,7 @@ end
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
         add_node!(qc, Elements.X, (1,))
         qc1 = empty(qc)
-        @test QuantumDAGs.nv(qc) == QuantumDAGs.nv(qc1) + 1
+        @test Circuits.nv(qc) == Circuits.nv(qc1) + 1
     end
 end
 
@@ -199,7 +200,7 @@ end
     end
     @test check(qc)
     @test num_qubits(qc) == n
-    @test QuantumDAGs.nv(qc) == 2 * n + n
+    @test Circuits.nv(qc) == 2 * n + n
 
     @test first(qc) == first(qc.nodes)
     @test last(qc) == last(qc.nodes)

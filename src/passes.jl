@@ -6,6 +6,14 @@ using ..Elements: CX
 
 export cx_cancellation!
 
+"""
+    cx_cancellation!(qc::Circuit)
+
+Remove `CX` gates according the the rule `CX CX → I`.
+
+Replace each sequences of `CX` gates by one `CX` gate if the length of the
+sequence is even, and by nothing if it is odd.
+"""
 function cx_cancellation!(qc::Circuit)
     runs = find_runs_two_wires(qc, CX)
     while !isempty(runs)

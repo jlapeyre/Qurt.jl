@@ -18,15 +18,17 @@ import MEnums
 using Dictionaries: Dictionaries
 import DictTools
 
-using ..Elements
+using ..Elements: Elements, Element
 import ..Interface: count_ops, count_wires, check, num_qubits, num_clbits,
-    num_qu_cl_bits, nodevertex, getelement, getwires, getparams, getquwires, getclwires,
-    node
+    num_qu_cl_bits, nodevertex, getelement, getwires, getparams, getquwires,
+    getclwires, node
 
 using ..Utils: copyresize!
 
 # Imported from Graphs into DAGCircuits
 using Graphs: Graphs # inneighbors, outneighbors
+
+# Too bad "neighbor" is the English word (or worse "neighbour"). How about "vecino"?
 import Graphs: outneighbors, inneighbors, indegree, outdegree
 
 export Node, new_node_vector, count_wires, nodevertex, wireind, outneighborind,
@@ -45,11 +47,12 @@ on wires and mapping wires to vertices.
 """
 function new_node_vector end
 
-# Takes tuple of quantum and classical wires and packages them for insertion
-# into node management structure.
+# Takes tuple of quantum and classical wires and packages them for insertion into node management
+# structure.
 wireset(quwires::Tuple{Int, Vararg{Int}}, ::Tuple{}) = (quwires, length(quwires))
 wireset(quwires::AbstractVector, ::Tuple{}) = ((quwires...,), length(quwires))
-wireset(quwires::Tuple{Int, Vararg{Int}}, clwires::Tuple{Int, Vararg{Int}}) = ((quwires..., clwires...), length(quwires))
+wireset(quwires::Tuple{Int, Vararg{Int}}, clwires::Tuple{Int, Vararg{Int}}) =
+    ((quwires..., clwires...), length(quwires))
 
 # TODO: Fix these
 getquwires(wires::Tuple{Int, Vararg{Int}}) = wires
@@ -99,7 +102,6 @@ inneighbors(node::Node) = node.inwiremap
 include("node_array.jl")
 
 const ANodeArrays = Union{NodeArray, StructVector{<:Node}}
-#const ANodeArrays = Union{StructVector{<:Node}}
 
 new_node_vector(::Type{<:StructVector{NodeT}}) where NodeT = StructVector{NodeT}(__empty_node_storage())
 
@@ -221,10 +223,8 @@ wirenodes(nodes, args...) = WireNodes(nodes, args...)
 
 function Base.iterate(wn::WireNodes, vertex=wn.init_vertex)
     isnothing(vertex) && return nothing
-#    isoutput(wn.nodes, vertex) && return nothing
-    next_vertex = isoutput(wn.nodes, vertex) ? nothing : outneighbors(wn.nodes, vertex, wn.wire)
+    next_vertex = Elements.isoutput(wn.nodes, vertex) ? nothing : outneighbors(wn.nodes, vertex, wn.wire)
     return (vertex, next_vertex)
-#    return (vertex, v)
 end
 
 """
@@ -334,14 +334,11 @@ function rewire_across_nodes!(nodes::ANodeArrays, vind1::Integer, vind2::Integer
     wires = getwires(nodes, vind1)
     wires2 = getwires(nodes, vind2)
     wires == wires2 || Set(wires) == Set(wires2) || throw(NodesError("Vertices do not have the same wires: $wires, $wires2"))
-#    @info "rewire_across_nodes"
     for wire in wires
         from = inneighborind(nodes, vind1, wire)
         to = outneighborind(nodes, vind2, wire)
         setoutwire_ind(nodes, from.vi, from.wi, to.vi)
-#        @show "setout", from.vi, to.vi
         setinwire_ind(nodes, to.vi, to.wi, from.vi)
-#        @show "setin", to.vi, from.vi
     end
     empty!(nodes.inwiremap[vind1])
     empty!(nodes.outwiremap[vind2])
@@ -359,23 +356,13 @@ function _move_wires!(nodes::ANodeArrays, src::Integer, dst::Integer)
     copyresize!(nodes.outwiremap[dst], nodes.outwiremap[src])
 
     # Makes neighbors point to dst rather than src
-    # @info "moving from"
-    # @show src, dst
+    # TODO: emptying nodes.outwiremap[src] acts as a sentinel. Make this more robust
     for wire in getwires(nodes, src)
-
-#        if length(nodes.wires[src]) == length(nodes.inwiremap[src])
         if length(nodes.wires[src]) == length(nodes.outwiremap[src])
             from = inneighborind(nodes, src, wire)
-#            @show from
             setoutwire_ind(nodes, from.vi, from.wi, dst)
-#            @show "setout", from.vi, dst
-        end
-
-        if length(nodes.wires[src]) == length(nodes.outwiremap[src])
             to = outneighborind(nodes, src, wire)
-#            @show to
             setinwire_ind(nodes, to.vi, to.wi, dst)
-#            @show "setin", to.vi, dst
         end
     end
 
