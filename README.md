@@ -11,7 +11,7 @@ This repo explores design of data structures and functions for quantum circuits.
 
 The repo includes an implementation of some ideas in Julia. Many of the design choices are not specific to Julia.
 
-Here are some [notes on design considerations](./DesignConsiderations.md). The notes are somewhat out of date, as my understanding
+Here are some [notes on design considerations](./DesignConsiderations.md). The notes are ~~somewhat~~ out of date, as my understanding
 has evolved since I have been implementing `QuantumDAGs.jl`.
 
 I am getting closer to committing to developing `QuantumDAGs.jl` in Julia. I have not run into big show stoppers in performance or
@@ -31,7 +31,7 @@ If you don't want to add that registry, you can probably add the package by clon
 At the time I am writing this sentence the [test suite](./test/runtests.jl) passes. This is the only other place to find examples.
 
 
-## Examples
+## Examples (Out of date)
 
 Tallying occurences of things on nodes is pretty fast.
 ```julia
