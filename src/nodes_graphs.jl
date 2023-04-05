@@ -8,9 +8,9 @@ module NodesGraphs
 using StructArrays: StructVector
 using Graphs: topological_sort
 using ..Circuits: Circuit, CircuitError
-using ..NodeStructs: Nodes, ANodeArrays
+using ..NodeStructs: Nodes, Node, ANodeArrays
 using ..Elements: Element
-
+using Dictionaries
 
 export find_runs_two_wires, find_runs_one_wire
 
@@ -73,5 +73,7 @@ function find_runs_one_wire(qc::Circuit, element::Element)
         verts -> length(verts) == 1 ? (only(verts), true) : (0, false)
     _find_runs(qc, element, Val(1), check_wires)
 end
+
+
 
 end # module NodesGraphs

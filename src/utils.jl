@@ -12,7 +12,6 @@ function copyresize!(dst, src)
     return copy!(dst, src)
 end
 
-
 # Probably don't need this.
 function _node(expr)
     if expr.head === :call

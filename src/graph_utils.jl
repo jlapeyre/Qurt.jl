@@ -6,6 +6,8 @@ using Graphs: Graphs, AbstractGraph, SimpleDiGraph, AbstractSimpleGraph, edgetyp
 
 using Dictionaries: Dictionary, AbstractDictionary, Dictionaries
 
+export edges_topological, edges_from
+
 struct GraphUtilsError <: Exception
     msg::AbstractString
 end
@@ -63,111 +65,5 @@ function edges_topological(graph::AbstractSimpleGraph)
     end
     return _edges
 end
-
-function _follow_map(dict, ind)
-    new1 = ind
-    ct = 0
-    loopmax = length(values(dict)) + 2
-    new2 = new1 # value thrown away
-    for i in 1:loopmax
-        ct += 1
-        new2 = get(dict, new1, new1)
-        new2 == new1 && break
-        # Following should help compress
-        # Dictionaries.unset!(dict, new1)
-        # Dictionaries.set!(dict, ind, new2)
-        new1 = new2
-    end
-    if ct == loopmax
-        @show ind, ct
-        throw(ErrorException("Map does not have required structure"))
-    end
-    return new2
-end
-
-import ..NodeStructs: Node
-using StructArrays
-
-_index_type(::SimpleDiGraph{IntT}) where IntT = IntT
-_index_type(::StructVector{<:Node{IntT}}) where IntT = IntT
-Graphs.nv(nodes::StructVector{<:Node{IntT}}) where IntT = length(nodes)
-
-# TODO: Might work for other graphs as well.
-# TODO: Use Dictionary?
-function remove_vertices!(g, vertices, remove_func!::F=Graphs.rem_vertex!) where {F}
-    IntT = _index_type(g)
-    vmap = Dictionary{IntT, IntT}()
-    ivmap = Dictionary{IntT, IntT}()
-    for v in vertices
-        n = Graphs.nv(g)
-        rv = get(vmap, v, v)
-        Dictionaries.unset!(vmap, v)
-        remove_func!(g, rv)
-        if rv != n # If not last vertex, then swap and pop was done
-            nval = get(vmap, rv, rv)
-            nn = _follow_map(ivmap, n) # find inv map for current last vertex
-            Dictionaries.set!(vmap, nn, nval)
-            Dictionaries.set!(ivmap, nval, nn)
-        end
-    end
-    return (vmap, ivmap)
-end
-
-function _dict_remove_vertices!(g::SimpleDiGraph{IntT}, vertices) where {IntT}
-    vmap = Dict{IntT, IntT}()
-    ivmap = Dict{IntT, IntT}()
-    for v in vertices
-        n = Graphs.nv(g)
-        rv = get(vmap, v, v)
-        delete!(vmap, v)
-        Graphs.rem_vertex!(g, rv)
-        if rv != n # If not last vertex, then swap and pop was done
-            nval = get(vmap, rv, rv)
-            nn = _follow_map(ivmap, n) # find inv map for current last vertex
-            vmap[nn] = nval
-            ivmap[nval] = nn
-        end
-    end
-    return (vmap, ivmap)
-end
-
-# backward map
-function map_edges(g, vmap::AbstractVector)
-    [Graphs.Edge(vmap[e.src], vmap[e.dst]) for e in Graphs.edges(g)]
-end
-
-function map_edges(g, vmap::Dict)
-    ivmap = empty(vmap)
-    for k in keys(vmap)
-        v = vmap[k]
-        if v in keys(ivmap)
-            println(vmap)
-            @show vmap
-            throw(ArgumentError("Multiple vals"))
-        end
-        ivmap[v] = k
-    end
-    [Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for e in Graphs.edges(g)]
-end
-
-# Forward map
-function map_edges(g, vmap::AbstractDictionary)
-    ivmap = empty(vmap)
-    for k in keys(vmap)
-        v = vmap[k]
-        if v in keys(ivmap)
-            println(vmap)
-            @show vmap
-            throw(ArgumentError("Multiple vals"))
-        end
-        insert!(ivmap, v, k)
-    end
-    [Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for e in Graphs.edges(g)]
-end
-
-
-# print_edges(g::AbstractGraph) = print_edges(stdout, g)
-# function print_edges(io::IO, g::AbstractGraph)
-# end
 
 end # module GraphUtils

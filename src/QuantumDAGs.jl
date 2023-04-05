@@ -83,6 +83,9 @@ include("builders.jl")
     @precompile_all_calls begin
         using QuantumDAGs.Circuits
         using QuantumDAGs.Elements
+        using QuantumDAGs.Builders
+        using QuantumDAGs.Passes
+        using QuantumDAGs.NodesGraphs
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
         qc = Circuits.Circuit(2)
@@ -95,7 +98,10 @@ include("builders.jl")
         Circuits.remove_node!(qc, 5)
         Circuits.remove_node!(qc, 5)
         Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
-#        @build qc X(1) RX{1.5}(2) RX{3//2}(1)
+        qc = Circuits.Circuit(2)
+        Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
+        find_runs_two_wires(qc, CX)
+        cx_cancellation!(qc)
     end
 end
 
