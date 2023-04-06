@@ -1,3 +1,5 @@
+#using ReTestItems
+using QuantumDAGs
 using Test
 
 using Dictionaries: Dictionary
@@ -20,8 +22,9 @@ using QuantumDAGs.NodeStructs: NodeVector
 using MEnums: @addinblock
 import QuantumDAGs
 
-include("passes/test_cx_cancellation.jl")
-include("test_quantumdags.jl")
-include("test_remove_node.jl")
-include("test_aqua.jl")
-include("test_jet.jl")
+
+include("passes/cx_cancellation_test.jl")
+include("quantumdags_test.jl")
+include("remove_node_test.jl")
+include("aqua_test.jl")
+include("jet_test.jl")

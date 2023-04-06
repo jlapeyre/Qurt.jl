@@ -1,4 +1,6 @@
-const CIRCUITS = Dict{Symbol, Any}()
+@testset "remove_node!" begin
+
+    CIRCUITS = Dict{Symbol, Any}()
 
 # empty
 CIRCUITS[:q1empty] =
@@ -115,7 +117,7 @@ CIRCUITS[:q2_Y2_CX12] =
     end
 
 
-@testset "remove_node!" begin
+
     qc = CIRCUITS[:q1X1]()
     remove_node!(qc, 3)
     @test check(qc)
