@@ -28,7 +28,7 @@ export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode
 @menum (Element, blocklength=10^6, numblocks=10, compactshow=true)
 
 @menum OpBlock begin
-    Q1NoParam=1
+    Q1NoParam = 1
     Q2NoParam
     QNNoParam
     UserNoParam
@@ -77,7 +77,6 @@ isgate(x::Element) = MEnums.ltblock(x, QuCl)
 #     return MEnums.val(el) <= last(blockrange(typeof(el), blockind))
 # end
 
-
 # Element with parameters (not Julia parameters, params from the QC domain)
 struct ParamElement{ParamsT}
     element::Element
@@ -91,13 +90,15 @@ struct WiresElement{WiresT}
     element::Element
     wires::WiresT
 end
-struct WiresParamElement{WiresT, ParamsT}
+struct WiresParamElement{WiresT,ParamsT}
     element::Element
     wires::WiresT
     params::ParamsT
 end
 
-Base.:(==)(x::ParamElement, y::ParamElement) = x.element == y.element && x.params == y.params
+function Base.:(==)(x::ParamElement, y::ParamElement)
+    return x.element == y.element && x.params == y.params
+end
 
 isquinput(x::Element) = x === Input
 isclinput(x::Element) = x === ClInput
@@ -117,7 +118,9 @@ end
 (element::Element)() = NoParamElement(element)
 (element::Element)(param) = ParamElement(element, param)
 (element::Element)(params...) = ParamElement(element, params)
-(pelement::ParamElement)(wires::Int...) = WiresParamElement(pelement.element, wires, pelement.params)
+function (pelement::ParamElement)(wires::Int...)
+    return WiresParamElement(pelement.element, wires, pelement.params)
+end
 (npelement::NoParamElement)(wires::Int...) = WiresElement(npelement.element, wires)
 
 Interface.getelement(x::ParamElement) = x.element
@@ -129,7 +132,7 @@ Interface.getparams(x::Element) = nothing
 
 Angle.normalize_turn(x::ParamElement) = (x.element)(Angle.normalize_turn.(x.params)...)
 
-function Angle.equal_turn(x::ParamElement, y::ParamElement, eqfun = Angle.equal_turn)
+function Angle.equal_turn(x::ParamElement, y::ParamElement, eqfun=Angle.equal_turn)
     # x === y && return true # Might save time.
     x.element == y.element || return false
     length(x.params) == length(y.params) || return false
@@ -142,12 +145,12 @@ end
 """
     isapprox_turn(x::ParamElement, y::ParamElement; kw...)
 
-
 Return `true` if `x` and `y` are approximately equal. The element types must
 be equal. `Angle.isapprox_turn` must return `true` element-wise on the parameters.
 """
-Angle.isapprox_turn(x::ParamElement, y::ParamElement; kw...) =
-    Angle.equal_turn(x, y, (a, b) -> Angle.isapprox_turn(a, b; kw...))
+function Angle.isapprox_turn(x::ParamElement, y::ParamElement; kw...)
+    return Angle.equal_turn(x, y, (a, b) -> Angle.isapprox_turn(a, b; kw...))
+end
 
 const IntT = MEnums.basetype(Element)
 
@@ -162,11 +165,15 @@ Base.one(::Element) = Element(1)
 for f in (:+, :-, :rem, :div)
     @eval Base.$f(x::Element, y::Element, args...) = Element($f(IntT(x), IntT(y), args...))
     if f === :rem
-        @eval Base.$f(x::Element, y::Element, rmode::RoundingMode{:FromZero}, args...) = Element($f(IntT(x), IntT(y), args...))
+        @eval function Base.$f(
+            x::Element, y::Element, rmode::RoundingMode{:FromZero}, args...
+        )
+            return Element($f(IntT(x), IntT(y), args...))
+        end
     end
 end
 
-for f in (:*, )
+for f in (:*,)
     @eval Base.$f(x::Element, y, args...) = Element($f(IntT(x), y, args...))
     @eval Base.$f(y, x::Element, args...) = Element($f(y, IntT(x), args...))
     @eval Base.$f(y::Element, x::Element, args...) = Element($f(IntT(y), IntT(x), args...))

@@ -8,11 +8,12 @@ module Builders
 export @build
 
 function __parse_builds!(circ, addgates, ex)
-    isa(ex, LineNumberNode) && return
+    isa(ex, LineNumberNode) && return nothing
     ex.head === :call || throw(ArgumentError("expecting call, got $(ex.head)"))
     gate = ex.args[1]
     if ex.args[2] isa Expr
-        ex.args[2].head === :parameters || throw(ArgumentError("expecting parameters (classical wires), got $(ex.head)"))
+        ex.args[2].head === :parameters ||
+            throw(ArgumentError("expecting parameters (classical wires), got $(ex.head)"))
         clwires = ex.args[2].args
         wires = ex.args[3:end]
     else
@@ -31,7 +32,7 @@ function __parse_builds!(circ, addgates, ex)
     else
         gatetup = gate
     end
-    push!(addgates, :(add_node!($circ, $gatetup, $(wires...,), $(clwires...,))))
+    return push!(addgates, :(add_node!($circ, $gatetup, $(wires...,), $(clwires...,))))
 end
 
 function __build(exprs)
@@ -50,11 +51,11 @@ function __build(exprs)
     if length(addgates) == 1
         return addgates[1]
     end
-    return(:([$(addgates...)]))
+    return (:([$(addgates...)]))
 end
 
 macro build(exprs...)
-    :($(esc(__build(exprs))))
+    return :($(esc(__build(exprs))))
 end
 
 end # module Builders

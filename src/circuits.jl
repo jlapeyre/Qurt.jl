@@ -2,26 +2,64 @@ module Circuits
 
 using ConcreteStructs: @concrete
 using StructArrays: StructVector
-using Graphs: Graphs, rem_edge!, add_edge!, DiGraph, SimpleDiGraph, outneighbors, inneighbors, nv, ne,
-    edges, vertices, AbstractGraph
+using Graphs:
+    Graphs,
+    rem_edge!,
+    add_edge!,
+    DiGraph,
+    SimpleDiGraph,
+    outneighbors,
+    inneighbors,
+    nv,
+    ne,
+    edges,
+    vertices,
+    AbstractGraph
 import Graphs: Graphs, indegree, outdegree, is_cyclic
 using DictTools: DictTools
 using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
 
-import ..Interface: num_qubits, num_clbits, getelement, getparams, getwires, count_wires, count_ops,
-    node, check
+import ..Interface:
+    num_qubits,
+    num_clbits,
+    getelement,
+    getparams,
+    getwires,
+    count_wires,
+    count_ops,
+    node,
+    check
 
 using ..Elements: Elements, Element, Input, Output, ClInput, ClOutput
-using  ..Elements: ParamElement, WiresParamElement, WiresElement
+using ..Elements: ParamElement, WiresParamElement, WiresElement
 using ..NodeStructs: Node, new_node_vector, NodeStructs, wireset
 
-import ..NodeStructs: wireind, outneighborind, inneighborind, setoutwire_ind, setinwire_ind, wirenodes,
-    setelement!, substitute_node!
+import ..NodeStructs:
+    wireind,
+    outneighborind,
+    inneighborind,
+    setoutwire_ind,
+    setinwire_ind,
+    wirenodes,
+    setelement!,
+    substitute_node!
 
-using ..GraphUtils: GraphUtils, _add_vertex!, _add_vertices!, _replace_one_edge_with_two!, _empty_simple_graph!
+using ..GraphUtils:
+    GraphUtils,
+    _add_vertex!,
+    _add_vertices!,
+    _replace_one_edge_with_two!,
+    _empty_simple_graph!
 
-export Circuit, add_node!, remove_node!, remove_block!, topological_nodes,
-    topological_vertices, predecessors, successors, quantum_successors,
+export Circuit,
+    add_node!,
+    remove_node!,
+    remove_block!,
+    topological_nodes,
+    topological_vertices,
+    predecessors,
+    successors,
+    quantum_successors,
     remove_vertices!
 
 const DefaultGraphType = SimpleDiGraph
@@ -37,10 +75,11 @@ end
 Structure for representing a quantum circuit as a DAG, plus auxiliary information.
 
 ### Fields
-* `graph` -- The DAG as a `Graphs.DiGraph`
-* `nodes` -- Operations and other nodes on vertices
-* `nqubits` -- Number of qubits.
-* `nclbits` -- Number of classical bits.
+
+  - `graph` -- The DAG as a `Graphs.DiGraph`
+  - `nodes` -- Operations and other nodes on vertices
+  - `nqubits` -- Number of qubits.
+  - `nclbits` -- Number of classical bits.
 
 The DAG is a `Graphs.DiGraph`, which maintains edge lists for forward and backward edges.
 An "operation" is associated with each vertex in the graph. Each vertex is identified by
@@ -68,14 +107,19 @@ The number of wires is equal to `nqubits + nclbits`.
     global_phase # Should be called just "phase", but Qiskit uses this.
 end
 
-Circuit(nqubits::Integer, nclbits=0; global_phase=0) =
-    Circuit(DefaultGraphType, DefaultNodesType, nqubits, nclbits; global_phase=global_phase)
+function Circuit(nqubits::Integer, nclbits=0; global_phase=0)
+    return Circuit(
+        DefaultGraphType, DefaultNodesType, nqubits, nclbits; global_phase=global_phase
+    )
+end
 
-Circuit(::Type{GraphT}, nqubits::Integer, nclbits=0; global_phase=0) where {GraphT} =
-    Circuit(GraphT, DefaultNodesType, nqubits, nclbits; global_phase=global_phase)
+function Circuit(::Type{GraphT}, nqubits::Integer, nclbits=0; global_phase=0) where {GraphT}
+    return Circuit(GraphT, DefaultNodesType, nqubits, nclbits; global_phase=global_phase)
+end
 
-function Circuit(::Type{GraphT}, ::Type{NodesT}, nqubits::Integer,
-                                  nclbits=0; global_phase=0) where {NodesT, GraphT}
+function Circuit(
+    ::Type{GraphT}, ::Type{NodesT}, nqubits::Integer, nclbits=0; global_phase=0
+) where {NodesT,GraphT}
     nodes = new_node_vector(NodesT) # Store operator and wire data
     graph = GraphT(0) # Assumption about constructor of graph.
     __add_io_nodes!(graph, nodes, nqubits, nclbits) # Add edges to graph and node type and wires
@@ -92,11 +136,19 @@ function Circuit(::Type{GraphT}, ::Type{NodesT}, nqubits::Integer,
     input_vertices = vcat(input_qu_vertices, input_cl_vertices)
     output_vertices = vcat(output_qu_vertices, output_cl_vertices)
 
-    return Circuit(graph, nodes,
-                   input_qu_vertices, output_qu_vertices,
-                   input_cl_vertices, output_cl_vertices,
-                   input_vertices, output_vertices,
-                   nqubits, nclbits, global_phase)
+    return Circuit(
+        graph,
+        nodes,
+        input_qu_vertices,
+        output_qu_vertices,
+        input_cl_vertices,
+        output_cl_vertices,
+        input_vertices,
+        output_vertices,
+        nqubits,
+        nclbits,
+        global_phase,
+    )
 end
 
 qu_wire_indices(nqu, _ncl=nothing) = 1:nqu
@@ -104,7 +156,7 @@ cl_wire_indices(nqu, ncl) = (1:ncl) .+ nqu
 wire_indices(nqu, ncl) = 1:(nqu + ncl)
 wire_indices(qc::Circuit) = wire_indices(num_qubits(qc), num_clbits(qc))
 
-function Base.:(==)(c1::T, c2::T) where {T <: Circuit}
+function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     c1 === c2 && return true
     for field in fieldnames(T)
         getfield(c1, field) == getfield(c2, field) || return false
@@ -117,17 +169,32 @@ function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
     ncl = num_clbits(qc)
     nv = Graphs.nv(qc)
     ne = Graphs.ne(qc)
-    println(io, "circuit {nq=$nq, ncl=$ncl, nv=$nv, ne=$ne} $(typeof(qc.graph)) $(eltype(qc.nodes))")
+    return println(
+        io,
+        "circuit {nq=$nq, ncl=$ncl, nv=$nv, ne=$ne} $(typeof(qc.graph)) $(eltype(qc.nodes))",
+    )
 end
 
 function Base.copy(qc::Circuit)
     # We need to deepcopy nodes. I think because of Vectors in Vectors.
-    copies = [copy(x) for x in (
-        qc.input_qu_vertices, qc.output_qu_vertices,
-        qc.input_cl_vertices, qc.output_cl_vertices,
-        qc.input_vertices, qc.output_vertices)]
-    return Circuit(copy(qc.graph), deepcopy(qc.nodes), copies..., qc.nqubits,
-                   qc.nclbits, qc.global_phase)
+    copies = [
+        copy(x) for x in (
+            qc.input_qu_vertices,
+            qc.output_qu_vertices,
+            qc.input_cl_vertices,
+            qc.output_cl_vertices,
+            qc.input_vertices,
+            qc.output_vertices,
+        )
+    ]
+    return Circuit(
+        copy(qc.graph),
+        deepcopy(qc.nodes),
+        copies...,
+        qc.nqubits,
+        qc.nclbits,
+        qc.global_phase,
+    )
 end
 
 ###
@@ -144,8 +211,15 @@ end
 Return an object that is a copy of `qc` except that all circuit elements other than
 input and output nodes are not present.
 """
-Base.empty(qc::Circuit) =
-    Circuit(typeof(qc.graph), typeof(qc.nodes), num_qubits(qc), num_clbits(qc); global_phase=qc.global_phase)
+function Base.empty(qc::Circuit)
+    return Circuit(
+        typeof(qc.graph),
+        typeof(qc.nodes),
+        num_qubits(qc),
+        num_clbits(qc);
+        global_phase=qc.global_phase,
+    )
+end
 
 # Can't change global phase.
 # Most work is done in the last two calls below.
@@ -206,9 +280,13 @@ end
 
 # 1. Add vertices to DAG for both quantum and classical input and output nodes.
 # 2. Add an edge from each input to each output node.
-function __add_io_vertices!(graph::SimpleDiGraph, num_qu_wires::Integer, num_cl_wires::Integer=0)
+function __add_io_vertices!(
+    graph::SimpleDiGraph, num_qu_wires::Integer, num_cl_wires::Integer=0
+)
     (in_qc, out_qc, in_cl, out_cl) =
-        _add_vertices!.(Ref(graph), (num_qu_wires, num_qu_wires, num_cl_wires, num_cl_wires))
+        _add_vertices!.(
+            Ref(graph), (num_qu_wires, num_qu_wires, num_cl_wires, num_cl_wires)
+        )
 
     for pairs in zip.((in_qc, in_cl), (out_qc, out_cl))
         Graphs.add_edge!.(Ref(graph), pairs) # Wrap with `Ref` forces broadcast as a scalar.
@@ -221,18 +299,27 @@ end
 Add input and output nodes to `nodes`. Wires numbered 1 through `nqubits` are
 quantum wires. Wires numbered `nqubits + 1` through `nqubits + nclbits` are classical wires.
 """
-function __add_io_node_data!(graph::AbstractGraph, nodes, nqubits::Integer, nclbits::Integer)
+function __add_io_node_data!(
+    graph::AbstractGraph, nodes, nqubits::Integer, nclbits::Integer
+)
     quantum_wires = qu_wire_indices(nqubits) # 1:nqubits # the first `nqubits` wires
     classical_wires = cl_wire_indices(nqubits, nclbits) # (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
     vertex_ind = 0
-    for (node, wires) in ((Input, quantum_wires), (Output, quantum_wires),
-                          (ClInput, classical_wires), (ClOutput, classical_wires))
+    for (node, wires) in (
+        (Input, quantum_wires),
+        (Output, quantum_wires),
+        (ClInput, classical_wires),
+        (ClOutput, classical_wires),
+    )
         for wire in wires
             vertex_ind += 1
-            NodeStructs.add_node!(nodes, node, wireset((wire,), Tuple{}()),
-                      copy(inneighbors(graph, vertex_ind)),
-                      copy(outneighbors(graph, vertex_ind))
-                      )
+            NodeStructs.add_node!(
+                nodes,
+                node,
+                wireset((wire,), Tuple{}()),
+                copy(inneighbors(graph, vertex_ind)),
+                copy(outneighbors(graph, vertex_ind)),
+            )
         end
     end
     return nothing
@@ -254,9 +341,9 @@ function add_node!(qc::Circuit, op::Element, wires, clwires=Tuple{}())
 end
 
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector
-function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
-                   wires, clwires=Tuple{}())
-
+function add_node!(
+    qc::Circuit, (op, params)::Tuple{Element,<:Any}, wires, clwires=Tuple{}()
+)
     allwires = (wires..., clwires...)
     new_vert = _add_vertex!(qc.graph)
     inwiremap = Vector{Int}(undef, length(allwires))
@@ -276,7 +363,9 @@ function add_node!(qc::Circuit, (op, params)::Tuple{Element, <:Any},
         inwiremap[i] = prev
         outwiremap[i] = outvert
     end
-    NodeStructs.add_node!(qc.nodes, op, wireset(wires, clwires), inwiremap, outwiremap, params)
+    NodeStructs.add_node!(
+        qc.nodes, op, wireset(wires, clwires), inwiremap, outwiremap, params
+    )
     return new_vert
 end
 
@@ -314,7 +403,7 @@ function remove_block!(qc::Circuit, vinds)
     # rem_vertex! will remove existing edges for us below.
     if isempty(vinds)
         IntT = _index_type(qc.graph)
-        return (Dictionary{IntT, IntT}(), Dictionary{IntT, IntT}())
+        return (Dictionary{IntT,IntT}(), Dictionary{IntT,IntT}())
     end
     for (from, to) in zip(inneighbors(qc, vinds[1]), outneighbors(qc, vinds[end]))
         Graphs.add_edge!(qc.graph, from, to)
@@ -412,16 +501,16 @@ function _follow_map(dict, ind)
     return new2
 end
 
-_index_type(::SimpleDiGraph{IntT}) where IntT = IntT
-_index_type(::StructVector{<:Node{IntT}}) where IntT = IntT
-Graphs.nv(nodes::StructVector{<:Node{IntT}}) where IntT = length(nodes)
+_index_type(::SimpleDiGraph{IntT}) where {IntT} = IntT
+_index_type(::StructVector{<:Node{IntT}}) where {IntT} = IntT
+Graphs.nv(nodes::StructVector{<:Node{IntT}}) where {IntT} = length(nodes)
 
 # TODO: Might work for other graphs as well.
 # TODO: Use Dictionary?
 function remove_vertices!(g, vertices, remove_func!::F=Graphs.rem_vertex!) where {F}
     IntT = _index_type(g)
-    vmap = Dictionary{IntT, IntT}()
-    ivmap = Dictionary{IntT, IntT}()
+    vmap = Dictionary{IntT,IntT}()
+    ivmap = Dictionary{IntT,IntT}()
     for v in vertices
         n = Graphs.nv(g)
         rv = get(vmap, v, v)
@@ -444,8 +533,8 @@ function apply_vmap!(vector, vmap)
 end
 
 function _dict_remove_vertices!(g::SimpleDiGraph{IntT}, vertices) where {IntT}
-    vmap = Dict{IntT, IntT}()
-    ivmap = Dict{IntT, IntT}()
+    vmap = Dict{IntT,IntT}()
+    ivmap = Dict{IntT,IntT}()
     for v in vertices
         n = Graphs.nv(g)
         rv = get(vmap, v, v)
@@ -464,7 +553,7 @@ end
 # TODO: following used in devel. Are they needed?
 # backward map
 function __map_edges(g, vmap::AbstractVector)
-    [Graphs.Edge(vmap[e.src], vmap[e.dst]) for e in Graphs.edges(g)]
+    return [Graphs.Edge(vmap[e.src], vmap[e.dst]) for e in Graphs.edges(g)]
 end
 
 function __map_edges(g, vmap::Dict)
@@ -478,7 +567,10 @@ function __map_edges(g, vmap::Dict)
         end
         ivmap[v] = k
     end
-    [Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for e in Graphs.edges(g)]
+    return [
+        Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for
+        e in Graphs.edges(g)
+    ]
 end
 
 # Forward map
@@ -493,7 +585,10 @@ function __map_edges(g, vmap::AbstractDictionary)
         end
         insert!(ivmap, v, k)
     end
-    [Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for e in Graphs.edges(g)]
+    return [
+        Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for
+        e in Graphs.edges(g)
+    ]
 end
 
 ###
@@ -505,8 +600,17 @@ end
 # TODO, we need to define these in nodes if we want them.
 # But we will not want Vector...
 # Forward these methods from `Circuit` to the container of nodes.
-for f in (:keys, :lastindex, :axes, :size, :length, :iterate, :view, (:inneighbors, :Graphs),
-          (:outneighbors, :Graphs))
+for f in (
+    :keys,
+    :lastindex,
+    :axes,
+    :size,
+    :length,
+    :iterate,
+    :view,
+    (:inneighbors, :Graphs),
+    (:outneighbors, :Graphs),
+)
     (func, Mod) = isa(f, Tuple) ? f : (f, :Base)
     @eval ($Mod.$func)(qc::Circuit, args...) = $func(qc.nodes, args...)
 end
@@ -523,11 +627,28 @@ end
 
 import .Elements: isinput, isoutput, isquinput, isquoutput, isclinput, iscloutput, isionode
 
-for f in (:count_ops, :count_wires, :nodevertex, :wireind, :outneighborind, :inneighborind,
-          :setoutwire_ind, :setinwire_ind,
-          :isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput,
-          :isionode,:indegree, :outdegree,
-          :substitute_node!, :setelement!, :node)
+for f in (
+    :count_ops,
+    :count_wires,
+    :nodevertex,
+    :wireind,
+    :outneighborind,
+    :inneighborind,
+    :setoutwire_ind,
+    :setinwire_ind,
+    :isinput,
+    :isoutput,
+    :isquinput,
+    :isquoutput,
+    :isclinput,
+    :iscloutput,
+    :isionode,
+    :indegree,
+    :outdegree,
+    :substitute_node!,
+    :setelement!,
+    :node,
+)
     @eval $f(qc::Circuit, args...) = $f(qc.nodes, args...)
 end
 
@@ -542,8 +663,8 @@ num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
 macro __shfail(ex)
     quote
         result::Bool = $(esc(ex))
-        if ! result
-            println($(sprint(Base.show_unquoted,ex)))
+        if !result
+            println($(sprint(Base.show_unquoted, ex)))
         end
         result
     end
@@ -561,16 +682,18 @@ function check(qc::Circuit)
         num_fails += 1
         println("fail $v: $(qc[v])")
         println("outn=$(outneighbors(qc, v)), inn=$(inneighbors(qc, v))")
-        println()
+        return println()
     end
     if Graphs.nv(qc.graph) != length(qc.nodes)
         throw(CircuitError("Number of nodes in DAG is not equal to length(qc.nodes)"))
     end
     for v in qc.input_qu_vertices
-        isquinput(qc, v) || throw(CircuitError("Expecting Input, got $(getelement(qc, v))."))
+        isquinput(qc, v) ||
+            throw(CircuitError("Expecting Input, got $(getelement(qc, v))."))
     end
     for v in qc.output_qu_vertices
-        isquoutput(qc, v) || throw(CircuitError("Expecting Output, got $(getelement(qc, v))."))
+        isquoutput(qc, v) ||
+            throw(CircuitError("Expecting Output, got $(getelement(qc, v))."))
     end
     for v in vertices(qc)
         indeg = indegree(qc, v)

@@ -29,13 +29,15 @@ new_node_vector(::Type{Vector{Node}}) = Vector{Node}(undef, 0)
 #     push!(nodes, Node(element, wires, back, fore, Int32(numquwires)))
 # end
 
-function add_node!(nodes::Vector{Node}, element, (wires, numquwires), back, fore, params=nothing)
+function add_node!(
+    nodes::Vector{Node}, element, (wires, numquwires), back, fore, params=nothing
+)
     if isnothing(params)
         node = element
     else
         node = ParamElement(element, params)
     end
-    push!(nodes, Node(node, wires, back, fore, Int32(numquwires)))
+    return push!(nodes, Node(node, wires, back, fore, Int32(numquwires)))
 end
 
 getwires(x::Node) = x.wires
@@ -52,12 +54,14 @@ function count_ops(nodes::Vector{<:Node})  # ?? this is faster than below
 end
 
 function count_elements(nodes::Vector{<:Node})
-    dict = Dictionaries.Dictionary{Elements.Element, Int}()
+    dict = Dictionaries.Dictionary{Elements.Element,Int}()
     for node in nodes
         element = node.node
         (hasval, token) = Dictionaries.gettoken(dict, element)
         if hasval
-            Dictionaries.settokenvalue!(dict, token, Dictionaries.gettokenvalue(dict, token) + 1)
+            Dictionaries.settokenvalue!(
+                dict, token, Dictionaries.gettokenvalue(dict, token) + 1
+            )
         else
             insert!(dict, element, 1)
         end

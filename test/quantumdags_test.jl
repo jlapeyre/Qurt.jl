@@ -14,12 +14,11 @@ end
     qc = Circuit(2)
     @test 5 == @build qc X(1)
     @test [6, 7] == @build qc CX(1, 2) RX{3//2}(1)
-    @test [8, 9, 10] ==
-        @build qc begin
-            X(1)
-            CX(2, 1)
-            U{0, 0.5, 1}(1)
-        end
+    @test [8, 9, 10] == @build qc begin
+        X(1)
+        CX(2, 1)
+        U{0,0.5,1}(1)
+    end
     @test getparams(qc, 10) == (0, 0.5, 1)
     qc = Circuit(1, 1)
     @build qc Measure(1; 2)
@@ -105,7 +104,6 @@ end
 
     @test inout(qc, nCH, wire1) == (nX, output1)
     @test inout(qc, nCH, wire2) == (nY, output2)
-
 end
 
 @testset "user-defined gate" begin
@@ -189,18 +187,18 @@ end
 end
 
 @testset "elements" begin
-   @test RX(1/2) === ParamElement(RX, 1/2)
-   @test ! isapprox_turn(RX(1.5), RX(0.5 + 1e-8))
-   @test isapprox_turn(RX(1.5), RX(0.5 + 1e-17))
-   @test isapprox_turn(RX(1.0), RX(1.0 + 1e-15); atol=1e-10)
+    @test RX(1 / 2) === ParamElement(RX, 1 / 2)
+    @test !isapprox_turn(RX(1.5), RX(0.5 + 1e-8))
+    @test isapprox_turn(RX(1.5), RX(0.5 + 1e-17))
+    @test isapprox_turn(RX(1.0), RX(1.0 + 1e-15); atol=1e-10)
 end
 
 @testset "angle" begin
     t1 = 0.12345
     t2 = t1 + 2
     @test (t1 + 2.0) - 2.0 != t1 # choice of t1 is important
-    @test ! (normalize_turn(t2) == t1)
-    @test ! equal_turn(t1, t2)
+    @test !(normalize_turn(t2) == t1)
+    @test !equal_turn(t1, t2)
     @test isapprox_turn(t1, t2)
     @test normalize_turn(t2) ≈ t1
     @test normalize_turn(t1) == t1

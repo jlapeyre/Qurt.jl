@@ -1,13 +1,14 @@
 module GraphPlotsExt
 
-import QuantumDAGs
+using QuantumDAGs: QuantumDAGs
 
-import GraphPlot
-import Graphs
+using GraphPlot: GraphPlot
+using Graphs: Graphs
 using Compose: Compose
 using Compose: cm
 # For plotting to PDF
-import Cairo, Fontconfig
+using Cairo: Cairo
+using Fontconfig: Fontconfig
 
 using QuantumDAGs.Circuits: Circuit
 using QuantumDAGs.Interface: getelement
@@ -23,10 +24,15 @@ function _compose(qc::Circuit)
     nodelabelsize = fill(1, nvert)
     nodesize = fill(1, nvert)
 
-    composition = GraphPlot.gplot(g; nodelabel=nodelabels, nodelabelsize=nodelabelsize,
-                                  nodesize=nodesize, NODELABELSIZE=NODELABELSIZE,
-                                  NODESIZE=NODESIZE,
-                                  EDGELINEWIDTH=EDGELINEWIDTH)
+    composition = GraphPlot.gplot(
+        g;
+        nodelabel=nodelabels,
+        nodelabelsize=nodelabelsize,
+        nodesize=nodesize,
+        NODELABELSIZE=NODELABELSIZE,
+        NODESIZE=NODESIZE,
+        EDGELINEWIDTH=EDGELINEWIDTH,
+    )
     return composition
 end
 

@@ -21,5 +21,5 @@ end
 
 function make_and_cancel()
     qc = make_cnot_circuit()
-    cx_cancellation!(qc)
+    return cx_cancellation!(qc)
 end

@@ -17,7 +17,7 @@ compute their values when accessed via `getindex`.
 
 `isa(vec, AbstractVector)` need not be `true`.
 """
-struct PermutedVector{ElT, VecT, PermT} <: AbstractVector{ElT}
+struct PermutedVector{ElT,VecT,PermT} <: AbstractVector{ElT}
     vec::VecT
     perm::PermT
     # TODO: Add constructor that checks lengths, maybe even that perm is a perm
@@ -25,7 +25,9 @@ end
 
 PermutedVector(vec, perm) = PermutedVector(Base.IteratorEltype(typeof(vec)), vec, perm)
 PermutedVector(::Base.HasEltype, vec, perm) = PermutedVector{eltype(vec)}(vec, perm)
-PermutedVector{ElT}(vec, perm) where {ElT} = PermutedVector{ElT,typeof(vec),typeof(perm)}(vec, perm)
+function PermutedVector{ElT}(vec, perm) where {ElT}
+    return PermutedVector{ElT,typeof(vec),typeof(perm)}(vec, perm)
+end
 
 Base.size(pv::PermutedVector) = (length(pv.perm),)
 Base.getindex(pv::PermutedVector, i::Integer) = pv.vec[pv.perm[i]]

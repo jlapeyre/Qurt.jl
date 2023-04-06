@@ -15,15 +15,17 @@ end
 # TODO: Probably don't need this.
 function _node(expr)
     if expr.head === :call
-        length(expr.args) > 2 || throw(ArgumentError("@node expecting a function call with two or more arguments."))
+        length(expr.args) > 2 || throw(
+            ArgumentError("@node expecting a function call with two or more arguments.")
+        )
         nodeobj = expr.args[2]
-    # elseif expr.head === :ref  No this is wrong
-    #     length(expr.args) > 1 || throw(ArgumentError("@node expecting an array reference call with one or more arguments."))
-    #     nodeobj = expr.args[1]
+        # elseif expr.head === :ref  No this is wrong
+        #     length(expr.args) > 1 || throw(ArgumentError("@node expecting an array reference call with one or more arguments."))
+        #     nodeobj = expr.args[1]
     else
         throw(ArgumentError("@node expecting a function call."))
     end
-    :(node($nodeobj, $expr))
+    return :(node($nodeobj, $expr))
 end
 
 # TODO: Probably don't need this.
@@ -31,7 +33,7 @@ end
 # For example:
 # @node successors(qc, 5)
 macro node(expr)
-    :($(esc(_node(expr))))
+    return :($(esc(_node(expr))))
 end
 
 end # module Utils

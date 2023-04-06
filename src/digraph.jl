@@ -6,7 +6,6 @@
 
 module QDiGraph
 
-
 """
     VertexPort
 
@@ -17,7 +16,6 @@ struct VertexPort
     port::Int
 end
 
-
 mutable struct DiGraph{T}
     ne::Int
     fadjlist::Vector{Vector{T}} # forward edges
@@ -25,7 +23,7 @@ mutable struct DiGraph{T}
 end
 
 DiGraph(nv::Integer) = DiGraph{Int64}(nv)
-DiGraph{T}(nv::Integer) where T = DiGraph(0, [T[] for _ in 1:nv], [T[] for _ in 1:nv])
+DiGraph{T}(nv::Integer) where {T} = DiGraph(0, [T[] for _ in 1:nv], [T[] for _ in 1:nv])
 
 struct Port{T}
     vertex::T
@@ -39,8 +37,9 @@ function _resize_setindex!(vect, val, ind)
     return vect[ind] = val
 end
 
-add_edge!(g::DiGraph, (from_v, from_p), (to_v, to_p)) =
-    add_edge!(g, Port(from_v, from_p), Port(to_v, to_p))
+function add_edge!(g::DiGraph, (from_v, from_p), (to_v, to_p))
+    return add_edge!(g, Port(from_v, from_p), Port(to_v, to_p))
+end
 
 # function add_edge!(g::DiGraph, from::Port, to::Port)
 #     _resize_setindex!(g.fadjlist[from.vertex][from.port]

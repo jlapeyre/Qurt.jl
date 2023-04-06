@@ -1,8 +1,14 @@
 module GraphUtils
 ## Functions that operate only on graphs and `Base` objects
 
-using Graphs: Graphs, AbstractGraph, SimpleDiGraph, AbstractSimpleGraph, edgetype,
-    outneighbors, topological_sort
+using Graphs:
+    Graphs,
+    AbstractGraph,
+    SimpleDiGraph,
+    AbstractSimpleGraph,
+    edgetype,
+    outneighbors,
+    topological_sort
 
 using Dictionaries: Dictionary, AbstractDictionary, Dictionaries
 
@@ -21,10 +27,14 @@ function _add_vertex!(graph::AbstractGraph)
 end
 
 # Add `num_verts` vertices to `graph` and return Vector of new vertex inds
-_add_vertices!(graph::AbstractGraph, num_verts::Integer) = [_add_vertex!(graph) for _ in 1:num_verts]
+function _add_vertices!(graph::AbstractGraph, num_verts::Integer)
+    return [_add_vertex!(graph) for _ in 1:num_verts]
+end
 
 # Remove edge v1 -> v2. Add two edges: v1 -> vmid -> v2
-function _replace_one_edge_with_two!(g::AbstractGraph, v1::Integer, v2::Integer, vmid::Integer)
+function _replace_one_edge_with_two!(
+    g::AbstractGraph, v1::Integer, v2::Integer, vmid::Integer
+)
     Graphs.rem_edge!(g, v1, v2)
     Graphs.add_edge!(g, v1, vmid)
     Graphs.add_edge!(g, vmid, v2)
@@ -57,19 +67,27 @@ function edges_from!(_edges, graph::AbstractSimpleGraph, vertex)
     return _edges
 end
 
-struct EdgesOrdered{Order, GT, VT}
+struct EdgesOrdered{Order,GT,VT}
     graph::GT
     verts::VT
 end
 
-EdgesOrdered(graph, verts) = EdgesOrdered{nothing, typeof(graph), typeof(verts)}(graph, verts)
-EdgesOrdered(order, graph, verts) = EdgesOrdered{order, typeof(graph), typeof(verts)}(graph, verts)
+EdgesOrdered(graph, verts) = EdgesOrdered{nothing,typeof(graph),typeof(verts)}(graph, verts)
+function EdgesOrdered(order, graph, verts)
+    return EdgesOrdered{order,typeof(graph),typeof(verts)}(graph, verts)
+end
 
-function Base.show(io::IO, eos::EdgesOrdered{GT, VT, Order}) where {GT, VT, Order}
+function Base.show(io::IO, eos::EdgesOrdered{GT,VT,Order}) where {GT,VT,Order}
     if isnothing(Order)
-        print(io, "EdgesOrdered{$GT, $VT}(nv=$(Graphs.nv(eos.graph)), ne=$(Graphs.ne(eos.graph)))")
+        print(
+            io,
+            "EdgesOrdered{$GT, $VT}(nv=$(Graphs.nv(eos.graph)), ne=$(Graphs.ne(eos.graph)))",
+        )
     else
-        print(io, "EdgesOrdered{$GT, $VT, $Order}(nv=$(Graphs.nv(eos.graph)), ne=$(Graphs.ne(eos.graph)))")
+        print(
+            io,
+            "EdgesOrdered{$GT, $VT, $Order}(nv=$(Graphs.nv(eos.graph)), ne=$(Graphs.ne(eos.graph)))",
+        )
     end
 end
 
@@ -84,12 +102,12 @@ function Base.iterate(et::EdgesOrdered, (i, j)=(1, 1))
         i > length(et.verts) && return nothing
         overts = outneighbors(et.graph, et.verts[i])
     end
-    return (edgetype(et.graph)(et.verts[i], overts[j]), (i, j+1))
+    return (edgetype(et.graph)(et.verts[i], overts[j]), (i, j + 1))
 end
 
 function edges_topological(graph::AbstractSimpleGraph)
     verts = topological_sort(graph)
-    return EdgesOrdered{:Topological, typeof(graph), typeof(verts)}(graph, verts)
+    return EdgesOrdered{:Topological,typeof(graph),typeof(verts)}(graph, verts)
 end
 
 # Materialized array
@@ -100,6 +118,5 @@ function _edges_topological(graph::AbstractSimpleGraph)
     end
     return _edges
 end
-
 
 end # module GraphUtils

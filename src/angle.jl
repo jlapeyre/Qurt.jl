@@ -1,7 +1,15 @@
 module Angle
 
-export normalize_turn, equal_turn, isapprox_turn, cos_turn, sin_turn, sincos_turn,
-    tan_turn, csc_turn, sec_turn, normalize
+export normalize_turn,
+    equal_turn,
+    isapprox_turn,
+    cos_turn,
+    sin_turn,
+    sincos_turn,
+    tan_turn,
+    csc_turn,
+    sec_turn,
+    normalize
 
 export Turn  # normalize will conflict with LinearAlgebra
 

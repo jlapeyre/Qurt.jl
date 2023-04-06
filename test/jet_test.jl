@@ -12,27 +12,27 @@ using JET: ReportPass, BasicPass, InferenceErrorReport, UncaughtExceptionReport
 struct MayThrowIsOk <: ReportPass end
 
 # ignores `UncaughtExceptionReport` analyzed by `JETAnalyzer`
-(::MayThrowIsOk)(::Type{UncaughtExceptionReport}, @nospecialize(_...)) = return
+(::MayThrowIsOk)(::Type{UncaughtExceptionReport}, @nospecialize(_...)) = return nothing
 
 # forward to `BasicPass` for everything else
 function (::MayThrowIsOk)(report_type::Type{<:InferenceErrorReport}, @nospecialize(args...))
-    BasicPass()(report_type, args...)
+    return BasicPass()(report_type, args...)
 end
 
 # imported to be declared as modules filtered out from analysis result
 using Compose
 
 @testset "jet" begin
-    if get(ENV,"QUANTUMDAGS_JET_TEST","")=="true"
-        rep = report_package("QuantumDAGs";
+    if get(ENV, "QUANTUMDAGS_JET_TEST", "") == "true"
+        rep = report_package(
+            "QuantumDAGs";
             report_pass=MayThrowIsOk(), # TODO have something more fine grained than a generic "do not care about thrown errors"
             ignored_modules=( # TODO fix issues with these modules or report them upstrem
                 AnyFrameModule(Compose),
-#                AnyFrameModule(Base),
-              )
-            )
+                #                AnyFrameModule(Base),
+            ),
+        )
         @show rep
         @test length(JET.get_reports(rep)) == 0
     end
 end # testset
-
