@@ -1,36 +1,3 @@
-using Dictionaries: Dictionary
-
-using QuantumDAGs.Interface: count_wires, count_ops, num_qubits, num_clbits, getelement, getwires,
-      getparams
-
-using QuantumDAGs.Circuits: Circuits, Circuit, DefaultGraphType, DefaultNodesType, add_node!,
-      remove_node!, outneighbors, inneighbors, nv, check, substitute_node!, successors,
-      predecessors, edges
-
-using QuantumDAGs.Builders: @build
-
-using QuantumDAGs.Elements: Elements, Element, ParamElement, RX, X, Y, Y, Input, Output, CX, CZ, CH,
-       U, ClOutput, UserNoParam, Measure
-
-# TODO: import from proper place
-using QuantumDAGs.Angle: isapprox_turn, normalize_turn, equal_turn, cos_turn, sin_turn, tan_turn
-
-using QuantumDAGs.NodeStructs: NodeVector
-
-using QuantumDAGs.Passes: cx_cancellation!
-using QuantumDAGs.NodesGraphs: find_runs_two_wires
-
-using MEnums: @addinblock
-
-import QuantumDAGs
-
-@testset "CX cancellation" begin
-    qc = Circuit(2)
-    @build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
-    @test find_runs_two_wires(qc, CX) == [[5, 6, 7], [8, 9], [10, 11]]
-    cx_cancellation!(qc)
-    @test find_runs_two_wires(qc, CX) == [[5]]
-end
 
 @testset "quantum and classical wires" begin
     qc = Circuit(1, 1)

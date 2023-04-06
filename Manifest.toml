@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0-rc1"
 manifest_format = "2.0"
-project_hash = "f19fb4b0ecd066eafb820ce52ab374db17a9dfbd"
+project_hash = "b7b028affd056a734b87369c2416334695db58ad"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -155,11 +155,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.MEnums]]
-git-tree-sha1 = "dcbb6299b54348c1f67ac5b7f23bc3a1c296e66b"
-repo-rev = "main"
-repo-url = "https://github.com/jlapeyre/MEnums.jl"
+git-tree-sha1 = "5ef29189ac4be496aca7d1eab3731748ee8638a5"
 uuid = "7c338ca5-b20e-417b-9799-aae6c720705e"
-version = "0.6.1"
+version = "0.6.2"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]

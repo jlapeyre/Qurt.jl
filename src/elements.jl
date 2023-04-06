@@ -9,7 +9,7 @@ gate.
 """
 module Elements
 
-using MEnums: MEnums, @menum, @addinblock
+using MEnums: MEnums, MEnum, @menum, @addinblock
 using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
 using ..Interface
@@ -22,7 +22,7 @@ export Q1Params3Float, U
 export QuCl, Measure
 export UserNoParam
 export IONodes, ClInput, ClOutput, Input, Output
-export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode
+export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate
 
 # Elements are ops, input/output, ... everything that lives on a vertex
 @menum (Element, blocklength=10^6, numblocks=10, compactshow=true)
@@ -43,8 +43,40 @@ end
 @addinblock Element Q2NoParam CX CY CZ CH CP
 @addinblock Element Q1Params1Float RX RY RZ
 @addinblock Element Q1Params3Float U
+# Try putting all quantum gates before all other elements
 @addinblock Element QuCl Measure
 @addinblock Element IONodes ClInput ClOutput Input Output
+
+isgate(x::Element) = MEnums.ltblock(x, QuCl)
+
+# """
+#     blockrange(t::Type{<:MEnum}, blockind)
+
+# Return the range of values of `t` in block number `blockind`.
+# """
+# function blockrange(t::Type{<:MEnum}, blockind)
+#     blen = MEnums.blocklength(t)
+#     _blockind = Integer(blockind)
+#     start = blen * (_blockind - 1) + 1
+#     stop = blen * _blockind
+#     return start:stop
+# end
+# function inblock(el::MEnum, blockind)
+#     return MEnums.val(el) in blockrange(typeof(el), blockind)
+# end
+# function gtblock(el::MEnum, blockind)
+#     return MEnums.val(el) > last(blockrange(typeof(el), blockind))
+# end
+# function ltblock(el::MEnum, blockind)
+#     return MEnums.val(el) < first(blockrange(typeof(el), blockind))
+# end
+# function geblock(el::MEnum, blockind)
+#     return MEnums.val(el) >= firt(blockrange(typeof(el), blockind))
+# end
+# function leblock(el::MEnum, blockind)
+#     return MEnums.val(el) <= last(blockrange(typeof(el), blockind))
+# end
+
 
 # Element with parameters (not Julia parameters, params from the QC domain)
 struct ParamElement{ParamsT}

@@ -57,13 +57,49 @@ function edges_from!(_edges, graph::AbstractSimpleGraph, vertex)
     return _edges
 end
 
-# TODO: Make this an iterator. Open issue upstream
+struct EdgesOrdered{Order, GT, VT}
+    graph::GT
+    verts::VT
+end
+
+EdgesOrdered(graph, verts) = EdgesOrdered{nothing, typeof(graph), typeof(verts)}(graph, verts)
+EdgesOrdered(order, graph, verts) = EdgesOrdered{order, typeof(graph), typeof(verts)}(graph, verts)
+
+function Base.show(io::IO, eos::EdgesOrdered{GT, VT, Order}) where {GT, VT, Order}
+    if isnothing(Order)
+        print(io, "EdgesOrdered{$GT, $VT}(nv=$(Graphs.nv(eos.graph)), ne=$(Graphs.ne(eos.graph)))")
+    else
+        print(io, "EdgesOrdered{$GT, $VT, $Order}(nv=$(Graphs.nv(eos.graph)), ne=$(Graphs.ne(eos.graph)))")
+    end
+end
+
+Base.IteratorSize(et::Type{<:EdgesOrdered}) = Base.HasLength()
+Base.length(et::EdgesOrdered) = Graphs.ne(et.graph)
+
+function Base.iterate(et::EdgesOrdered, (i, j)=(1, 1))
+    overts = outneighbors(et.graph, et.verts[i])
+    while j > length(overts)
+        j = 1
+        i += 1
+        i > length(et.verts) && return nothing
+        overts = outneighbors(et.graph, et.verts[i])
+    end
+    return (edgetype(et.graph)(et.verts[i], overts[j]), (i, j+1))
+end
+
 function edges_topological(graph::AbstractSimpleGraph)
+    verts = topological_sort(graph)
+    return EdgesOrdered{:Topological, typeof(graph), typeof(verts)}(graph, verts)
+end
+
+# Materialized array
+function _edges_topological(graph::AbstractSimpleGraph)
     _edges = edgetype(graph)[]
     for v in topological_sort(graph)
         edges_from!(_edges, graph, v)
     end
     return _edges
 end
+
 
 end # module GraphUtils

@@ -18,7 +18,7 @@ using ..NodeStructs: Node, new_node_vector, NodeStructs, wireset
 import ..NodeStructs: wireind, outneighborind, inneighborind, setoutwire_ind, setinwire_ind, wirenodes,
     setelement!, substitute_node!
 
-using ..GraphUtils: _add_vertex!, _add_vertices!, _replace_one_edge_with_two!, _empty_simple_graph!
+using ..GraphUtils: GraphUtils, _add_vertex!, _add_vertices!, _replace_one_edge_with_two!, _empty_simple_graph!
 
 export Circuit, add_node!, remove_node!, remove_block!, topological_nodes,
     topological_vertices, predecessors, successors, quantum_successors,
@@ -121,12 +121,13 @@ function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
 end
 
 function Base.copy(qc::Circuit)
+    # We need to deepcopy nodes. I think because of Vectors in Vectors.
     copies = [copy(x) for x in (
-        qc.graph, qc.nodes,
         qc.input_qu_vertices, qc.output_qu_vertices,
         qc.input_cl_vertices, qc.output_cl_vertices,
         qc.input_vertices, qc.output_vertices)]
-    return Circuit(copies..., qc.nqubits, qc.nclbits, qc.global_phase)
+    return Circuit(copy(qc.graph), deepcopy(qc.nodes), copies..., qc.nqubits,
+                   qc.nclbits, qc.global_phase)
 end
 
 ###
@@ -311,6 +312,10 @@ wires to the block, respectively.
 function remove_block!(qc::Circuit, vinds)
     # Connect in- and out-neighbors of vertex to be removed
     # rem_vertex! will remove existing edges for us below.
+    if isempty(vinds)
+        IntT = _index_type(qc.graph)
+        return (Dictionary{IntT, IntT}(), Dictionary{IntT, IntT}())
+    end
     for (from, to) in zip(inneighbors(qc, vinds[1]), outneighbors(qc, vinds[end]))
         Graphs.add_edge!(qc.graph, from, to)
     end
@@ -383,7 +388,9 @@ end
 ### remove_vertices!
 ###
 
-# TODO: Move this very generic util to utils.jl. Document. Maybe clean it up.
+# TODO: This is a very generic util. In fact it may exist somewhere.
+# Document. Maybe clean it up. Probably don't move from here until
+# we need it elsewhere.
 function _follow_map(dict, ind)
     new1 = ind
     ct = 0
@@ -506,6 +513,8 @@ end
 
 Base.getindex(qc::Circuit, ind::Integer) = qc.nodes[ind]
 Base.getindex(qc::Circuit, inds::AbstractVector) = @view qc.nodes[inds]
+
+GraphUtils.edges_topological(qc::Circuit) = GraphUtils.edges_topological(qc.graph)
 
 # Forward these methods from Circuit to Graphs
 for f in (:edges, :vertices, :nv, :ne, :is_cyclic)

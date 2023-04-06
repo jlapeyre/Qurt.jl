@@ -1,6 +1,6 @@
 using Revise
-@time_imports using QuantumDAGs
-#using QuantumDAGs
+#@time_imports using QuantumDAGs
+using QuantumDAGs
 using QuantumDAGs.Circuits
 using QuantumDAGs.NodeStructs
 using QuantumDAGs.Elements
@@ -9,3 +9,4 @@ using QuantumDAGs.Builders
 using QuantumDAGs.Interface
 using QuantumDAGs.NodesGraphs
 using QuantumDAGs.Passes
+using Graphs
