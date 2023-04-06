@@ -1,7 +1,8 @@
 module Passes
 
 using ..NodesGraphs: find_runs_two_wires
-using ..Circuits: Circuit, remove_block!, apply_vmap!
+using ..Circuits: Circuit, remove_block!
+using ..RemoveVertices: VertexMap, index_type
 using ..Elements: CX
 
 export cx_cancellation!
@@ -16,10 +17,10 @@ sequence is even, and by nothing if it is odd.
 """
 function cx_cancellation!(qc::Circuit)
     runs = find_runs_two_wires(qc, CX)
+    vmap = VertexMap(index_type(qc.graph))
     while !isempty(runs)
         run = pop!(runs)
-        (vmap, _) = remove_block!(qc, iseven(length(run)) ? run : run[2:end])
-        foreach(_run -> apply_vmap!(_run, vmap), runs)
+        remove_block!(qc, iseven(length(run)) ? run : run[2:end], vmap)
     end
 end
 
