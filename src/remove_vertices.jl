@@ -8,6 +8,7 @@ module RemoveVertices
 using Dictionaries: Dictionaries, Dictionary
 
 export VertexMap, remove_vertices!, num_vertices, index_type
+#    forward_vmap, forward_vmap!, backward_vmap, backward_vmap!
 
 # TODO: This is a very generic util. Used in unionfind, I think. In fact it may exist somewhere.
 # Document. Maybe clean it up.
@@ -51,6 +52,9 @@ function VertexMap(::Type{IntT}) where {IntT}
     return VertexMap(Dictionary{IntT,IntT}(), Dictionary{IntT,IntT}())
 end
 
+# The forward direction is likely the only useful one
+(vmap::VertexMap)(i::Integer) = get(vmap.fmap, i, i)
+
 # TODO: Might work for other graphs as well.
 # TODO: Use Dictionary?
 function remove_vertices!(
@@ -59,7 +63,8 @@ function remove_vertices!(
     for v in vertices
         n = num_vertices(g)
         rv = get(vmap.fmap, v, v)
-        Dictionaries.unset!(vmap.fmap, v)
+# Following line must not be active
+#        Dictionaries.unset!(vmap.fmap, v)
         remove_func!(g, rv)
         if rv != n # If not last vertex, then swap and pop was done
             nval = get(vmap.fmap, rv, rv)
@@ -71,10 +76,27 @@ function remove_vertices!(
     return vmap
 end
 
-function apply_vmap!(vector, vmap)
-    @inbounds for i in eachindex(vector)
-        vector[i] = get(vmap, vector[i], vector[i])
-    end
-end
+# function forward_vmap(vmap::VertexMap, vector)
+#     return forward_vmap!(vmap, copy(vector))
+# end
+
+# function backward_vmap(vmap::VertexMap, vector)
+#     return backward_vmap!(vmap, copy(vector))
+# end
+
+# function forward_vmap!(vmap::VertexMap, vector)
+#     return apply_vmap_dict!(vmap.fmap, vector)
+# end
+
+# function backward_vmap!(vmap::VertexMap, vector)
+#     return apply_vmap_dict!(vmap.imap, vector)
+# end
+
+# function apply_vmap_dict!(vmap::Union{Dictionary, Dict}, vector)
+#     @inbounds for i in eachindex(vector)
+#         vector[i] = get(vmap, vector[i], vector[i])
+#     end
+#     return vector
+# end
 
 end # module RemoveVertices

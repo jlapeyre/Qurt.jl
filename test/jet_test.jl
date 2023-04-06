@@ -20,7 +20,7 @@ function (::MayThrowIsOk)(report_type::Type{<:InferenceErrorReport}, @nospeciali
 end
 
 # imported to be declared as modules filtered out from analysis result
-using Compose
+# using Compose
 
 @testset "jet" begin
     if get(ENV, "QUANTUMDAGS_JET_TEST", "") == "true"
@@ -28,7 +28,7 @@ using Compose
             "QuantumDAGs";
             report_pass=MayThrowIsOk(), # TODO have something more fine grained than a generic "do not care about thrown errors"
             ignored_modules=( # TODO fix issues with these modules or report them upstrem
-                AnyFrameModule(Compose),
+#                AnyFrameModule(Compose),
                 #                AnyFrameModule(Base),
             ),
         )
