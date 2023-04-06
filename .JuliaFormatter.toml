@@ -1,0 +1,4 @@
+style = "blue"
+always_use_return = true
+format_docstrings = true
+
