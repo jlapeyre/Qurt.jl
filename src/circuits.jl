@@ -405,33 +405,31 @@ Remove the nodes in the block given by collection `vinds` and connect incoming a
 neighbors of the block on each wire. Assume the first and last elements are on incoming and outgoing
 wires to the block, respectively.
 """
-#function remove_block!(qc::Circuit, vinds, vmap=RemoveVertices.VertexMap(RemoveVertices.index_type(qc.graph)))
-function remove_block!(qc::Circuit, vinds, vmap1, vmap2)
+function remove_block!(qc::Circuit, vinds, vmap)
     # Connect in- and out-neighbors of vertex to be removed
     # rem_vertex! will remove existing edges for us below.
     if isempty(vinds)
-        return vmap1
+        return vmap
     end
-    for (from, to) in zip(inneighbors(qc, vmap2(vinds[1])), outneighbors(qc, vmap2(vinds[end])))
+    for (from, to) in zip(inneighbors(qc, vmap(vinds[1])), outneighbors(qc, vmap(vinds[end])))
         Graphs.add_edge!(qc.graph, from, to)
     end
     # Reconnect wire directly from in- to out-neighbor of vind
-    NodeStructs.rewire_across_nodes!(qc.nodes, vmap2(vinds[1]), vmap2(vinds[end]))
+    NodeStructs.rewire_across_nodes!(qc.nodes, vmap(vinds[1]), vmap(vinds[end]))
 
-    RemoveVertices.remove_vertices!(qc.graph, vinds, Graphs.rem_vertex!, vmap1)
+    RemoveVertices.remove_vertices!(qc.graph, vinds, Graphs.rem_vertex!, vmap)
     # Analogue of rem_vertex! for nodes
-    vmap = RemoveVertices.remove_vertices!(qc.nodes, vinds, NodeStructs.rem_node!, vmap2)
+    vmap = RemoveVertices.remove_vertices!(qc.nodes, vinds, NodeStructs.rem_node!, vmap)
     return vmap
 end
 
 #function remove_blocks!(qc::Circuit, blocks, vmap=VertexMap(index_type(qc.graph)))
 function remove_blocks!(qc::Circuit, blocks)
-    vmap1=VertexMap(index_type(qc.graph))
-    vmap2=VertexMap(index_type(qc.graph))
+    vmap=VertexMap(index_type(qc.graph))
     for block in blocks
-        remove_block!(qc, block, vmap1, vmap2)
+        remove_block!(qc, block, vmap)
     end
-    return (vmap1, vmap2)
+    return vmap
 end
 
 """
