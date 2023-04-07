@@ -13,10 +13,10 @@ export cx_cancellation!, simplify_involution!
 
 Remove `CX` gates according the the rule `CX CX → I`.
 
-Replace each sequences of `CX` gates by one `CX` gate if the length of the
+Replace each sequence of `CX` gates by one `CX` gate if the length of the
 sequence is even, and by nothing if it is odd.
 """
-cx_cancellation!(qc::Circuit) =  _simplify_involution!(qc, Val(CX))
+cx_cancellation!(qc::Circuit) = _simplify_involution!(qc, Val(CX))
 
 """
     simplify_involution!(qc::Circuit, op::Element)
@@ -25,7 +25,10 @@ Replace runs of `op` of odd length by a single `op`, and remove those of even le
 """
 simplify_involution!(qc::Circuit, op::Element) = _simplify_involution!(qc, Val(op))
 
-_simplify_involution!(qc::Circuit, ::Val{op}) where {op} =
-    remove_blocks!(qc, [iseven(length(run)) ? run : run[2:end] for run in find_runs(qc, op)])
+function _simplify_involution!(qc::Circuit, ::Val{op}) where {op}
+    return remove_blocks!(
+        qc, [iseven(length(run)) ? run : run[2:end] for run in find_runs(qc, op)]
+    )
+end
 
 end # module Passes

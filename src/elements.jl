@@ -65,34 +65,6 @@ function Interface.num_qubits(elem::Element)
     throw(ArgumentError("Unknown or undefined number of qubits"))
 end
 
-# """
-#     blockrange(t::Type{<:MEnum}, blockind)
-
-# Return the range of values of `t` in block number `blockind`.
-# """
-# function blockrange(t::Type{<:MEnum}, blockind)
-#     blen = MEnums.blocklength(t)
-#     _blockind = Integer(blockind)
-#     start = blen * (_blockind - 1) + 1
-#     stop = blen * _blockind
-#     return start:stop
-# end
-# function inblock(el::MEnum, blockind)
-#     return MEnums.val(el) in blockrange(typeof(el), blockind)
-# end
-# function gtblock(el::MEnum, blockind)
-#     return MEnums.val(el) > last(blockrange(typeof(el), blockind))
-# end
-# function ltblock(el::MEnum, blockind)
-#     return MEnums.val(el) < first(blockrange(typeof(el), blockind))
-# end
-# function geblock(el::MEnum, blockind)
-#     return MEnums.val(el) >= firt(blockrange(typeof(el), blockind))
-# end
-# function leblock(el::MEnum, blockind)
-#     return MEnums.val(el) <= last(blockrange(typeof(el), blockind))
-# end
-
 # Element with parameters (not Julia parameters, params from the QC domain)
 struct ParamElement{ParamsT}
     element::Element

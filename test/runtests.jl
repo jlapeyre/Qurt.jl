@@ -30,10 +30,13 @@ using QuantumDAGs.Elements:
     Element,
     ParamElement,
     RX,
+    I,
     X,
     Y,
-    Y,
+    Z,
     H,
+    RZ,
+    SX,
     Input,
     Output,
     CX,
@@ -41,6 +44,7 @@ using QuantumDAGs.Elements:
     CH,
     U,
     ClOutput,
+    ClInput,
     UserNoParam,
     Measure
 
@@ -51,6 +55,7 @@ using QuantumDAGs.NodeStructs: NodeVector
 using MEnums: @addinblock
 using QuantumDAGs: QuantumDAGs
 
+include("elements_test.jl")
 include("passes/cancellation_test.jl")
 include("quantumdags_test.jl")
 include("remove_node_test.jl")
