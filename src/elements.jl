@@ -14,10 +14,13 @@ using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
 using ..Interface
 
+# TODO: Find a way to keep export and defs in sync automtically.
 export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
-export Q1NoParam, I, X, Y, Z, H, SX
-export Q2NoParam, CX, CY, CZ, CH
-export Q1Params1Float, RX, RY, RZ
+export Q1NoParam, I, X, Y, Z, H, P, SX, S, T
+export Q2NoParam, CX, CY, CZ, CH, CP, DCX, ECR, SWAP, iSWAP
+export Q1Params1Float, RX, RY, RZ, R
+export Q2Params1Float, RXX, RYY, RZZ, RZX
+export Q2Params2Float, XXmYY, XXpYY
 export Q1Params3Float, U
 export QuCl, Measure
 export UserNoParam
@@ -36,34 +39,61 @@ export isinput,
     Q1Params1Float
     Q2Params1Float
     Q1Params2Float
+    Q2Params2Float
     Q1Params3Float
     QuCl
     IONodes
 end
 
-@addinblock Element Q1NoParam I X Y Z H P SX
-@addinblock Element Q2NoParam CX CY CZ CH CP
-@addinblock Element Q1Params1Float RX RY RZ
-@addinblock Element Q2Params1Float RZZ
+@addinblock Element Q1NoParam I X Y Z H P SX S T
+@addinblock Element Q2NoParam CX CY CZ CH CP DCX ECR SWAP iSWAP
+# Why did ? Put `Float` here ?
+@addinblock Element Q1Params1Float RX RY RZ R
+@addinblock Element Q2Params1Float RXX RYY RZZ RZX
+@addinblock Element Q2Params2Float XXmYY XXpYY
 @addinblock Element Q1Params3Float U
 # Try putting all quantum gates before all other elements
-@addinblock Element QuCl Measure
+@addinblock Element QuCl Q1Measure Measure
 @addinblock Element IONodes ClInput ClOutput Input Output
 
-const Q1GateBlocks = (Q1NoParam, Q1Params1Float)
-
+const Q1GateBlocks = (Q1NoParam, Q1Params1Float, Q1Params3Float)
+const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 # Hmm. what if the op takes varying number of qubits. Like measure
 const Q1Blocks = (Q1GateBlocks..., IONodes)
-const Q2Blocks = (Q2NoParam, Q2Params1Float)
+const Q2Blocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 
 isgate(x::Element) = MEnums.ltblock(x, QuCl)
 const Paulis = (I, X, Y, Z)
 
+# What can we do here ?
+function isclifford end
+function isinvolution end
+
+inblocks(elem, blocks) = any(block -> inblock(elem, Integer(block)), blocks)
+
+# TODO: Put conversion `Integer(.)` in Enums
 function Interface.num_qubits(elem::Element)
-    any(block -> inblock(elem, Integer(block)), Q1Blocks) && return 1
-    any(block -> inblock(elem, Integer(block)), Q2Blocks) && return 2
-    throw(ArgumentError("Unknown or undefined number of qubits"))
+    inblocks(elem, Q1GateBlocks) && return 1
+    inblocks(elem, Q2GateBlocks) && return 2
+    elem === Q1Measure && return 1
+    inblock(elem, IONodes) && return 0
+    return nothing
 end
+
+function Interface.num_clbits(elem::Element)
+    elem === Q1Measure && return 1
+    inblocks(elem, (Q1Blocks..., Q2Blocks...)) && return 0
+    return nothing
+end
+
+isquinput(x::Element) = x === Input
+isclinput(x::Element) = x === ClInput
+isquoutput(x::Element) = x === Output
+iscloutput(x::Element) = x === ClOutput
+
+isinput(x::Element) = isquinput(x) || isclinput(x)
+isoutput(x::Element) = isquoutput(x) || iscloutput(x)
+isionode(x::Element) = isinput(x) || isoutput(x)
 
 # Element with parameters (not Julia parameters, params from the QC domain)
 struct ParamElement{ParamsT}
@@ -87,15 +117,6 @@ end
 function Base.:(==)(x::ParamElement, y::ParamElement)
     return x.element == y.element && x.params == y.params
 end
-
-isquinput(x::Element) = x === Input
-isclinput(x::Element) = x === ClInput
-isquoutput(x::Element) = x === Output
-iscloutput(x::Element) = x === ClOutput
-
-isinput(x::Element) = isquinput(x) || isclinput(x)
-isoutput(x::Element) = isquoutput(x) || iscloutput(x)
-isionode(x::Element) = isinput(x) || isoutput(x)
 
 # Lexical order, not mathematical
 function Base.isless(x::ParamElement, y::ParamElement)
