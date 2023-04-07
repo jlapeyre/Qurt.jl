@@ -51,7 +51,7 @@ using QuantumDAGs.NodeStructs: NodeVector
 using MEnums: @addinblock
 using QuantumDAGs: QuantumDAGs
 
-include("passes/cx_cancellation_test.jl")
+include("passes/cancellation_test.jl")
 include("quantumdags_test.jl")
 include("remove_node_test.jl")
 include("aqua_test.jl")

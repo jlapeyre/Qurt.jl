@@ -165,6 +165,7 @@ Return the index of wire number `wire` in the list of wires for node `node_ind`.
     return wire_ind
 end
 
+# TODO: Rename this to make it clear this value written is a vertex number
 function setoutwire_ind(
     nodes::ANodeArrays, vind_src::Integer, wireind::Integer, vind_dst::Integer
 )
@@ -372,7 +373,8 @@ function rem_node!(nodes::ANodeArrays, ind)
         NodesError("Node index to remove, $ind, is out of bounds: $(eachindex(nodes))")
     )
     _move_wires!(nodes, length(nodes), ind)
-    return pop!(nodes)
+    result = pop!(nodes)
+    return result
 end
 
 """
@@ -419,14 +421,17 @@ function _move_wires!(nodes::ANodeArrays, src::Integer, dst::Integer)
     # Copy outwires from src to dst
     copyresize!(nodes.outwiremap[dst], nodes.outwiremap[src])
 
-    # Makes neighbors point to dst rather than src
     # TODO: emptying nodes.outwiremap[src] acts as a sentinel. Make this more robust
     for wire in getwires(nodes, src)
-        if length(nodes.wires[src]) == length(nodes.outwiremap[src])
+        if (length(nodes.wires[src]) == length(nodes.outwiremap[src])) || (length(nodes.wires[src]) == length(nodes.inwiremap[src]))
             from = inneighborind(nodes, src, wire)
-            setoutwire_ind(nodes, from.vi, from.wi, dst)
-            to = outneighborind(nodes, src, wire)
-            setinwire_ind(nodes, to.vi, to.wi, dst)
+            if !isempty(outneighbors(nodes, from.vi))
+                setoutwire_ind(nodes, from.vi, from.wi, dst)
+            end
+            if !isempty(outneighbors(nodes, src))
+                to = outneighborind(nodes, src, wire)
+                setinwire_ind(nodes, to.vi, to.wi, dst)
+            end
         end
     end
 

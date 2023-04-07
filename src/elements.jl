@@ -9,23 +9,23 @@ gate.
 """
 module Elements
 
-using MEnums: MEnums, MEnum, @menum, @addinblock
+using MEnums: MEnums, MEnum, @menum, @addinblock, inblock, ltblock
 using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
 using ..Interface
 
 export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
-export Q1NoParam, X, Y, Z, H, SX
+export Q1NoParam, I, X, Y, Z, H, SX
 export Q2NoParam, CX, CY, CZ, CH
 export Q1Params1Float, RX, RY, RZ
 export Q1Params3Float, U
 export QuCl, Measure
 export UserNoParam
 export IONodes, ClInput, ClOutput, Input, Output
-export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate
+export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
 
 # Elements are ops, input/output, ... everything that lives on a vertex
-@menum (Element, blocklength=10^6, numblocks=10, compactshow=true)
+@menum (Element, blocklength=10^6, numblocks=50, compactshow=true)
 
 @menum OpBlock begin
     Q1NoParam = 1
@@ -33,6 +33,7 @@ export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode
     QNNoParam
     UserNoParam
     Q1Params1Float
+    Q2Params1Float
     Q1Params2Float
     Q1Params3Float
     QuCl
@@ -42,12 +43,26 @@ end
 @addinblock Element Q1NoParam I X Y Z H P SX
 @addinblock Element Q2NoParam CX CY CZ CH CP
 @addinblock Element Q1Params1Float RX RY RZ
+@addinblock Element Q2Params1Float RZZ
 @addinblock Element Q1Params3Float U
 # Try putting all quantum gates before all other elements
 @addinblock Element QuCl Measure
 @addinblock Element IONodes ClInput ClOutput Input Output
 
+const Q1GateBlocks = (Q1NoParam, Q1Params1Float)
+
+# Hmm. what if the op takes varying number of qubits. Like measure
+const Q1Blocks = (Q1GateBlocks..., IONodes)
+const Q2Blocks = (Q2NoParam, Q2Params1Float)
+
 isgate(x::Element) = MEnums.ltblock(x, QuCl)
+const Paulis = (I, X, Y, Z)
+
+function Interface.num_qubits(elem::Element)
+    any(block -> inblock(elem, Integer(block)), Q1Blocks) && return 1
+    any(block -> inblock(elem, Integer(block)), Q2Blocks) && return 2
+    throw(ArgumentError("Unknown or undefined number of qubits"))
+end
 
 # """
 #     blockrange(t::Type{<:MEnum}, blockind)

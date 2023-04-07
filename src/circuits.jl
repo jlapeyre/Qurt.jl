@@ -51,7 +51,7 @@ using ..GraphUtils:
     _replace_one_edge_with_two!,
     _empty_simple_graph!
 
-using ..RemoveVertices: RemoveVertices, remove_vertices!
+using ..RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
 export Circuit,
     add_node!,
@@ -406,22 +406,32 @@ neighbors of the block on each wire. Assume the first and last elements are on i
 wires to the block, respectively.
 """
 #function remove_block!(qc::Circuit, vinds, vmap=RemoveVertices.VertexMap(RemoveVertices.index_type(qc.graph)))
-function remove_block!(qc::Circuit, vinds, vmap) #vmap_d vmap_n)
+function remove_block!(qc::Circuit, vinds, vmap1, vmap2)
     # Connect in- and out-neighbors of vertex to be removed
     # rem_vertex! will remove existing edges for us below.
     if isempty(vinds)
-        return vmap
+        return vmap1
     end
-    for (from, to) in zip(inneighbors(qc, vmap(vinds[1])), outneighbors(qc, vmap(vinds[end])))
+    for (from, to) in zip(inneighbors(qc, vmap2(vinds[1])), outneighbors(qc, vmap2(vinds[end])))
         Graphs.add_edge!(qc.graph, from, to)
     end
     # Reconnect wire directly from in- to out-neighbor of vind
-    NodeStructs.rewire_across_nodes!(qc.nodes, vmap(vinds[1]), vmap(vinds[end]))
+    NodeStructs.rewire_across_nodes!(qc.nodes, vmap2(vinds[1]), vmap2(vinds[end]))
 
-    RemoveVertices.remove_vertices!(qc.graph, vinds, Graphs.rem_vertex!, vmap)
+    RemoveVertices.remove_vertices!(qc.graph, vinds, Graphs.rem_vertex!, vmap1)
     # Analogue of rem_vertex! for nodes
-    vmap = RemoveVertices.remove_vertices!(qc.nodes, vinds, NodeStructs.rem_node!, vmap)
+    vmap = RemoveVertices.remove_vertices!(qc.nodes, vinds, NodeStructs.rem_node!, vmap2)
     return vmap
+end
+
+#function remove_blocks!(qc::Circuit, blocks, vmap=VertexMap(index_type(qc.graph)))
+function remove_blocks!(qc::Circuit, blocks)
+    vmap1=VertexMap(index_type(qc.graph))
+    vmap2=VertexMap(index_type(qc.graph))
+    for block in blocks
+        remove_block!(qc, block, vmap1, vmap2)
+    end
+    return (vmap1, vmap2)
 end
 
 """
