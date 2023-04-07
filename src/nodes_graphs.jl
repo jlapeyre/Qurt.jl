@@ -5,14 +5,15 @@ module NodesGraphs
 ### Specifically, we need both the wire informtion from nodes and topological sort from the graph.
 ###
 
+using Dictionaries
 using StructArrays: StructVector
 using Graphs: topological_sort
 using ..Circuits: Circuit, CircuitError
 using ..NodeStructs: Nodes, Node, ANodeArrays
 using ..Elements: Element
-using Dictionaries
+using ..Interface: num_qubits
 
-export find_runs_two_wires, find_runs_one_wire
+export find_runs_two_wires, find_runs_one_wire, find_runs
 
 function _find_runs(qc::Circuit, element, nwires, checkfun::F) where {F}
     return _find_runs(qc.nodes, topological_sort(qc.graph), element, nwires, checkfun)
@@ -76,11 +77,25 @@ end
 
 Return runs of one-wire elements of type `element` on the same wire.
 
-For example `CX(1, 2)` and `CX(2, 1)` are not in the same run.
+For example `X(1)` and `X(2)` are not in the same run.
 """
 function find_runs_one_wire(qc::Circuit, element)
     check_wires = verts -> length(verts) == 1 ? (only(verts), true) : (0, false)
     return _find_runs(qc, element, Val(1), check_wires)
+end
+
+"""
+    find_runs(qc::Circuit, element)::Vector{Vector{<:Integer}}
+
+Return a `Vector` of `Vector`s of consecutive vertices with `element` on the same wires.
+
+`element` may be a single element or a collection thereof.
+"""
+function find_runs(qc::Circuit, element)
+    nq = num_qubits(first(element))
+    nq == 1 && return find_runs_one_wire(qc, element)
+    nq == 2 && return find_runs_two_wires(qc, element)
+    throw(ArgumentError("unknown numq for $op"))
 end
 
 end # module NodesGraphs

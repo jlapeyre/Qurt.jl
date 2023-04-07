@@ -1,6 +1,6 @@
 module Passes
 
-using ..NodesGraphs: find_runs_two_wires, find_runs_one_wire
+using ..NodesGraphs: find_runs
 using ..Circuits: Circuit, remove_blocks!
 using ..RemoveVertices: VertexMap, index_type
 using ..Elements: CX, Element
@@ -16,30 +16,16 @@ Remove `CX` gates according the the rule `CX CX → I`.
 Replace each sequences of `CX` gates by one `CX` gate if the length of the
 sequence is even, and by nothing if it is odd.
 """
-function cx_cancellation!(qc::Circuit)
-    #   _simplify_involution!(qc, Val(CX))
-    return _simplify_involution2!(qc, CX)
-    # blocks = [iseven(length(run)) ? run : run[2:end] for run in find_runs_two_wires(qc, CX)]
-    # remove_blocks!(qc, blocks)
-end
+cx_cancellation!(qc::Circuit) =  _simplify_involution!(qc, Val(CX))
 
-function _simplify_involution!(qc::Circuit, ::Val{op}) where {op}
-    blocks = [iseven(length(run)) ? run : run[2:end] for run in find_func(op)(qc, op)]
-    return remove_blocks!(qc, blocks)
-end
+"""
+    simplify_involution!(qc::Circuit, op::Element)
 
-function find_func(op::Element)
-    nq = num_qubits(op)
-    nq == 1 && return find_runs_one_wire
-    nq == 2 && return find_runs_two_wires
-    throw(ArgumentError("unknown numq for $op"))
-end
-
-function _simplify_involution2!(qc::Circuit, op)
-    blocks = [iseven(length(run)) ? run : run[2:end] for run in find_func(op)(qc, op)]
-    return remove_blocks!(qc, blocks)
-end
-
+Replace runs of `op` of odd length by a single `op`, and remove those of even length.
+"""
 simplify_involution!(qc::Circuit, op::Element) = _simplify_involution!(qc, Val(op))
+
+_simplify_involution!(qc::Circuit, ::Val{op}) where {op} =
+    remove_blocks!(qc, [iseven(length(run)) ? run : run[2:end] for run in find_runs(qc, op)])
 
 end # module Passes

@@ -406,11 +406,9 @@ neighbors of the block on each wire. Assume the first and last elements are on i
 wires to the block, respectively.
 """
 function remove_block!(qc::Circuit, vinds, vmap)
-    # Connect in- and out-neighbors of vertex to be removed
+    isempty(vinds) && return vmap
+    # Connect in- and out-neighbors of first and last nodes in the block
     # rem_vertex! will remove existing edges for us below.
-    if isempty(vinds)
-        return vmap
-    end
     for (from, to) in
         zip(inneighbors(qc, vmap(vinds[1])), outneighbors(qc, vmap(vinds[end])))
         Graphs.add_edge!(qc.graph, from, to)
@@ -429,7 +427,6 @@ function remove_vertex!(qc::Circuit, ind)
     return NodeStructs.rem_node!(qc.nodes, ind)
 end
 
-#function remove_blocks!(qc::Circuit, blocks, vmap=VertexMap(index_type(qc.graph)))
 function remove_blocks!(qc::Circuit, blocks)
     vmap = VertexMap(index_type(qc.graph))
     for block in blocks
