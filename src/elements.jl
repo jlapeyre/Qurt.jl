@@ -22,7 +22,8 @@ export Q1Params3Float, U
 export QuCl, Measure
 export UserNoParam
 export IONodes, ClInput, ClOutput, Input, Output
-export isinput, isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
+export isinput,
+    isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
 
 # Elements are ops, input/output, ... everything that lives on a vertex
 @menum (Element, blocklength=10^6, numblocks=50, compactshow=true)

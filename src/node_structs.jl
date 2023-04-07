@@ -423,7 +423,8 @@ function _move_wires!(nodes::ANodeArrays, src::Integer, dst::Integer)
 
     # TODO: emptying nodes.outwiremap[src] acts as a sentinel. Make this more robust
     for wire in getwires(nodes, src)
-        if (length(nodes.wires[src]) == length(nodes.outwiremap[src])) || (length(nodes.wires[src]) == length(nodes.inwiremap[src]))
+        if (length(nodes.wires[src]) == length(nodes.outwiremap[src])) ||
+            (length(nodes.wires[src]) == length(nodes.inwiremap[src]))
             from = inneighborind(nodes, src, wire)
             if !isempty(outneighbors(nodes, from.vi))
                 setoutwire_ind(nodes, from.vi, from.wi, dst)

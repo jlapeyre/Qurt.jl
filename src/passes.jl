@@ -17,15 +17,15 @@ Replace each sequences of `CX` gates by one `CX` gate if the length of the
 sequence is even, and by nothing if it is odd.
 """
 function cx_cancellation!(qc::Circuit)
- #   _simplify_involution!(qc, Val(CX))
-    _simplify_involution2!(qc, CX)
+    #   _simplify_involution!(qc, Val(CX))
+    return _simplify_involution2!(qc, CX)
     # blocks = [iseven(length(run)) ? run : run[2:end] for run in find_runs_two_wires(qc, CX)]
     # remove_blocks!(qc, blocks)
 end
 
 function _simplify_involution!(qc::Circuit, ::Val{op}) where {op}
     blocks = [iseven(length(run)) ? run : run[2:end] for run in find_func(op)(qc, op)]
-    remove_blocks!(qc, blocks)
+    return remove_blocks!(qc, blocks)
 end
 
 function find_func(op::Element)
@@ -37,7 +37,7 @@ end
 
 function _simplify_involution2!(qc::Circuit, op)
     blocks = [iseven(length(run)) ? run : run[2:end] for run in find_func(op)(qc, op)]
-    remove_blocks!(qc, blocks)
+    return remove_blocks!(qc, blocks)
 end
 
 simplify_involution!(qc::Circuit, op::Element) = _simplify_involution!(qc, Val(op))

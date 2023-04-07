@@ -28,9 +28,9 @@ end
             "QuantumDAGs";
             report_pass=MayThrowIsOk(), # TODO have something more fine grained than a generic "do not care about thrown errors"
             ignored_modules=( # TODO fix issues with these modules or report them upstrem
-#                AnyFrameModule(Compose),
-                #                AnyFrameModule(Base),
-            ),
+            #                AnyFrameModule(Compose),
+            #                AnyFrameModule(Base),
+    ),
         )
         @show rep
         @test length(JET.get_reports(rep)) == 0

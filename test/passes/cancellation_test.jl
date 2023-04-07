@@ -18,7 +18,6 @@ end
     using QuantumDAGs.Passes: cx_cancellation!
     using QuantumDAGs.NodesGraphs: find_runs_two_wires
 
-
     qc = Circuits.Circuit(2)
     @build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
     cx_cancellation!(qc) # Throws an error depending on bug
@@ -51,7 +50,7 @@ end
         qc = Circuit(nq)
         noncx = 0
         for _ in 1:ncx
-            wires = [1,2]
+            wires = [1, 2]
             while true
                 wires = rand(1:nq, 2) # Hard code a seed here
                 wires[1] != wires[2] && break
@@ -66,7 +65,7 @@ end
     end
 
     function analyze_cx_runs(numcx=10, nq=4)
-        return analyze_cx_runs(make_cx_runs(numcx, nq)...,)
+        return analyze_cx_runs(make_cx_runs(numcx, nq)...)
     end
 
     function analyze_cx_runs(qc::Circuit, numnoncx)

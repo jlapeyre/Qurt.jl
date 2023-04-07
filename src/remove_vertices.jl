@@ -55,14 +55,14 @@ end
 (vmap::VertexMap)(i::Integer) = get(vmap.fmap, i, i)
 
 function remove_vertices!(
-    g, vertices, remove_func!::F, vmap=VertexMap(index_type(g))
+    graph, vertices, remove_func!::F, vmap=VertexMap(index_type(graph))
 ) where {F}
     for v in vertices
-        n = num_vertices(g)
+        n = num_vertices(graph)
         rv = get(vmap.fmap, v, v)
         # Following line must not be active
         #        Dictionaries.unset!(vmap.fmap, v)
-        remove_func!(g, rv)
+        remove_func!(graph, rv)
         if rv != n # If not last vertex, then swap and pop was done
             nval = get(vmap.fmap, rv, rv)
             nn = _follow_map(vmap.imap, n) # find inv map for current last vertex
