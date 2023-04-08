@@ -1,6 +1,6 @@
 module Utils
 
-export copyresize!
+export copyresize!, maximumby
 
 """
     copyresize!(dst, src)
@@ -10,6 +10,19 @@ Copy `src` to `dst` after resizing `dst` to size of `src`.
 function copyresize!(dst, src)
     resize!(dst, length(src))
     return copy!(dst, src)
+end
+
+# Why does Julia not have this?
+# itr must be indexable in this implementation
+"""
+    maximumby(itr; by::F=identity) where {F}
+
+Return the maximum element of `itr` determined by comparing the result of calling `by` on each
+element. `itr` must be indexable.
+"""
+function maximumby(itr; by::F=identity) where {F}
+    (_, ind) = findmax(by, itr)
+    return itr[ind]
 end
 
 # TODO: Probably don't need this.

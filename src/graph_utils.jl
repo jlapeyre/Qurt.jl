@@ -5,14 +5,17 @@ using Graphs:
     Graphs,
     AbstractGraph,
     SimpleDiGraph,
+    DiGraph,
     AbstractSimpleGraph,
     edgetype,
     outneighbors,
+    inneighbors,
     topological_sort
 
 using Dictionaries: Dictionary, AbstractDictionary, Dictionaries
+using ..Utils: maximumby
 
-export edges_topological, edges_from
+export edges_topological, edges_from, dag_longest_path
 
 struct GraphUtilsError <: Exception
     msg::AbstractString
@@ -117,6 +120,77 @@ function _edges_topological(graph::AbstractSimpleGraph)
         edges_from!(_edges, graph, v)
     end
     return _edges
+end
+
+## Borrowed from networkx
+"""
+    dag_longest_path(G, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
+
+Return the longest path in the DAG `G`.
+"""
+function dag_longest_path(G::DiGraph, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
+    _dag_longest_path_ord(G, topo_order, inneighbors, IntT)
+end
+
+function _dag_longest_path_ord(G, topo_order, inneighborfunc::IF, ::Type{IntT}=Int) where {IntT, IF}
+    dist_length = Vector{IntT}(undef, length(topo_order))
+    dist_u = Vector{IntT}(undef, length(topo_order))
+    return _dag_longest_path_ord!(dist_length, dist_u, G, topo_order, inneighborfunc, IntT)
+end
+
+## This method is much faster than the more generic one below.
+## Assumptions on the structure of the Graph `G`.
+## 1. Vertices are integers from 1:vmax where vmax is the number of vertices
+## 2. `inneighborfunc(G, v)` returns a iterable collection of inneighbors of `v`.
+## 3. vertices returned by `inneighborfunc` of type `IntT`.
+##
+## dist_length::Vector{IntT}, dist_u::Vector{IntT} are work arrays that will be overwritten.
+function _dag_longest_path_ord!(dist_length, dist_u, G, topo_order, inneighborfunc::IF, ::Type{IntT}=Int) where {IntT, IF}
+    path = IntT[]
+    isempty(topo_order) && return path
+    default_weight = 1 # unweighted
+    for v in topo_order
+        us = [(dist_length[u] + default_weight, u) for u in inneighborfunc(G, v)]
+        maxu = isempty(us) ? (0, v) :  maximumby(us; by=first)
+        @inbounds if first(maxu) >= 0
+            dist_length[v] = first(maxu)
+            dist_u[v] = maxu[2]
+        else
+            dist_length[v] = IntT(0)
+            dist_u[v] = v
+        end
+    end
+    (_, v) = findmax(dist_length) # v is the index
+    u = typemax(Int)
+    while u != v
+        push!(path, v)
+        (u, v) = (v, dist_u[v])
+    end
+    return reverse!(path)
+end
+
+## This method does not require that vertices by integers from 1 to num_verts
+## Note: Using a loop instead of allocating `us` did not improve performance for
+## small number of neighors.
+function dag_longest_path(G, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
+    path = IntT[]
+    isempty(topo_order) && return path
+    dist = Dictionary{IntT,Tuple{IntT,IntT}}() # stores (v => (length, u))
+    default_weight = 1
+    for v in topo_order
+        us = [(dist[u][1] + default_weight, u) for u in inneighbors(G, v)]
+        # Use the best predecessor if there is one and its distance is
+        # non-negative, otherwise terminate.
+        maxu = isempty(us) ? (0, v) :  maximumby(us; by=first)
+        set!(dist, v, first(maxu) >= 0 ? maxu : (0, v))
+    end
+    (_, v) = findmax(first, dist) # 'v' is the dict key
+    u = typemax(Int)
+    while u != v
+        push!(path, v)
+        (u, v) = (v, dist[v][2])
+    end
+    return reverse!(path)
 end
 
 end # module GraphUtils

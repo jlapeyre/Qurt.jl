@@ -49,7 +49,8 @@ using ..GraphUtils:
     _add_vertex!,
     _add_vertices!,
     _replace_one_edge_with_two!,
-    _empty_simple_graph!
+    _empty_simple_graph!,
+    dag_longest_path
 
 using ..RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
@@ -62,7 +63,8 @@ export Circuit,
     predecessors,
     successors,
     quantum_successors,
-    remove_vertices!
+    remove_vertices!,
+    longest_path
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -614,6 +616,8 @@ end
 
 num_qubits(qc::Circuit, vert) = num_qubits(qc.nodes, vert)
 num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
+
+longest_path(qc::Circuit) = dag_longest_path(qc.graph)
 
 ###
 ### Check integrity of Circuit
