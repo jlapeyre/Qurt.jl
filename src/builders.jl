@@ -32,7 +32,9 @@ function __parse_builds!(circ, addgates, ex)
     else
         gatetup = gate
     end
-    return push!(addgates, :(add_node!($circ, $gatetup, $(wires...,), $(clwires...,))))
+    quwiretup = Expr(:tuple, wires...)
+    clwiretup = Expr(:tuple)
+    return push!(addgates, :(add_node!($circ, $gatetup, $quwiretup, $clwiretup)))
 end
 
 function __build(exprs)
