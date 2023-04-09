@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0-rc2"
 manifest_format = "2.0"
-project_hash = "b7b028affd056a734b87369c2416334695db58ad"
+project_hash = "468aebaeceaae1508aaf70b6ec18c9730e66c742"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -105,6 +105,12 @@ deps = ["ArnoldiMethod", "Compat", "DataStructures", "Distributed", "Inflate", "
 git-tree-sha1 = "1cf1d7dcb4bc32d7b4a5add4232db3750c27ecb4"
 uuid = "86223c79-3864-5bf0-83f7-82e725a168b6"
 version = "1.8.0"
+
+[[deps.GraphsExt]]
+deps = ["Dictionaries", "Graphs"]
+git-tree-sha1 = "58d407a127c971de76a79dcfd8df0e37f47d49b9"
+uuid = "69a6172a-6e93-4cbc-8d73-93c06968df79"
+version = "1.0.0"
 
 [[deps.Indexing]]
 git-tree-sha1 = "ce1566720fd6b19ff3411404d4b977acd4814f9f"

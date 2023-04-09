@@ -60,4 +60,12 @@ macro build(exprs...)
     return :($(esc(__build(exprs))))
 end
 
+# function dotest!(f, coll, x)
+#     println("Got x = $x, returning f(x) = $(f(x))")
+#     push!(coll, f(x))
+#     println("coll is ", coll)
+#     return nothing
+# end
+
+
 end # module Builders

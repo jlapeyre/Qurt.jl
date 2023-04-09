@@ -12,7 +12,7 @@ using Graphs:
     inneighbors,
     topological_sort
 
-using Dictionaries: Dictionary, AbstractDictionary, Dictionaries
+using Dictionaries: Dictionary, AbstractDictionary, Dictionaries, set!
 using ..Utils: maximumby
 
 export edges_topological, edges_from, dag_longest_path
@@ -122,15 +122,19 @@ function _edges_topological(graph::AbstractSimpleGraph)
     return _edges
 end
 
+###
+### dag_longest_path
+###
+
 ## Borrowed from networkx
 """
     dag_longest_path(G, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
 
 Return the longest path in the DAG `G`.
 """
-function dag_longest_path(G::DiGraph, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
-    _dag_longest_path_ord(G, topo_order, inneighbors, IntT)
-end
+# function dag_longest_path(G::DiGraph, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
+#     _dag_longest_path_ord(G, topo_order, inneighbors, IntT)
+# end
 
 function _dag_longest_path_ord(G, topo_order, inneighborfunc::IF, ::Type{IntT}=Int) where {IntT, IF}
     dist_length = Vector{IntT}(undef, length(topo_order))
@@ -150,8 +154,16 @@ function _dag_longest_path_ord!(dist_length, dist_u, G, topo_order, inneighborfu
     isempty(topo_order) && return path
     default_weight = 1 # unweighted
     for v in topo_order
-        us = [(dist_length[u] + default_weight, u) for u in inneighborfunc(G, v)]
-        maxu = isempty(us) ? (0, v) :  maximumby(us; by=first)
+        _vinn = inneighborfunc(G, v)
+        vinn = isa(_vinn, AbstractVector) || isa(_vinn, Tuple) ? _vinn : collect(_vinn)
+        if isempty(vinn)
+            maxu = (0, v)
+        else
+            (_umax, i) = findmax(u -> dist_length[u] + default_weight, vinn)
+            maxu = (_umax, vinn[i])
+        end
+        # us = [(dist_length[u] + default_weight, u) for u in inneighborfunc(G, v)]
+        # maxu = isempty(us) ? (0, v) :  maximumby(us; by=first)
         @inbounds if first(maxu) >= 0
             dist_length[v] = first(maxu)
             dist_u[v] = maxu[2]
@@ -169,19 +181,30 @@ function _dag_longest_path_ord!(dist_length, dist_u, G, topo_order, inneighborfu
     return reverse!(path)
 end
 
-## This method does not require that vertices by integers from 1 to num_verts
-## Note: Using a loop instead of allocating `us` did not improve performance for
-## small number of neighors.
+## This method does not require that vertices by integers from 1 to num_verts.
+## It could be optimized further, even for this general case.
 function dag_longest_path(G, topo_order=topological_sort(G), ::Type{IntT}=eltype(G)) where IntT
     path = IntT[]
     isempty(topo_order) && return path
     dist = Dictionary{IntT,Tuple{IntT,IntT}}() # stores (v => (length, u))
     default_weight = 1
     for v in topo_order
-        us = [(dist[u][1] + default_weight, u) for u in inneighbors(G, v)]
+
         # Use the best predecessor if there is one and its distance is
         # non-negative, otherwise terminate.
-        maxu = isempty(us) ? (0, v) :  maximumby(us; by=first)
+        _vinn = inneighbors(G, v)
+        vinn = isa(_vinn, AbstractVector) || isa(_vinn, Tuple) ? _vinn : collect(_vinn)
+
+        if isempty(vinn)
+            maxu = (0, v)
+        else
+            (_umax, i) = findmax(u -> dist[u][1] + default_weight, vinn)
+            maxu = (_umax, vinn[i])
+        end
+
+        # us = [(dist[u][1] + default_weight, u) for u in inneighbors(G, v)]
+        # maxu = isempty(us) ? (0, v) :  maximumby(us; by=first)
+
         set!(dist, v, first(maxu) >= 0 ? maxu : (0, v))
     end
     (_, v) = findmax(first, dist) # 'v' is the dict key

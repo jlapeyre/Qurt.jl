@@ -44,13 +44,14 @@ import ..NodeStructs:
     setelement!,
     substitute_node!
 
+using GraphsExt: split_edge!, dag_longest_path
+
 using ..GraphUtils:
     GraphUtils,
     _add_vertex!,
     _add_vertices!,
-    _replace_one_edge_with_two!,
     _empty_simple_graph!,
-    dag_longest_path
+    _replace_one_edge_with_two!
 
 using ..RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
@@ -362,6 +363,7 @@ function add_node!(
         prev = only(Graphs.inneighbors(qc.graph, outvert)) # Output node has one inneighbor
         # Replace prev -> outvert with prev -> new_vert -> outvert
         _replace_one_edge_with_two!(qc.graph, prev, outvert, new_vert)
+#        split_edge!(qc.graph, prev, outvert, new_vert)
         setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
         setinwire_ind(qc.nodes, outvert, 1, new_vert)
         inwiremap[i] = prev
