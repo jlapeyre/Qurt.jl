@@ -45,14 +45,13 @@ import ..NodeStructs:
     substitute_node!
 
 using GraphsExt: split_edge!, dag_longest_path
+using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
 using ..GraphUtils:
     GraphUtils,
     _add_vertex!,
     _add_vertices!,
     _empty_simple_graph!
-
-using ..RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
 export Circuit,
     add_node!,

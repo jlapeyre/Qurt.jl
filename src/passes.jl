@@ -2,7 +2,7 @@ module Passes
 
 using ..NodesGraphs: find_runs
 using ..Circuits: Circuit, remove_blocks!
-using ..RemoveVertices: VertexMap, index_type
+using GraphsExt.RemoveVertices: VertexMap, index_type
 using ..Elements: CX, Element
 using ..Interface: num_qubits
 
