@@ -50,8 +50,7 @@ using ..GraphUtils:
     GraphUtils,
     _add_vertex!,
     _add_vertices!,
-    _empty_simple_graph!,
-    _replace_one_edge_with_two!
+    _empty_simple_graph!
 
 using ..RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
@@ -362,8 +361,8 @@ function add_node!(
         outvert = output_vertex(qc, wire) # Output node for wire
         prev = only(Graphs.inneighbors(qc.graph, outvert)) # Output node has one inneighbor
         # Replace prev -> outvert with prev -> new_vert -> outvert
-        _replace_one_edge_with_two!(qc.graph, prev, outvert, new_vert)
-#        split_edge!(qc.graph, prev, outvert, new_vert)
+#        _replace_one_edge_with_two!(qc.graph, prev, outvert, new_vert)
+        split_edge!(qc.graph, prev, outvert, new_vert)
         setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
         setinwire_ind(qc.nodes, outvert, 1, new_vert)
         inwiremap[i] = prev
