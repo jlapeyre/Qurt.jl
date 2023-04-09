@@ -24,7 +24,7 @@ end
     @build qc Measure(1; 2)
     qc1 = Circuit(1, 1)
     add_node!(qc1, Measure, (1,), (2,))
-    @test_broken qc == qc1
+    @test qc == qc1
 end
 
 @testset "call builder interface" begin

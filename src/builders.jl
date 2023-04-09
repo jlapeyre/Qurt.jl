@@ -12,7 +12,7 @@ function __parse_builds!(circ, addgates, ex)
     ex.head === :call || throw(ArgumentError("expecting call, got $(ex.head)"))
     gate = ex.args[1]
     if ex.args[2] isa Expr
-        ex.args[2].head === :parameters ||
+        ex.args[2].head === :parameters || # after ";"
             throw(ArgumentError("expecting parameters (classical wires), got $(ex.head)"))
         clwires = ex.args[2].args
         wires = ex.args[3:end]
@@ -33,7 +33,7 @@ function __parse_builds!(circ, addgates, ex)
         gatetup = gate
     end
     quwiretup = Expr(:tuple, wires...)
-    clwiretup = Expr(:tuple)
+    clwiretup = Expr(:tuple, clwires...)
     return push!(addgates, :(add_node!($circ, $gatetup, $quwiretup, $clwiretup)))
 end
 
