@@ -4,7 +4,7 @@ using Graphs: Graphs, edges
 using ..Interface: getelement, getclwires, getquwires
 using ..Circuits: Circuit
 
-using ..GraphUtils: edges_topological
+using GraphsExt: edges_topological
 
 export print_edges
 

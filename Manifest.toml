@@ -108,7 +108,7 @@ version = "1.8.0"
 
 [[deps.GraphsExt]]
 deps = ["Dictionaries", "Graphs"]
-git-tree-sha1 = "58d407a127c971de76a79dcfd8df0e37f47d49b9"
+path = "/home/lapeyre/myrepos/julia_repos/GraphsExt"
 uuid = "69a6172a-6e93-4cbc-8d73-93c06968df79"
 version = "1.0.0"
 

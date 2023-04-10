@@ -44,7 +44,7 @@ import ..NodeStructs:
     setelement!,
     substitute_node!
 
-using GraphsExt: split_edge!, dag_longest_path
+using GraphsExt: GraphsExt, split_edge!, dag_longest_path
 using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
 
 using ..GraphUtils:
@@ -395,9 +395,9 @@ function remove_node!(qc::Circuit, vind::Integer)
     return nothing
 end
 
-RemoveVertices.index_type(::SimpleDiGraph{IntT}) where {IntT} = IntT
+#RemoveVertices.index_type(::SimpleDiGraph{IntT}) where {IntT} = IntT
+#RemoveVertices.num_vertices(g::AbstractGraph) = Graphs.nv(g)
 RemoveVertices.index_type(::StructVector{<:Node{IntT}}) where {IntT} = IntT
-RemoveVertices.num_vertices(g::AbstractGraph) = Graphs.nv(g)
 RemoveVertices.num_vertices(nodes::StructVector{<:Node{<:Integer}}) = length(nodes)
 
 """
@@ -580,7 +580,7 @@ end
 Base.getindex(qc::Circuit, ind::Integer) = qc.nodes[ind]
 Base.getindex(qc::Circuit, inds::AbstractVector) = @view qc.nodes[inds]
 
-GraphUtils.edges_topological(qc::Circuit) = GraphUtils.edges_topological(qc.graph)
+GraphsExt.edges_topological(qc::Circuit) = GraphsExt.edges_topological(qc.graph)
 
 # Forward these methods from Circuit to Graphs
 for f in (:edges, :vertices, :nv, :ne, :is_cyclic)
