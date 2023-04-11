@@ -14,6 +14,7 @@ module Interface
 export num_qubits,
     num_clbits,
     num_qu_cl_bits,
+    num_parameters,
     count_ops,
     count_wires,
     check,
@@ -45,6 +46,8 @@ Return the number of clbits associated with `obj` or with the `i`th
 element of the collection `objs`.
 """
 function num_clbits end
+
+function num_parameters end
 
 """
     num_qu_cl_bits(obj)

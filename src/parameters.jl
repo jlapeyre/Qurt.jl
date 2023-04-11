@@ -1,7 +1,9 @@
 module Parameters
 using SymbolicUtils: SymbolicUtils, @syms, Sym, BasicSymbolic
 
-export ParameterMap, ParamRef, newparameter, parameter, @makesyms
+import ..Interface
+
+export ParameterMap, ParamRef, newparameter, parameter, parameters, @makesyms
 
 # Could use Int32 ?
 struct ParamRef
@@ -33,8 +35,10 @@ Base.in(param::T, pm::ParameterMap{T}) where {T} = haskey(pm._ptoi, param)
 Base.axes(pm::ParameterMap) = axes(1:length(pm))
 Base.lastindex(pm::ParameterMap) = length(pm)
 
+Interface.num_parameters(pm::ParameterMap) = length(pm)
+
 function Base.copy(pm::ParameterMap{T}) where {T}
-    return Parameter{T}(copy(pm._itop), copy(pm._ptoi))
+    return ParameterMap{T}(copy(pm._itop), copy(pm._ptoi))
 end
 
 function Base.:(==)(pm1::ParameterMap{T1}, pm2::ParameterMap{T2}) where {T1,T2}

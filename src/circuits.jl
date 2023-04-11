@@ -20,6 +20,7 @@ using DictTools: DictTools
 using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
 
 import ..Interface:
+    Interface,
     num_qubits,
     num_clbits,
     getelement,
@@ -49,7 +50,7 @@ using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, Ve
 
 using ..GraphUtils: GraphUtils, _add_vertex!, _add_vertices!, _empty_simple_graph!
 
-using ..Parameters: ParameterMap
+using ..Parameters: Parameters, ParameterMap
 
 export Circuit,
     add_node!,
@@ -195,7 +196,7 @@ function Base.copy(qc::Circuit)
     return Circuit(
         copy(qc.graph),
         deepcopy(qc.nodes),
-        deepcopy(qc.param_map),
+        copy(qc.param_map), # TODO: deepcopy ?
         copies...,
         qc.nqubits,
         qc.nclbits,
@@ -240,6 +241,13 @@ function Base.empty!(qc::Circuit, nqu=num_qubits(qc), ncl=num_clbits(qc))
     __add_io_nodes!(qc.graph, qc.nodes, nqu, ncl)
     return qc
 end
+
+## TODO: maybe move other forwarded methods up here.
+
+Parameters.newparameter(qc::Circuit, args...) = Parameters.newparameter(qc.param_map, args...)
+Parameters.parameters(qc::Circuit) = Parameters.parameters(qc.param_map)
+Interface.num_parameters(qc::Circuit) = Interface.num_parameters(qc.param_map)
+Parameters.ParamRef(qc::Circuit, args...) = Parameters.ParamRef(qc.param_map, args...)
 
 # Index into all Qu and Cl input vertex indices
 input_vertex(qc::Circuit, wireind::Integer) = qc.input_vertices[wireind]
