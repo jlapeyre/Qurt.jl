@@ -49,6 +49,8 @@ using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, Ve
 
 using ..GraphUtils: GraphUtils, _add_vertex!, _add_vertices!, _empty_simple_graph!
 
+using ..Parameters: ParameterMap
+
 export Circuit,
     add_node!,
     remove_node!,
@@ -95,6 +97,7 @@ The number of wires is equal to `nqubits + nclbits`.
 @concrete struct Circuit
     graph
     nodes
+    param_map
     input_qu_vertices::Vector{Int}
     output_qu_vertices::Vector{Int}
     input_cl_vertices::Vector{Int}
@@ -119,8 +122,10 @@ end
 function Circuit(
     ::Type{GraphT}, ::Type{NodesT}, nqubits::Integer, nclbits=0; global_phase=0
 ) where {NodesT,GraphT}
-    nodes = new_node_vector(NodesT) # Store operator and wire data
     graph = GraphT(0) # Assumption about constructor of graph.
+    nodes = new_node_vector(NodesT) # Store operator and wire data
+    param_map = ParameterMap()
+
     __add_io_nodes!(graph, nodes, nqubits, nclbits) # Add edges to graph and node type and wires
     # Store indices of io vertices
     input_qu_vertices = collect(1:nqubits)
@@ -138,6 +143,7 @@ function Circuit(
     return Circuit(
         graph,
         nodes,
+        param_map,
         input_qu_vertices,
         output_qu_vertices,
         input_cl_vertices,
@@ -189,6 +195,7 @@ function Base.copy(qc::Circuit)
     return Circuit(
         copy(qc.graph),
         deepcopy(qc.nodes),
+        deepcopy(qc.param_map),
         copies...,
         qc.nqubits,
         qc.nclbits,

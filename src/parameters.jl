@@ -20,14 +20,26 @@ ParamRef(pm::ParameterMap{T}, param::T) where {T} = ParamRef(pm[param])
 
 Base.getindex(pm::ParameterMap, ind::Integer) = pm._itop[ind]
 Base.getindex(pm::ParameterMap{T}, ind::T) where {T} = pm._ptoi[ind]
+
 function Base.getindex(pm::ParameterMap, r::OrdinalRange{V,V}) where {V<:Integer}
     return [pm[i] for i in r]
 end
+
+Base.getindex(pm::ParameterMap, pr::ParamRef) = pm[pr.ind]
+Base.getindex(pm::ParameterMap, prs::ParamRef...) = pm[[pr.ind for pr in prs]]
 
 Base.length(pm::ParameterMap) = length(pm._itop)
 Base.in(param::T, pm::ParameterMap{T}) where {T} = haskey(pm._ptoi, param)
 Base.axes(pm::ParameterMap) = axes(1:length(pm))
 Base.lastindex(pm::ParameterMap) = length(pm)
+
+function Base.copy(pm::ParameterMap{T}) where {T}
+    return Parameter{T}(copy(pm._itop), copy(pm._ptoi))
+end
+
+function Base.:(==)(pm1::ParameterMap{T1}, pm2::ParameterMap{T2}) where {T1,T2}
+    return T1 == T2 && pm1._itop == pm2._itop && pm1._ptoi == pm2._ptoi
+end
 
 parameters(pm::ParameterMap) = keys(pm._ptoi)
 
