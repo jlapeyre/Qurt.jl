@@ -29,7 +29,7 @@ export isinput,
     isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
 
 # Elements are ops, input/output, ... everything that lives on a vertex
-@menum (Element, blocklength=10^6, numblocks=50, compactshow=true)
+@menum (Element, blocklength=10^3, numblocks=50, compactshow=true)
 
 @menum OpBlock begin
     Q1NoParam = 1
@@ -41,8 +41,10 @@ export isinput,
     Q1Params2Float
     Q2Params2Float
     Q1Params3Float
+    QuNonGate
     QuCl
     IONodes
+    ControlFlow
 end
 
 @addinblock Element Q1NoParam I X Y Z H P SX S T
@@ -52,9 +54,14 @@ end
 @addinblock Element Q2Params1Float RXX RYY RZZ RZX
 @addinblock Element Q2Params2Float XXmYY XXpYY
 @addinblock Element Q1Params3Float U
+# Quantum, non-classical, but not a gate
+@addinblock Element QuNonGate Reset
+# Does Barrier belong here?
+@addinblock Element QuNonGate Barrier
 # Try putting all quantum gates before all other elements
 @addinblock Element QuCl Q1Measure Measure
 @addinblock Element IONodes ClInput ClOutput Input Output
+@addinblock Element ControlFlow Break Continue IfElse For While Case
 
 const Q1GateBlocks = (Q1NoParam, Q1Params1Float, Q1Params3Float)
 const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)

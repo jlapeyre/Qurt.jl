@@ -6,7 +6,10 @@ using SnoopPrecompile: @precompile_setup, @precompile_all_calls
 include("utils.jl")
 include("interface.jl")
 include("angle.jl")
+include("durations.jl")
+include("parameters.jl")
 include("elements.jl")
+include("control_flow.jl")
 include("node_structs.jl")
 include("graph_utils.jl")
 #include("remove_vertices.jl")
@@ -42,6 +45,9 @@ include("builders.jl")
         Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
         find_runs_two_wires(qc, CX)
         cx_cancellation!(qc)
+
+        # using Unitful
+        # 3Unitful.ms
     end
 end
 
