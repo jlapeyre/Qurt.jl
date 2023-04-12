@@ -95,7 +95,7 @@ function find_runs(qc::Circuit, element)
     nq = num_qubits(first(element))
     nq == 1 && return find_runs_one_wire(qc, element)
     nq == 2 && return find_runs_two_wires(qc, element)
-    throw(ArgumentError("unknown numq for $op"))
+    throw(ArgumentError("unknown numq for $element"))
 end
 
 end # module NodesGraphs
