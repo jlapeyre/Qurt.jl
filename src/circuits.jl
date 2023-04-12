@@ -19,6 +19,8 @@ import Graphs: Graphs, indegree, outdegree, is_cyclic
 using DictTools: DictTools
 using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
 
+using SymbolicUtils: BasicSymbolic
+
 import ..Interface:
     Interface,
     num_qubits,
@@ -50,7 +52,7 @@ using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, Ve
 
 using ..GraphUtils: GraphUtils, _add_vertex!, _add_vertices!, _empty_simple_graph!
 
-using ..Parameters: Parameters, ParameterMap
+using ..Parameters: Parameters, ParameterTable, ParamRef
 
 export Circuit,
     add_node!,
@@ -98,7 +100,7 @@ The number of wires is equal to `nqubits + nclbits`.
 @concrete struct Circuit
     graph
     nodes
-    param_map
+    param_table
     input_qu_vertices::Vector{Int}
     output_qu_vertices::Vector{Int}
     input_cl_vertices::Vector{Int}
@@ -125,7 +127,7 @@ function Circuit(
 ) where {NodesT,GraphT}
     graph = GraphT(0) # Assumption about constructor of graph.
     nodes = new_node_vector(NodesT) # Store operator and wire data
-    param_map = ParameterMap()
+    param_table = ParameterTable()
 
     __add_io_nodes!(graph, nodes, nqubits, nclbits) # Add edges to graph and node type and wires
     # Store indices of io vertices
@@ -144,7 +146,7 @@ function Circuit(
     return Circuit(
         graph,
         nodes,
-        param_map,
+        param_table,
         input_qu_vertices,
         output_qu_vertices,
         input_cl_vertices,
@@ -169,6 +171,7 @@ function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     end
     return true
 end
+
 
 function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
     nq = num_qubits(qc)
@@ -196,7 +199,7 @@ function Base.copy(qc::Circuit)
     return Circuit(
         copy(qc.graph),
         deepcopy(qc.nodes),
-        copy(qc.param_map), # TODO: deepcopy ?
+        copy(qc.param_table), # TODO: deepcopy ?
         copies...,
         qc.nqubits,
         qc.nclbits,
@@ -244,10 +247,10 @@ end
 
 ## TODO: maybe move other forwarded methods up here.
 
-Parameters.newparameter(qc::Circuit, args...) = Parameters.newparameter(qc.param_map, args...)
-Parameters.parameters(qc::Circuit) = Parameters.parameters(qc.param_map)
-Interface.num_parameters(qc::Circuit) = Interface.num_parameters(qc.param_map)
-Parameters.ParamRef(qc::Circuit, args...) = Parameters.ParamRef(qc.param_map, args...)
+Parameters.newparameter!(qc::Circuit, args...) = Parameters.newparameter!(qc.param_table, args...)
+Parameters.parameters(qc::Circuit) = Parameters.parameters(qc.param_table)
+Interface.num_parameters(qc::Circuit) = Interface.num_parameters(qc.param_table)
+Parameters.ParamRef(qc::Circuit, args...) = Parameters.ParamRef(qc.param_table, args...)
 
 # Index into all Qu and Cl input vertex indices
 input_vertex(qc::Circuit, wireind::Integer) = qc.input_vertices[wireind]
@@ -356,8 +359,15 @@ end
 
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector
 function add_node!(
-    qc::Circuit, (op, params)::Tuple{Element,<:Any}, wires, clwires=Tuple{}()
+    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=Tuple{}()
 )
+    if isnothing(_inparams)
+        params = tuple()
+    elseif isa(_inparams, Tuple)
+        params = _inparams
+    else
+        params = (_inparams,) # Won't catch mistake [p1, p2] for (p1, p2)
+    end
     allwires = (wires..., clwires...)
     new_vert = _add_vertex!(qc.graph)
     inwiremap = Vector{Int}(undef, length(allwires))
@@ -371,15 +381,32 @@ function add_node!(
         outvert = output_vertex(qc, wire) # Output node for wire
         prev = only(Graphs.inneighbors(qc.graph, outvert)) # Output node has one inneighbor
         # Replace prev -> outvert with prev -> new_vert -> outvert
-        #        _replace_one_edge_with_two!(qc.graph, prev, outvert, new_vert)
         split_edge!(qc.graph, prev, outvert, new_vert)
         setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
         setinwire_ind(qc.nodes, outvert, 1, new_vert)
         inwiremap[i] = prev
         outwiremap[i] = outvert
     end
-    NodeStructs.add_node!(
-        qc.nodes, op, wireset(wires, clwires), inwiremap, outwiremap, params
+    if isempty(params)
+        newparams = params
+    else
+        syminds = findall(x -> isa(x, BasicSymbolic), params)
+        if isempty(syminds)
+            newparams = params
+        else
+            _newparams = Any[x for x in params]
+            new_node_ind = new_vert #  length(qc.nodes) + 1 # not happy with doing this
+            for i in syminds
+                param_ind = Parameters.getornew(qc.param_table.pm, params[i])
+                param_ref = ParamRef(param_ind)
+                Parameters.add_paramref!(qc.param_table, param_ref, new_node_ind)
+                _newparams[i] = param_ref
+            end
+            newparams = (_newparams...,)
+        end
+    end
+    new_node_ind = NodeStructs.add_node!(
+        qc.nodes, op, wireset(wires, clwires), inwiremap, outwiremap, newparams
     )
     return new_vert
 end
@@ -393,6 +420,14 @@ neighbors on each wire.
 function remove_node!(qc::Circuit, vind::Integer)
     # Connect in- and out-neighbors of vertex to be removed
     # rem_vertex! will remove existing edges for us below.
+    params = getparams(qc, vind) # qc.nodes.params[vind]
+    if !isnothing(params)
+        for param in params
+            if isa(param, ParamRef)
+                Parameters.remove_paramref!(qc.param_table, param, vind)
+            end
+        end
+    end
     for (from, to) in zip(inneighbors(qc, vind), outneighbors(qc, vind))
         Graphs.add_edge!(qc.graph, from, to)
     end
@@ -420,6 +455,14 @@ wires to the block, respectively.
 """
 function remove_block!(qc::Circuit, vinds, vmap)
     isempty(vinds) && return vmap
+    for ind in vinds
+        mappedind = vmap(ind)
+        for param in getparams(qc, mappedind) # .nodes.parameters[ind]
+            if isa(param, ParamRef)
+                Parameters.remove_paramref!(qc.param_table, param, mappedind)
+            end
+        end
+    end
     # Connect in- and out-neighbors of first and last nodes in the block
     # rem_vertex! will remove existing edges for us below.
     for (from, to) in
@@ -435,6 +478,7 @@ end
 RemoveVertices.num_vertices(qc::Circuit) = RemoveVertices.num_vertices(qc.graph)
 RemoveVertices.index_type(qc::Circuit) = RemoveVertices.index_type(qc.graph)
 
+# Remove vertex from both the graph and the nodes structure
 function remove_vertex!(qc::Circuit, ind)
     Graphs.rem_vertex!(qc.graph, ind)
     return NodeStructs.rem_node!(qc.nodes, ind)

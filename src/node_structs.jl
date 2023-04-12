@@ -325,6 +325,7 @@ function check(nodes::ANodeArrays)
     return nothing
 end
 
+# Return the index/id of new node
 function add_node!(
     nodes::StructVector{<:Node},
     element::Element,
@@ -339,7 +340,7 @@ function add_node!(
     push!(nodes.inwiremap, inwiremap)
     push!(nodes.outwiremap, outwiremap)
     push!(nodes.params, params)
-    return nothing
+    return length(nodes) # index of inserted node
 end
 
 # TODO: Maybe we should make these views.

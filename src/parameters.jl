@@ -3,25 +3,48 @@ using SymbolicUtils: SymbolicUtils, @syms, Sym, BasicSymbolic
 
 import ..Interface
 
-export ParameterMap, ParamRef, newparameter, parameter, parameters, @makesyms
+export ParameterMap, ParameterTable, ParamRef, newparameter!, parameter, parameters, @makesyms,
+    add_paramref!
+
+## TODO: We hash dict key twice in some funtions here. I don't think Base has an API to fix this
+## But it is doable.
+
 
 # Could use Int32 ?
 struct ParamRef
     ind::Int
 end
 
-struct ParameterMap{T}
-    _itop::Dict{Int,T}
-    _ptoi::Dict{T,Int}
+struct ParameterMap{T, IntT}
+    _itop::Dict{IntT,T}
+    _ptoi::Dict{T,IntT}
 end
 
 function ParameterMap()
-    return ParameterMap{BasicSymbolic}(Dict{Int,BasicSymbolic}(), Dict{BasicSymbolic,Int}())
+    return ParameterMap{BasicSymbolic, Int}(Dict{Int,BasicSymbolic}(), Dict{BasicSymbolic,Int}())
 end
 ParamRef(pm::ParameterMap{T}, param::T) where {T} = ParamRef(pm[param])
 
+param_type(::ParameterMap{T}) where {T} = T
+
+# TODO: not a good design!
+int_type(::ParameterMap{<:Any,IntT}) where {IntT} = IntT
+
 Base.getindex(pm::ParameterMap, ind::Integer) = pm._itop[ind]
-Base.getindex(pm::ParameterMap{T}, ind::T) where {T} = pm._ptoi[ind]
+Base.getindex(pm::ParameterMap{T}, param::T) where {T} = pm._ptoi[param]
+
+Base.get(pm::ParameterMap{T}, param::T, default) where {T} = get(pm._ptoi, param, default)
+Base.get(pm::ParameterMap{T}, param::T) where {T} = get(pm._ptoi, param)
+
+# TODO: is there a Julia name or interface for this?
+function getornew(pm::ParameterMap{T}, param::T) where {T}
+    param_ind = get(pm, param, nothing)
+    if isnothing(param_ind)
+        (_,  newind) = push!(pm, param)
+        return newind
+    end
+    return param_ind
+end
 
 function Base.getindex(pm::ParameterMap, r::OrdinalRange{V,V}) where {V<:Integer}
     return [pm[i] for i in r]
@@ -37,8 +60,8 @@ Base.lastindex(pm::ParameterMap) = length(pm)
 
 Interface.num_parameters(pm::ParameterMap) = length(pm)
 
-function Base.copy(pm::ParameterMap{T}) where {T}
-    return ParameterMap{T}(copy(pm._itop), copy(pm._ptoi))
+function Base.copy(pm::ParameterMap{T, IntT}) where {T, IntT}
+    return ParameterMap{T, IntT}(copy(pm._itop), copy(pm._ptoi))
 end
 
 function Base.:(==)(pm1::ParameterMap{T1}, pm2::ParameterMap{T2}) where {T1,T2}
@@ -54,14 +77,14 @@ function Base.push!(pm::ParameterMap{T}, param::T) where {T}
     nextind = length(pm) + 1
     pm._itop[nextind] = param
     pm._ptoi[param] = nextind
-    return pm # return collection follows semantics of push!
+    return (pm, nextind) # return collection follows semantics of push! more or less
 end
 
 # TODO: This hashes param twice. Do it just once
-function newparameter(pm::ParameterMap, sym::Symbol, ::Type{T}=Number) where {T}
-    return newparameter(pm, parameter(sym, T))
+function newparameter!(pm::ParameterMap, sym::Symbol, ::Type{T}=Number) where {T}
+    return newparameter!(pm, parameter(sym, T))
 end
-function newparameter(pm::ParameterMap{T}, param::T; check=true) where {T}
+function newparameter!(pm::ParameterMap{T}, param::T; check=true) where {T}
     check && (param in pm) && error("Parameter $param already present")
     push!(pm, param)
     return param
@@ -70,6 +93,76 @@ end
 function parameter(_name::Symbol, ::Type{T}=Number) where {T}
     return SymbolicUtils.Sym{T}(_name)
 end
+
+# TODO: Might want to optimize this by using Vector rather than Dict
+struct ParameterTable{PT, T}
+    parammap::ParameterMap{PT}
+    tab::Dict{T, Vector{T}}
+end
+
+function ParameterTable()
+    pm = ParameterMap()
+    T = int_type(pm)
+    tab = Dict{T, Vector{T}}()
+    return ParameterTable(pm, tab)
+end
+
+function Base.:(==)(pt1::ParameterTable, pt2::ParameterTable)
+    pt1 === pt2 && return true
+    return pt1.parammap == pt2.parammap && pt1.tab == pt2.tab
+end
+
+function Base.copy(pt::ParameterTable)
+    return ParameterTable(copy(pt.parammap), copy(pt.tab))
+end
+
+ParamRef(pt::ParameterTable{PT}, param::PT) where {PT} = ParamRef(pt.parammap[param])
+
+add_paramref!(pt::ParameterTable, sym::Symbol, node_ind::Integer) = add_paramref!(pt, parameter(sym), node_ind)
+add_paramref!(pt::ParameterTable, sym::Symbol, ::Type{T}, node_ind::Integer) where {T} = add_paramref!(pt, parameter(sym, T), node_ind)
+
+## Record in `pt` that `node_ind` has reference to `param`
+function add_paramref!(pt::ParameterTable{PT}, param::PT, node_ind::Integer) where {PT}
+    param_ind = getornew(pt.parammap, param)
+    _add_paramref!(pt, param_ind, node_ind)
+    return param_ind # Needed to creat reference in the other direction
+end
+
+# With this, we can't creat a ref to an `Integer`. We may want that, so we would wrap
+function add_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer)
+    _add_paramref!(pt, param_ref.ind, node_ind)
+    return param_ref.ind # caller has this already, but this is consistent
+end
+
+function _add_paramref!(pt::ParameterTable{PT}, param_ind::Integer, node_ind::Integer) where {PT}
+    vector = get(pt.tab, param_ind, nothing)
+    if isnothing(vector)
+        pt.tab[param_ind] = [node_ind]
+    else
+        sind = searchsortedfirst(vector, node_ind)
+        insert!(vector, sind, node_ind)
+    end
+end
+
+remove_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer) =
+    remove_paramref!(pt, param_ref.ind, node_ind)
+
+function remove_paramref!(pt::ParameterTable, param_ind::Integer, node_ind::Integer)
+    vector = get(pt.tab, param_ind, nothing)
+    if isnothing(vector)
+        error("Parameter table has no entry for $param_ind")
+    end
+    sind = searchsortedfirst(vector, node_ind)
+    sind > length(vector) && error("Node $node_ind has no reference for parameter ref $param_ind in table")
+    deleteat!(vector, sind)
+    if isempty(vector)
+        delete!(pt.tab, param_ind)
+    end
+end
+
+
+# function add_parameter!(pt::ParameterTable)
+# end
 
 import SymbolicUtils: _name_type
 function _makesyms(xs...)
@@ -86,18 +179,5 @@ end
 macro makesyms(xs...)
     return _makesyms(xs...)
 end
-
-# This is the body of the upstream @syms
-# function _syms(xs...)
-#     defs = map(xs) do x
-#         n, t = _name_type(x)
-#         T = esc(t)
-#         nt = _name_type(x)
-#         n, t = nt.name, nt.type
-#         :($(esc(n)) = Sym{$T}($(Expr(:quote, n))))
-#     end
-#     Expr(:block, defs...,
-#          :(tuple($(map(x->esc(_name_type(x).name), xs)...))))
-# end
 
 end # module Parameters
