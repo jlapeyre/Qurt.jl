@@ -214,7 +214,9 @@ version = "1.8.0"
 
 [[deps.GraphsExt]]
 deps = ["Dictionaries", "Graphs"]
-git-tree-sha1 = "2c78e50ffa229163d177a924e0ba236131923ea2"
+git-tree-sha1 = "1d5bf45d95a40514845f0a9fa5ac211a72222228"
+repo-rev = "main"
+repo-url = "https://github.com/jlapeyre/GraphsExt.jl"
 uuid = "69a6172a-6e93-4cbc-8d73-93c06968df79"
 version = "1.0.1"
 
