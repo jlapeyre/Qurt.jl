@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0-rc2"
 manifest_format = "2.0"
-project_hash = "46da1cea980fefff7e7970d60833714464c1f62d"
+project_hash = "39c9490c763aa8ea897125f64599e5d44a7a8d10"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
@@ -214,9 +214,11 @@ version = "1.8.0"
 
 [[deps.GraphsExt]]
 deps = ["Dictionaries", "Graphs"]
-path = "/home/lapeyre/myrepos/julia_repos/GraphsExt"
+git-tree-sha1 = "284bc107ddb8ff80832b5c9733c45be1f4160b1f"
+repo-rev = "main"
+repo-url = "https://github.com/jlapeyre/GraphsExt.jl"
 uuid = "69a6172a-6e93-4cbc-8d73-93c06968df79"
-version = "1.0.1"
+version = "1.1.0"
 
 [[deps.IfElse]]
 git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
