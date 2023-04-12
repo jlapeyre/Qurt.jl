@@ -65,7 +65,8 @@ export Circuit,
     successors,
     quantum_successors,
     remove_vertices!,
-    longest_path
+    longest_path,
+    param_table
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -165,6 +166,13 @@ cl_wire_indices(nqu, ncl) = (1:ncl) .+ nqu
 wire_indices(nqu, ncl) = 1:(nqu + ncl)
 wire_indices(qc::Circuit) = wire_indices(num_qubits(qc), num_clbits(qc))
 
+"""
+    param_table(qc::Circuit)
+
+Return the parameter table for `qc`.
+"""
+param_table(qc::Circuit) = qc.param_table
+
 function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     c1 === c2 && return true
     for field in fieldnames(T)
@@ -172,7 +180,6 @@ function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     end
     return true
 end
-
 
 function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
     nq = num_qubits(qc)

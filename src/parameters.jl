@@ -122,6 +122,8 @@ function Base.copy(pt::ParameterTable)
     return ParameterTable(copy(pt.parammap), copy(pt.tab))
 end
 
+Base.isempty(pt::ParameterTable) = isempty(pt.tab)
+
 parameters(pt::ParameterTable) = parameters(pt.parammap)
 
 ParamRef(pt::ParameterTable{PT}, param::PT) where {PT} = ParamRef(pt.parammap[param])
