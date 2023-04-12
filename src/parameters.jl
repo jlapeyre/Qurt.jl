@@ -4,11 +4,13 @@ using SymbolicUtils: SymbolicUtils, @syms, Sym, BasicSymbolic
 import ..Interface
 
 export ParameterMap, ParameterTable, ParamRef, newparameter!, parameter, parameters, @makesyms,
-    add_paramref!
+    @makesym, add_paramref!, parameter_vector
 
 ## TODO: We hash dict key twice in some funtions here. I don't think Base has an API to fix this
 ## But it is doable.
 
+# Should we make this Number or Real, or ?
+const DEF_PARAM_TYPE = Number
 
 # Could use Int32 ?
 struct ParamRef
@@ -54,6 +56,8 @@ Base.getindex(pm::ParameterMap, pr::ParamRef) = pm[pr.ind]
 Base.getindex(pm::ParameterMap, prs::ParamRef...) = pm[[pr.ind for pr in prs]]
 
 Base.length(pm::ParameterMap) = length(pm._itop)
+
+# TODO: We should detect and disallow two params with same name but different type
 Base.in(param::T, pm::ParameterMap{T}) where {T} = haskey(pm._ptoi, param)
 Base.axes(pm::ParameterMap) = axes(1:length(pm))
 Base.lastindex(pm::ParameterMap) = length(pm)
@@ -81,7 +85,7 @@ function Base.push!(pm::ParameterMap{T}, param::T) where {T}
 end
 
 # TODO: This hashes param twice. Do it just once
-function newparameter!(pm::ParameterMap, sym::Symbol, ::Type{T}=Number) where {T}
+function newparameter!(pm::ParameterMap, sym::Symbol, ::Type{T}=DEF_PARAM_TYPE) where {T}
     return newparameter!(pm, parameter(sym, T))
 end
 function newparameter!(pm::ParameterMap{T}, param::T; check=true) where {T}
@@ -90,8 +94,10 @@ function newparameter!(pm::ParameterMap{T}, param::T; check=true) where {T}
     return param
 end
 
-function parameter(_name::Symbol, ::Type{T}=Number) where {T}
-    return SymbolicUtils.Sym{T}(_name)
+parameter(_name::Symbol, ::Type{T}=DEF_PARAM_TYPE) where {T} = SymbolicUtils.Sym{T}(_name)
+
+function parameter_vector(sym::Symbol, num_params::Integer, ::Type{PT}=DEF_PARAM_TYPE) where {PT}
+   return [parameter(Symbol(sym, i), PT) for i in 1:num_params]
 end
 
 # TODO: Might want to optimize this by using Vector rather than Dict
@@ -115,6 +121,8 @@ end
 function Base.copy(pt::ParameterTable)
     return ParameterTable(copy(pt.parammap), copy(pt.tab))
 end
+
+parameters(pt::ParameterTable) = parameters(pt.parammap)
 
 ParamRef(pt::ParameterTable{PT}, param::PT) where {PT} = ParamRef(pt.parammap[param])
 
@@ -178,6 +186,19 @@ end
 
 macro makesyms(xs...)
     return _makesyms(xs...)
+end
+
+function _makesym(x)
+    n, t = _name_type(x)
+    T = esc(t)
+    nt = _name_type(x)
+    n, t = nt.name, nt.type
+    def = :($n = Sym{$T}($(Expr(:quote, n))))
+    return Expr(:block, def, :($(_name_type(x).name))) # :(tuple($(map(x -> _name_type(x).name, xs)...))))
+end
+
+macro makesym(x)
+    return _makesym(x)
 end
 
 end # module Parameters

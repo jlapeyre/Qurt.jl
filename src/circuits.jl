@@ -397,7 +397,7 @@ function add_node!(
             _newparams = Any[x for x in params]
             new_node_ind = new_vert #  length(qc.nodes) + 1 # not happy with doing this
             for i in syminds
-                param_ind = Parameters.getornew(qc.param_table.pm, params[i])
+                param_ind = Parameters.getornew(qc.param_table.parammap, params[i])
                 param_ref = ParamRef(param_ind)
                 Parameters.add_paramref!(qc.param_table, param_ref, new_node_ind)
                 _newparams[i] = param_ref
@@ -446,6 +446,8 @@ end
 RemoveVertices.index_type(::StructVector{<:Node{IntT}}) where {IntT} = IntT
 RemoveVertices.num_vertices(nodes::StructVector{<:Node{<:Integer}}) = length(nodes)
 
+# TODO: more efficient to remove possible ParamRefs in `remove_blocks!` than here.
+# Need a flag here to skip it. But it is nice to see that vmap works correctly here.
 """
     remove_block!(qc::Circuit, vinds)
 
@@ -455,9 +457,9 @@ wires to the block, respectively.
 """
 function remove_block!(qc::Circuit, vinds, vmap)
     isempty(vinds) && return vmap
-    for ind in vinds
+    for ind in vinds # rem
         mappedind = vmap(ind)
-        for param in getparams(qc, mappedind) # .nodes.parameters[ind]
+        for param in getparams(qc, mappedind)
             if isa(param, ParamRef)
                 Parameters.remove_paramref!(qc.param_table, param, mappedind)
             end
