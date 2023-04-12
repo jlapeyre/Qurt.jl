@@ -15,14 +15,14 @@ struct NodeArray{NodeT<:Node,N,IntT<:Integer} <: AbstractArray{NodeT,N}
     numquwires::Array{Int32,N}
     inwiremap::Array{Vector{Int},N}
     outwiremap::Array{Vector{Int},N}
-    params::Array{Any,N}
+    params::Array{Tuple,N}
 end
 
 const NodeVector{NodeT,IntT} = NodeArray{NodeT,1,IntT}
 
 function NodeArray{Node{IntT}}() where {IntT}
     return NodeArray{Node{IntT},1,IntT}(
-        Element[], Tuple{IntT,Vararg{IntT}}[], Int32[], Vector{Int}[], Vector{Int}[], Any[]
+        Element[], Tuple{IntT,Vararg{IntT}}[], Int32[], Vector{Int}[], Vector{Int}[], Tuple[]
     )
 end
 
@@ -110,7 +110,7 @@ function add_node!(
     (wires, numquwires),
     inwiremap,
     outwiremap,
-    params=nothing,
+    params=tuple(),
 )
     push!(nodes.element, element)
     push!(nodes.wires, wires)

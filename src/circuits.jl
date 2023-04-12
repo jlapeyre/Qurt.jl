@@ -27,6 +27,7 @@ import ..Interface:
     num_clbits,
     getelement,
     getparams,
+    getparam,
     getwires,
     count_wires,
     count_ops,
@@ -266,10 +267,27 @@ output_cl_vertex(qc::Circuit, wireind::Integer) = qc.output_cl_vertices[wireind]
 
 getelement(qc::Circuit, ind) = getelement(qc.nodes, ind)
 elementsym(qc::Circuit, ind) = Symbol(getelement(qc, ind))
-getparams(qc::Circuit, ind) = getparams(qc.nodes, ind)
 getwires(qc::Circuit, ind) = getwires(qc.nodes, ind)
 getquwires(qc::Circuit, ind) = getquwires(qc.nodes, ind)
 getclwires(qc::Circuit, ind) = getclwires(qc.nodes, ind)
+
+function _get_or_deref(qc::Circuit, param)
+    !isa(param, ParamRef) && return param
+    return qc.param_table.parammap[param]
+end
+
+# Building output tuple or array is very slow. Dereferencing is relatively fast
+function getparams(qc::Circuit, ind; deref::Bool=false)
+    params = getparams(qc.nodes, ind)
+    !deref && return params
+    return map(p -> _get_or_deref(qc, p), params)
+end
+
+function getparam(qc::Circuit, ind::Integer, pos::Integer; deref::Bool=false)
+    param = getparam(qc.nodes, ind, pos)
+    deref && return _get_or_deref(qc, param)
+    return param
+end
 
 """
     num_qubits(qc::Circuit)
@@ -387,6 +405,7 @@ function add_node!(
         inwiremap[i] = prev
         outwiremap[i] = outvert
     end
+    # Much of the following if/else block is probably pretty slow.
     if isempty(params)
         newparams = params
     else
@@ -399,7 +418,7 @@ function add_node!(
             for i in syminds
                 param_ind = Parameters.getornew(qc.param_table.parammap, params[i])
                 param_ref = ParamRef(param_ind)
-                Parameters.add_paramref!(qc.param_table, param_ref, new_node_ind)
+                Parameters.add_paramref!(qc.param_table, param_ref, new_node_ind, i)
                 _newparams[i] = param_ref
             end
             newparams = (_newparams...,)

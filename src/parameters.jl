@@ -103,13 +103,13 @@ end
 # TODO: Might want to optimize this by using Vector rather than Dict
 struct ParameterTable{PT, T}
     parammap::ParameterMap{PT}
-    tab::Dict{T, Vector{T}}
+    tab::Dict{T, Vector{Tuple{T,T}}}
 end
 
 function ParameterTable()
     pm = ParameterMap()
     T = int_type(pm)
-    tab = Dict{T, Vector{T}}()
+    tab = Dict{T, Vector{Tuple{T,T}}}()
     return ParameterTable(pm, tab)
 end
 
@@ -126,8 +126,8 @@ parameters(pt::ParameterTable) = parameters(pt.parammap)
 
 ParamRef(pt::ParameterTable{PT}, param::PT) where {PT} = ParamRef(pt.parammap[param])
 
-add_paramref!(pt::ParameterTable, sym::Symbol, node_ind::Integer) = add_paramref!(pt, parameter(sym), node_ind)
-add_paramref!(pt::ParameterTable, sym::Symbol, ::Type{T}, node_ind::Integer) where {T} = add_paramref!(pt, parameter(sym, T), node_ind)
+add_paramref!(pt::ParameterTable, sym::Symbol, node_ind::Integer) = add_paramref!(pt, parameter(sym), node_ind, param_pos)
+add_paramref!(pt::ParameterTable, sym::Symbol, ::Type{T}, node_ind::Integer) where {T} = add_paramref!(pt, parameter(sym, T), node_ind, param_pos)
 
 ## Record in `pt` that `node_ind` has reference to `param`
 function add_paramref!(pt::ParameterTable{PT}, param::PT, node_ind::Integer) where {PT}
@@ -137,40 +137,36 @@ function add_paramref!(pt::ParameterTable{PT}, param::PT, node_ind::Integer) whe
 end
 
 # With this, we can't creat a ref to an `Integer`. We may want that, so we would wrap
-function add_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer)
-    _add_paramref!(pt, param_ref.ind, node_ind)
+function add_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer, param_pos::Integer)
+    _add_paramref!(pt, param_ref.ind, node_ind, param_pos)
     return param_ref.ind # caller has this already, but this is consistent
 end
 
-function _add_paramref!(pt::ParameterTable{PT}, param_ind::Integer, node_ind::Integer) where {PT}
+function _add_paramref!(pt::ParameterTable{PT}, param_ind::Integer, node_ind::Integer, param_pos::Integer) where {PT}
     vector = get(pt.tab, param_ind, nothing)
     if isnothing(vector)
-        pt.tab[param_ind] = [node_ind]
+        pt.tab[param_ind] = [(node_ind, param_pos)]
     else
-        sind = searchsortedfirst(vector, node_ind)
-        insert!(vector, sind, node_ind)
+        sind = searchsortedfirst(vector, (node_ind, param_pos))
+        insert!(vector, sind, (node_ind, param_pos))
     end
 end
 
-remove_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer) =
-    remove_paramref!(pt, param_ref.ind, node_ind)
+remove_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer, param_pos::Integer) =
+    remove_paramref!(pt, param_ref.ind, node_ind, param_pos)
 
 function remove_paramref!(pt::ParameterTable, param_ind::Integer, node_ind::Integer)
     vector = get(pt.tab, param_ind, nothing)
     if isnothing(vector)
         error("Parameter table has no entry for $param_ind")
     end
-    sind = searchsortedfirst(vector, node_ind)
+    sind = searchsortedfirst(vector, (node_ind, param_pos))
     sind > length(vector) && error("Node $node_ind has no reference for parameter ref $param_ind in table")
     deleteat!(vector, sind)
     if isempty(vector)
         delete!(pt.tab, param_ind)
     end
 end
-
-
-# function add_parameter!(pt::ParameterTable)
-# end
 
 import SymbolicUtils: _name_type
 function _makesyms(xs...)

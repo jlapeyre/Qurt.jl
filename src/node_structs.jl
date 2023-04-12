@@ -33,6 +33,7 @@ import ..Interface:
     getelement,
     getwires,
     getparams,
+    getparam,
     getquwires,
     getclwires,
     node
@@ -89,12 +90,12 @@ struct Node{IntT<:Integer}
     numquwires::Int32
     inwiremap::Vector{Int}
     outwiremap::Vector{Int}
-    params::Any
+    params::Tuple
 end
 
 function __empty_node_storage()
     return (
-        Element[], Tuple{Int,Vararg{Int}}[], Int32[], Vector{Int}[], Vector{Int}[], Any[]
+        Element[], Tuple{Int,Vararg{Int}}[], Int32[], Vector{Int}[], Vector{Int}[], Tuple[]
     )
 end
 
@@ -111,6 +112,7 @@ end
 getelement(node::Node) = node.element
 getwires(node::Node) = node.wires
 getparams(node::Node) = node.params
+getparam(node::Node, i::Integer) = getparams(node)[i]
 num_qubits(node::Node) = node.numquwires
 outneighbors(node::Node) = node.outwiremap
 inneighbors(node::Node) = node.inwiremap
@@ -332,7 +334,7 @@ function add_node!(
     (wires, numquwires),
     inwiremap,
     outwiremap,
-    params=nothing,
+    params=tuple(),
 )
     push!(nodes.element, element)
     push!(nodes.wires, wires)
@@ -346,7 +348,19 @@ end
 # TODO: Maybe we should make these views.
 getelement(nodes::ANodeArrays, inds...) = getindex(nodes.element, inds...)
 setelement!(nodes::ANodeArrays, op::Element, vert::Integer) = nodes.element[vert] = op
-getparams(nodes::ANodeArrays, inds...) = getindex(nodes.params, inds...)
+
+# Disable this. No test uses it
+#getparams(nodes::ANodeArrays, inds...) = getindex(nodes.params, inds...)
+getparams(nodes::ANodeArrays, ind) = getindex(nodes.params, ind)
+
+# Get the `pos`th param from params at node `ind`.
+"""
+    getparam(nodes::ANodeArrays, ind::Integer, pos::Integer)
+
+The the `pos`th parameter at node index `ind` in `nodes`.
+"""
+getparam(nodes::ANodeArrays, ind::Integer, pos::Integer) = getparams(nodes, ind)[pos]
+
 getwires(nodes::ANodeArrays, inds...) = getindex(nodes.wires, inds...)
 getquwires(nodes::ANodeArrays, i) = nodes.wires[i][1:(nodes.numquwires[i])]
 function getclwires(nodes::ANodeArrays, i)
