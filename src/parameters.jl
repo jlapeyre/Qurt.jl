@@ -136,6 +136,10 @@ end
 Base.length(pt::ParameterTable) = length(pt.tab)
 Base.isempty(pt::ParameterTable) = isempty(pt.tab)
 
+Base.getindex(pt::ParameterTable, vertex) = pt.tab[vertex]
+Base.getindex(pt::ParameterTable, param_ref::ParamRef) = pt[param_ref.ind]
+
+
 """
     num_parameters(param_table::ParameterTable)
 

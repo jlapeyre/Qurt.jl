@@ -24,6 +24,7 @@ export num_qubits,
     getclwires,
     getparams,
     getparam,
+    getnodes,
     node,
     nodevertex
 
@@ -82,6 +83,7 @@ function getquwires end
 function getclwires end
 function getparams end
 function getparam end
+function getnodes end
 
 """
     node(qc, vert)

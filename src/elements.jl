@@ -23,7 +23,7 @@ export Q2Params1Float, RXX, RYY, RZZ, RZX
 export Q2Params2Float, XXmYY, XXpYY
 export Q1Params3Float, U
 export QuCl, Measure
-export UserNoParam
+export UserNoParam, UserParams
 export IONodes, ClInput, ClOutput, Input, Output
 export isinput,
     isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
@@ -41,6 +41,7 @@ export isinput,
     Q1Params2Float
     Q2Params2Float
     Q1Params3Float
+    UserParams
     QuNonGate
     QuCl
     IONodes

@@ -59,6 +59,7 @@ export Circuit,
     add_node!,
     remove_node!,
     remove_block!,
+    remove_blocks!,
     topological_nodes,
     topological_vertices,
     predecessors,
@@ -66,7 +67,8 @@ export Circuit,
     quantum_successors,
     remove_vertices!,
     longest_path,
-    param_table
+    param_table,
+    param_map
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -172,6 +174,13 @@ wire_indices(qc::Circuit) = wire_indices(num_qubits(qc), num_clbits(qc))
 Return the parameter table for `qc`.
 """
 param_table(qc::Circuit) = qc.param_table
+
+"""
+    param_map(qc::Circuit)
+
+Return the parameter map for `qc`.
+"""
+param_map(qc::Circuit) = qc.param_table.parammap
 
 function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     c1 === c2 && return true
@@ -446,6 +455,25 @@ function add_node!(
     return new_vert
 end
 
+# reindexing after node reindexing has happened.
+function reindex_param_table!(qc::Circuit, from_vert, to_vert)
+    from_vert == to_vert && return
+    params = getparams(qc, to_vert)
+    table = param_table(qc)
+    for (pos, param) in enumerate(params)
+        if isa(param, ParamRef)
+            refs = table[param]
+            # ssortf returns an ind even if target is not present. potential bug.
+            ind = searchsortedfirst(refs, (from_vert, pos))
+            if ind > length(refs)
+                error("Can't find param ref ($from_vert, $pos) in table entry: $refs")
+            end
+            refs[ind] = (to_vert, pos)
+            sort!(refs)
+        end
+    end
+end
+
 # TODO: optionally return (maybe take as well?) a vertex map
 # TODO: factor out the param removal code
 """
@@ -458,6 +486,8 @@ function remove_node!(qc::Circuit, vind::Integer)
     # Connect in- and out-neighbors of vertex to be removed
     # rem_vertex! will remove existing edges for us below.
     params = getparams(qc, vind) # qc.nodes.params[vind]
+    table = param_table(qc)
+    swapped_node = length(qc.nodes) # last is swapped down
     if !isnothing(params)
         for (pos, param) in enumerate(params)
             if isa(param, ParamRef)
@@ -475,30 +505,29 @@ function remove_node!(qc::Circuit, vind::Integer)
     NodeStructs.rewire_across_node!(qc.nodes, vind)
     # Analogue of rem_vertex! for nodes
     NodeStructs.rem_node!(qc.nodes, vind)
+    reindex_param_table!(qc, 1 + length(qc.nodes), vind)
     return nothing
 end
 
-#RemoveVertices.index_type(::SimpleDiGraph{IntT}) where {IntT} = IntT
-#RemoveVertices.num_vertices(g::AbstractGraph) = Graphs.nv(g)
 RemoveVertices.index_type(::StructVector{<:Node{IntT}}) where {IntT} = IntT
 RemoveVertices.num_vertices(nodes::StructVector{<:Node{<:Integer}}) = length(nodes)
 
 # TODO: more efficient to remove possible ParamRefs in `remove_blocks!` than here.
 # Need a flag here to skip it. But it is nice to see that vmap works correctly here.
 """
-    remove_block!(qc::Circuit, vinds)
+    remove_block!(qc::Circuit, vinds, [vmap])
 
 Remove the nodes in the block given by collection `vinds` and connect incoming and outgoing
 neighbors of the block on each wire. Assume the first and last elements are on incoming and outgoing
 wires to the block, respectively.
 """
-function remove_block!(qc::Circuit, vinds, vmap)
+function remove_block!(qc::Circuit, vinds, vmap = VertexMap(index_type(qc.graph)))
     isempty(vinds) && return vmap
     for ind in vinds # rem
         mappedind = vmap(ind)
-        for param in getparams(qc, mappedind)
+        for (pos, param) in enumerate(getparams(qc, mappedind))
             if isa(param, ParamRef)
-                Parameters.remove_paramref!(qc.param_table, param, mappedind)
+                Parameters.remove_paramref!(qc.param_table, param, mappedind, pos)
             end
         end
     end
@@ -511,6 +540,14 @@ function remove_block!(qc::Circuit, vinds, vmap)
     # Reconnect wire directly from in- to out-neighbor of vind
     NodeStructs.rewire_across_nodes!(qc.nodes, vmap(vinds[1]), vmap(vinds[end]))
     RemoveVertices.remove_vertices!(qc, vinds, remove_vertex!, vmap)
+    for vind in vinds
+        oldind = vmap(vind, Val(:Reverse))
+        newind = vind
+#        @show oldind, newind
+        if newind <= length(qc)
+            reindex_param_table!(qc, oldind, newind)
+        end
+    end
     return vmap
 end
 
@@ -673,6 +710,7 @@ end
 
 Base.getindex(qc::Circuit, ind::Integer) = qc.nodes[ind]
 Base.getindex(qc::Circuit, inds::AbstractVector) = @view qc.nodes[inds]
+Interface.getnodes(qc::Circuit) = qc.nodes
 
 GraphsExt.edges_topological(qc::Circuit) = GraphsExt.edges_topological(qc.graph)
 
@@ -717,6 +755,24 @@ longest_path(qc::Circuit) = dag_longest_path(qc.graph)
 ### Check integrity of Circuit
 ###
 
+"""
+    check_param_table(qc::Circuit)
+
+Check that the (node, paramter position) pairs recorded in the table actually contain the recorded parameter.
+This check could fail if reindexing is not done properly.
+"""
+function check_param_table(qc)
+    table = param_table(qc)
+    for param_index = keys(table.tab)
+        for coords in table.tab[param_index]
+            ref = getparam(qc, coords[1], coords[2])
+            if ref.ind != param_index
+                throw(CircuitError("Parmeter $param_index not found at node/position $coords. Found $(ref.ind)"))
+            end
+        end
+    end
+end
+
 # Evaluate `ex` and print the code `ex` if false. Return the value whether true or false
 macro __shfail(ex)
     quote
@@ -742,6 +798,7 @@ function check(qc::Circuit)
         println("outn=$(outneighbors(qc, v)), inn=$(inneighbors(qc, v))")
         return println()
     end
+    check_param_table(qc)
     if Graphs.nv(qc.graph) != length(qc.nodes)
         throw(CircuitError("Number of nodes in DAG is not equal to length(qc.nodes)"))
     end
