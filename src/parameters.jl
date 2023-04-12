@@ -62,6 +62,17 @@ Base.in(param::T, pm::ParameterMap{T}) where {T} = haskey(pm._ptoi, param)
 Base.axes(pm::ParameterMap) = axes(1:length(pm))
 Base.lastindex(pm::ParameterMap) = length(pm)
 
+# TODO: Do we want to keep the parameters in the map and table in sync?
+# The table uses the map. It just doesn't delete entries that are no longer used.
+"""
+    num_parameters(param_map::ParameterMap)
+
+Return the number of unique symbolic parameters expressions in `param_map`.
+
+Note that this number may be different from the number of parameters in the circuit or
+the parameter table because it is possible that some parmeters in the map are not in use
+in the circuit.
+"""
 Interface.num_parameters(pm::ParameterMap) = length(pm)
 
 function Base.copy(pm::ParameterMap{T, IntT}) where {T, IntT}
@@ -122,8 +133,21 @@ function Base.copy(pt::ParameterTable)
     return ParameterTable(copy(pt.parammap), copy(pt.tab))
 end
 
+Base.length(pt::ParameterTable) = length(pt.tab)
 Base.isempty(pt::ParameterTable) = isempty(pt.tab)
 
+"""
+    num_parameters(param_table::ParameterTable)
+
+Return the number of unique symbolic parameter expressions recorded in `param_table`.
+"""
+Interface.num_parameters(pt::ParameterTable) = length(pt)
+
+"""
+    parameters(param_table::ParameterTable)
+
+Return an iterator over the symbolic parameter expressions in the map used by `param_table`.
+"""
 parameters(pt::ParameterTable) = parameters(pt.parammap)
 
 ParamRef(pt::ParameterTable{PT}, param::PT) where {PT} = ParamRef(pt.parammap[param])
@@ -157,7 +181,7 @@ end
 remove_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer, param_pos::Integer) =
     remove_paramref!(pt, param_ref.ind, node_ind, param_pos)
 
-function remove_paramref!(pt::ParameterTable, param_ind::Integer, node_ind::Integer)
+function remove_paramref!(pt::ParameterTable, param_ind::Integer, node_ind::Integer, param_pos::Integer)
     vector = get(pt.tab, param_ind, nothing)
     if isnothing(vector)
         error("Parameter table has no entry for $param_ind")

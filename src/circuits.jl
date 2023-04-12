@@ -257,6 +257,15 @@ end
 
 Parameters.newparameter!(qc::Circuit, args...) = Parameters.newparameter!(qc.param_table, args...)
 Parameters.parameters(qc::Circuit) = Parameters.parameters(qc.param_table)
+
+"""
+    num_parameters(qc::Circuit)
+
+Return the number of unique symbolic parameter expressions in use in gates in `qc`.
+
+For example, if exactly `t1`, `t2`, and `t1 - t2` are present, then `num_parameters` will return `3`.
+Non-symbolic parameters, such as `1.5`, do not count.
+"""
 Interface.num_parameters(qc::Circuit) = Interface.num_parameters(qc.param_table)
 Parameters.ParamRef(qc::Circuit, args...) = Parameters.ParamRef(qc.param_table, args...)
 
@@ -437,6 +446,8 @@ function add_node!(
     return new_vert
 end
 
+# TODO: optionally return (maybe take as well?) a vertex map
+# TODO: factor out the param removal code
 """
     remove_node!(qc::Circuit, vind::Integer)
 
@@ -448,9 +459,9 @@ function remove_node!(qc::Circuit, vind::Integer)
     # rem_vertex! will remove existing edges for us below.
     params = getparams(qc, vind) # qc.nodes.params[vind]
     if !isnothing(params)
-        for param in params
+        for (pos, param) in enumerate(params)
             if isa(param, ParamRef)
-                Parameters.remove_paramref!(qc.param_table, param, vind)
+                Parameters.remove_paramref!(qc.param_table, param, vind, pos)
             end
         end
     end
