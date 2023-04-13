@@ -15,18 +15,19 @@ using ..QuantumDAGs: QuantumDAGs
 using ..Interface
 
 # TODO: Find a way to keep export and defs in sync automtically.
-export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
-export Q1NoParam, I, X, Y, Z, H, P, SX, S, T
-export Q2NoParam, CX, CY, CZ, CH, CP, DCX, ECR, SWAP, iSWAP
-export Q1Params1Float, RX, RY, RZ, R
-export Q2Params1Float, RXX, RYY, RZZ, RZX
-export Q2Params2Float, XXmYY, XXpYY
-export Q1Params3Float, U
-export QuCl, Measure
-export UserNoParam, UserParams
-export IONodes, ClInput, ClOutput, Input, Output
-export isinput,
-    isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
+# export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
+# export Q1NoParam, I, X, Y, Z, H, P, SX, S, T
+# export Q2NoParam, CX, CY, CZ, CH, CP, DCX, ECR, SWAP, iSWAP
+# export Q1Params1Float, RX, RY, RZ, R
+# export Q2Params1Float, RXX, RYY, RZZ, RZX
+# export Q2Params2Float, XXmYY, XXpYY
+# export Q1Params3Float, U
+# export UserNoParam, UserParams
+
+# export QuCl, Measure
+# export IONodes, ClInput, ClOutput, Input, Output
+# export isinput,
+#     isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
 
 # Elements are ops, input/output, ... everything that lives on a vertex
 @menum (Element, blocklength=10^3, numblocks=50, compactshow=true)
@@ -42,6 +43,7 @@ export isinput,
     Q2Params2Float
     Q1Params3Float
     UserParams
+    MiscGates
     QuNonGate
     QuCl
     IONodes
@@ -55,6 +57,7 @@ end
 @addinblock Element Q2Params1Float RXX RYY RZZ RZX
 @addinblock Element Q2Params2Float XXmYY XXpYY
 @addinblock Element Q1Params3Float U
+@addinblock Element MiscGates CompoundGate
 # Quantum, non-classical, but not a gate
 @addinblock Element QuNonGate Reset
 # Does Barrier belong here?

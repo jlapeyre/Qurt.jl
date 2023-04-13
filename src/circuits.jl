@@ -456,7 +456,7 @@ function add_node!(
 end
 
 # reindexing after node reindexing has happened.
-function reindex_param_table!(qc::Circuit, from_vert, to_vert)
+function _reindex_param_table!(qc::Circuit, from_vert, to_vert)
     from_vert == to_vert && return
     params = getparams(qc, to_vert)
     table = param_table(qc)
@@ -505,7 +505,7 @@ function remove_node!(qc::Circuit, vind::Integer)
     NodeStructs.rewire_across_node!(qc.nodes, vind)
     # Analogue of rem_vertex! for nodes
     NodeStructs.rem_node!(qc.nodes, vind)
-    reindex_param_table!(qc, 1 + length(qc.nodes), vind)
+    _reindex_param_table!(qc, 1 + length(qc.nodes), vind)
     return nothing
 end
 
@@ -543,9 +543,8 @@ function remove_block!(qc::Circuit, vinds, vmap = VertexMap(index_type(qc.graph)
     for vind in vinds
         oldind = vmap(vind, Val(:Reverse))
         newind = vind
-#        @show oldind, newind
         if newind <= length(qc)
-            reindex_param_table!(qc, oldind, newind)
+            _reindex_param_table!(qc, oldind, newind)
         end
     end
     return vmap

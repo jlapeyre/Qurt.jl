@@ -107,6 +107,12 @@ end
 
 parameter(_name::Symbol, ::Type{T}=DEF_PARAM_TYPE) where {T} = SymbolicUtils.Sym{T}(_name)
 
+"""
+    parameter_vector(sym::Symbol, num_params::Integer, ::Type{PT}=DEF_PARAM_TYPE) where {PT}
+
+Return a `Vector` of symbolic parameters with base name `sym`. Each element will have type
+`PT`.
+"""
 function parameter_vector(sym::Symbol, num_params::Integer, ::Type{PT}=DEF_PARAM_TYPE) where {PT}
    return [parameter(Symbol(sym, i), PT) for i in 1:num_params]
 end
