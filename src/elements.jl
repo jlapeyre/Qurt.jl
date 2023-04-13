@@ -14,6 +14,8 @@ using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
 using ..Interface
 
+# Note that all creations, @addinblock, etc, put the new symbol on the export list.
+# We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
 # TODO: Find a way to keep export and defs in sync automtically.
 # export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
 # export Q1NoParam, I, X, Y, Z, H, P, SX, S, T
@@ -72,6 +74,8 @@ const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 # Hmm. what if the op takes varying number of qubits. Like measure
 const Q1Blocks = (Q1GateBlocks..., IONodes)
 const Q2Blocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
+
+#import .CElements: I, X, Y, Z, Input
 
 isgate(x::Element) = MEnums.ltblock(x, QuCl)
 const Paulis = (I, X, Y, Z)
