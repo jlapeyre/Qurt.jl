@@ -18,6 +18,7 @@ export num_qubits,
     count_ops,
     count_wires,
     check,
+    getcircuit,
     getelement,
     getwires,
     getquwires,
@@ -97,5 +98,7 @@ function node end
 # TODO: obsolete, remove
 # Return object with info about eh node/vertex
 function nodevertex end
+
+function getcircuit end
 
 end # module Interface

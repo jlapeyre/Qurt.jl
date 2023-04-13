@@ -195,7 +195,7 @@ function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
     ncl = num_clbits(qc)
     nv = Graphs.nv(qc)
     ne = Graphs.ne(qc)
-    return println(
+    return print(
         io,
         "circuit {nq=$nq, ncl=$ncl, nv=$nv, ne=$ne} $(typeof(qc.graph)) $(eltype(qc.nodes))",
     )

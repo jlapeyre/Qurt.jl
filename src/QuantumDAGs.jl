@@ -33,24 +33,26 @@ include("builders.jl")
     @precompile_all_calls begin
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
-
-        # qc = Circuits.Circuit(2)
-        # Circuits.add_node!(qc, Elements.X, (1,))
-        # Circuits.add_node!(qc, Elements.Y, (2,))
-        # Circuits.add_node!(qc, Elements.CX, (1, 2))
-        # IOQDAGs.print_edges(devnull, qc) # stdout would precompile more
-        # Circuits.check(qc)
-        # Circuits.remove_node!(qc, 5)
-        # Circuits.remove_node!(qc, 5)
-        # Circuits.remove_node!(qc, 5)
-        # Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
-        # qc = Circuits.Circuit(2)
-        # Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
-        # find_runs_two_wires(qc, CX)
-        # cx_cancellation!(qc)
-        # (theta,) = QuantumDAGs.Parameters.@makesyms θ
-        # qc = Circuits.Circuit(1)
-        # add_node!(qc, (Elements.RX, theta), (1,))
+        using SymbolicUtils: SymbolicUtils, @syms, Sym
+        qc = Circuits.Circuit(2)
+        Circuits.add_node!(qc, Elements.X, (1,))
+        Circuits.add_node!(qc, Elements.Y, (2,))
+        Circuits.add_node!(qc, Elements.CX, (1, 2))
+        IOQDAGs.print_edges(devnull, qc) # stdout would precompile more
+        Circuits.check(qc)
+        Circuits.remove_node!(qc, 5)
+        Circuits.remove_node!(qc, 5)
+        Circuits.remove_node!(qc, 5)
+        Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
+        qc = Circuits.Circuit(2)
+        Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
+        find_runs_two_wires(qc, CX)
+        cx_cancellation!(qc)
+        (theta,) = QuantumDAGs.Parameters.@makesyms θ
+        qc = Circuits.Circuit(1)
+        add_node!(qc, (Elements.RX, theta), (1,))
+        t1 = Sym{Real}(:t1)
+        Builders.@build qc RZ{t1}(1)
     end
 end
 

@@ -59,7 +59,8 @@ end
 @addinblock Element Q2Params1Float RXX RYY RZZ RZX
 @addinblock Element Q2Params2Float XXmYY XXpYY
 @addinblock Element Q1Params3Float U
-@addinblock Element MiscGates CompoundGate
+# TODO: Better solution for namespace coll. than appending 'Op'
+@addinblock Element MiscGates CompoundGateOp
 # Quantum, non-classical, but not a gate
 @addinblock Element QuNonGate Reset
 # Does Barrier belong here?
@@ -75,13 +76,13 @@ const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 const Q1Blocks = (Q1GateBlocks..., IONodes)
 const Q2Blocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 
-#import .CElements: I, X, Y, Z, Input
-
 isgate(x::Element) = MEnums.ltblock(x, QuCl)
 const Paulis = (I, X, Y, Z)
 
 # What can we do here ?
+# sorted search ?
 function isclifford end
+# _involutions = sort!([I, X, Y, ..])
 function isinvolution end
 
 inblocks(elem, blocks) = any(block -> inblock(elem, Integer(block)), blocks)
