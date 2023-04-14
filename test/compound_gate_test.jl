@@ -1,5 +1,5 @@
-using QuantumDAGs.Elements: CompoundGateOp
-using QuantumDAGs.CompoundGates: CompoundGate
+using .Elements: CompoundGateOp
+using .CompoundGates: CompoundGate
 
 @testset "compound gate" begin
     qcin = Circuit(1)

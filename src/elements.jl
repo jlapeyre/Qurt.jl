@@ -12,7 +12,7 @@ module Elements
 using MEnums: MEnums, MEnum, @menum, @addinblock, inblock, ltblock
 using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
-using ..Interface
+import ..Interface: Interface
 
 # Note that all creations, @addinblock, etc, put the new symbol on the export list.
 # We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
@@ -46,8 +46,9 @@ using ..Interface
     Q1Params3Float
     UserParams
     MiscGates
-    QuNonGate
+    # All and only gates above
     QuCl
+    QuNonGate
     IONodes
     ControlFlow
 end
@@ -61,6 +62,9 @@ end
 @addinblock Element Q1Params3Float U
 # TODO: Better solution for namespace coll. than appending 'Op'
 @addinblock Element MiscGates CompoundGateOp
+
+# Try this. CustomGate has no properties. You have to look further in params
+@addinblock Element MiscGates CustomGate
 # Quantum, non-classical, but not a gate
 @addinblock Element QuNonGate Reset
 # Does Barrier belong here?
@@ -76,14 +80,11 @@ const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 const Q1Blocks = (Q1GateBlocks..., IONodes)
 const Q2Blocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 
-isgate(x::Element) = MEnums.ltblock(x, QuCl)
-const Paulis = (I, X, Y, Z)
+function Interface.isgate(x::Element)
+    return MEnums.ltblock(x, QuCl)
+end
 
-# What can we do here ?
-# sorted search ?
-function isclifford end
-# _involutions = sort!([I, X, Y, ..])
-function isinvolution end
+const Paulis = (I, X, Y, Z)
 
 inblocks(elem, blocks) = any(block -> inblock(elem, Integer(block)), blocks)
 
@@ -206,6 +207,16 @@ end
 
 # Element is not an Integer. Julia assumes it is not integer like. That is x / y makes sense, etc.
 Base.in(x::Element, r::AbstractRange{Element}) = first(r) <= x <= last(r)
+
+const _INVOLUTIONS = sort!(Element[I, X, Y, Z, H, CX, CY, CZ, CH, SWAP])
+const _NOT_INVOLUTIONS = sort!(Element[SX, S, T])
+
+function Interface.isinvolution(el::Element)
+    insorted(el, _INVOLUTIONS) && return true
+    insorted(el, _NOT_INVOLUTIONS) && return false
+    return nothing
+end
+
 
 # TODO: We already keep track of largest used index in blocks. We can use them
 # To do the following automatically. Eg define range and get `range(Q1NoParam)`.

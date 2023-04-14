@@ -105,10 +105,10 @@ There is no meaning in the order of neighboring vertices in the edge lists, in f
 
 The number of wires is equal to `nqubits + nclbits`.
 """
-@concrete struct Circuit
-    graph
-    nodes
-    param_table
+struct Circuit{GT, NT, PT, GPT}
+    graph::GT
+    nodes::NT
+    param_table::PT
     input_qu_vertices::Vector{Int}
     output_qu_vertices::Vector{Int}
     input_cl_vertices::Vector{Int}
@@ -117,8 +117,24 @@ The number of wires is equal to `nqubits + nclbits`.
     output_vertices::Vector{Int}
     nqubits::Int
     nclbits::Int
-    global_phase # Should be called just "phase", but Qiskit uses this.
+    global_phase::GPT # Should be called just "phase", but Qiskit uses this.
 end
+
+# @concrete struct Circuit
+#     graph
+#     nodes
+#     param_table
+#     input_qu_vertices::Vector{Int}
+#     output_qu_vertices::Vector{Int}
+#     input_cl_vertices::Vector{Int}
+#     output_cl_vertices::Vector{Int}
+#     input_vertices::Vector{Int}
+#     output_vertices::Vector{Int}
+#     nqubits::Int
+#     nclbits::Int
+#     global_phase # Should be called just "phase", but Qiskit uses this.
+# end
+
 
 function Circuit(nqubits::Integer, nclbits=0; global_phase=0)
     return Circuit(
@@ -299,6 +315,8 @@ elementsym(qc::Circuit, ind) = Symbol(getelement(qc, ind))
 getwires(qc::Circuit, ind) = getwires(qc.nodes, ind)
 getquwires(qc::Circuit, ind) = getquwires(qc.nodes, ind)
 getclwires(qc::Circuit, ind) = getclwires(qc.nodes, ind)
+
+Interface.isinvolution(qc::Circuit, vertex) = Interface.isinvolution(qc.nodes, vertex)
 
 function _get_or_deref(qc::Circuit, param)
     !isa(param, ParamRef) && return param
@@ -653,7 +671,6 @@ import .Elements: isinput, isoutput, isquinput, isquoutput, isclinput, iscloutpu
 for f in (
     :count_ops,
     :count_wires,
-    :nodevertex,
     :wireind,
     :outneighborind,
     :inneighborind,

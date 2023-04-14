@@ -1,12 +1,12 @@
 using SymbolicUtils: @syms
 using MEnums: @addinblock
-using QuantumDAGs.Elements: UserParams
+using .Elements: UserParams
 
-using QuantumDAGs.Circuits: param_table, remove_block!
-using QuantumDAGs.Interface: num_parameters
+using .Circuits: param_table, remove_block!
+using .Interface: num_parameters
 
 @addinblock Element UserParams G1 G2 G3 G4 G5 G6 G7 G8
-using QuantumDAGs.Elements: G1, G2, G3, G4, G5, G6, G7, G8
+using .Elements: G1, G2, G3, G4, G5, G6, G7, G8
 
 @testset "symbolic params" begin
     qc = Circuit(1)

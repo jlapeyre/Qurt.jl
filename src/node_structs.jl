@@ -21,7 +21,8 @@ using DictTools: DictTools
 # Too bad "neighbor" is the English word (or worse "neighbour"). How about "vecino"?
 import Graphs: Graphs, outneighbors, inneighbors, indegree, outdegree
 
-using ..Elements: Elements, Element
+using ..Elements: Elements, Element, CustomGate
+
 import ..Interface:
     count_ops,
     count_wires,
@@ -29,21 +30,21 @@ import ..Interface:
     num_qubits,
     num_clbits,
     num_qu_cl_bits,
-    nodevertex,
     getelement,
     getwires,
     getparams,
     getparam,
     getquwires,
     getclwires,
-    node
+    node,
+    isinvolution
+
 
 using ..Utils: copyresize!
 
 export Node,
     new_node_vector,
     count_wires,
-    nodevertex,
     wireind,
     outneighborind,
     inneighborind,
@@ -142,6 +143,17 @@ end
 for f in (:isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput, :isionode)
     @eval (Elements.$f)(nv::ANodeArrays, ind) = (Elements.$f)(getelement(nv, ind))
 end
+
+
+function isinvolution(nodes::ANodeArrays, vertex)
+    el = getelement(nodes, vertex)
+    result = isinvolution(el)
+    isnothing(result) || return result
+    # After this branch, allocation occurs. Don't know why.
+    el === Elements.CustomGate && return isinvolution(getparam(nodes, vertex, 1))
+    return false
+end
+
 
 """
     wireind(circuit, node_ind, wire::Integer)
@@ -281,33 +293,6 @@ index of `wire` on that in-neighbor.
 """
 function inneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer)
     return _neighborind(inneighbors, nodes, node_ind, wire)
-end
-
-"""
-    nodevertex(nv::ANodeArrays, i::Integer)
-
-Return (nested) `NamedTuple` of information on node at index `i`.
-"""
-function nodevertex(nv::ANodeArrays, i::Integer)
-    back = nv.inwiremap[i]
-    fore = nv.outwiremap[i]
-    wires = nv.wires[i]
-    function _collect(verts)
-        return if isempty(verts)
-            wires
-        else
-            Tuple((w=w_, v=v_) for (w_, v_) in zip(wires, verts))
-        end
-    end
-    vwpair_back = _collect(back)
-    vwpair_fore = _collect(fore)
-    return (
-        els=nv.element[i],
-        back=vwpair_back,
-        fore=vwpair_fore,
-        nqu=nv.numquwires[i],
-        params=nv.params[i],
-    )
 end
 
 function check(nodes::ANodeArrays)

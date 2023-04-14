@@ -6,8 +6,7 @@ using Dictionaries: Dictionary
 
 import QuantumDAGs
 
-# TODO: how to import Elements so that I can do further `import Elements: obj` ?
-# import QuantumDAGs.Elements
+import QuantumDAGs: Circuits, NodeStructs, Elements, CompoundGates, Interface
 
 using QuantumDAGs.Interface:
     count_wires, count_ops, num_qubits, num_clbits, getelement, getwires, getparams
@@ -60,8 +59,7 @@ using QuantumDAGs.NodeStructs: NodeVector
 using MEnums: @addinblock
 using QuantumDAGs: QuantumDAGs
 
-
-include("jet_test.jl")
+include("properties_test.jl")
 include("compound_gate_test.jl")
 include("symbolic_params_test.jl")
 include("elements_test.jl")
@@ -69,3 +67,4 @@ include("passes/cancellation_test.jl")
 include("quantumdags_test.jl")
 include("remove_node_test.jl")
 include("aqua_test.jl")
+include("jet_test.jl")

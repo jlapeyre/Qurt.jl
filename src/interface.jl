@@ -27,7 +27,9 @@ export num_qubits,
     getparam,
     getnodes,
     node,
-    nodevertex
+    isclifford,
+    isinvolution
+
 
 ## TODO: we could include an export list for no reason than for the REPL to allow completion
 ## There must be another way to do this.
@@ -95,10 +97,29 @@ Return the node on vertex `vert`, or collection `verts`.
 """
 function node end
 
-# TODO: obsolete, remove
-# Return object with info about eh node/vertex
-function nodevertex end
-
 function getcircuit end
 
+# What can we do here ?
+# sorted search ?
+function isclifford end
+# _involutions = sort!([I, X, Y, ..])
+
+"""
+    isinvolution(obj)
+
+Return `true` if the `obj` is the inverse of `obj`.
+"""
+function isinvolution end
+
+"""
+    iscustomgate(gate)
+
+Return `true` if the gate is tagged `CustomGate::Element`.
+"""
+function iscustomgate end
+
+function isgate end
+
+
 end # module Interface
+

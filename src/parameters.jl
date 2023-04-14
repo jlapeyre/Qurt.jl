@@ -102,8 +102,6 @@ function newparameter!(pm::ParameterMap, sym::Symbol, ::Type{T}=DEF_PARAM_TYPE) 
     return newparameter!(pm, parameter(sym, T))
 end
 function newparameter!(pm::ParameterMap{T}, param::T; check::Bool=true) where {T}
-#    check && haskey(pm._ptoi, param) && error("Parameter $param already present")
-#    check && haskey(pm._ptoi, param) && error("Parameter already present") # JET does not allow $param
     check && (param in pm) && error("Parameter $param already present")
     push!(pm, param)
     return param

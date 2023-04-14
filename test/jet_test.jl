@@ -81,5 +81,7 @@ end
     reports = analyze_package(package_to_analyze)
     somereports = filter_reports(reports, package_to_analyze)
     @show somereports
+    number_of_ignored_jet_reports = length(reports) - length(somereports)
+    @show number_of_ignored_jet_reports
     @test length(somereports) == 0
 end # @testset "jet" begin

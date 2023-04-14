@@ -1,9 +1,8 @@
 @testset "elements" begin
-    using QuantumDAGs.Interface: num_clbits, num_qubits
-    using QuantumDAGs.Elements: isgate
-    using QuantumDAGs.Elements: I, X, Y, Z, H, P, SX, S, T, RX, RY, RZ, R, CX, CY, CZ,
+    using .Interface: num_clbits, num_qubits, isgate
+    using .Elements: I, X, Y, Z, H, P, SX, S, T, RX, RY, RZ, R, CX, CY, CZ,
     CH, CP, DCX, ECR, SWAP, iSWAP
-    using QuantumDAGs.Elements: Q1Measure, Input, Output, ClInput, ClOutput
+    using .Elements: Q1Measure, Input, Output, ClInput, ClOutput
 
     for op in (I, X, Y, Z, H, P, SX, S, T, RX, RY, RZ, R, CX, CY, CZ)
         @test isgate(op)
@@ -16,7 +15,7 @@
     for op in (Measure,)
         @test isnothing(num_qubits(op))
     end
-    for op in (I, X, Y, Z, H, SX, S, T, P, R, RX, RY, RZ, Y)
+    for op in (I, X, Y, Z, H, SX, S, T, P, R, RX, RY, RZ)
         @test num_qubits(op) == 1
     end
     @test num_qubits(Q1Measure) == 1
