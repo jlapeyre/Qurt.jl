@@ -519,20 +519,19 @@ wires to the block, respectively.
 """
 function remove_block!(qc::Circuit, vinds, vmap = VertexMap(index_type(qc.graph)))
     isempty(vinds) && return vmap
-    for mappedind in vmap.(vinds) # rem
+    mappedinds = vmap.(vinds)
+    for mappedind in mappedinds
         Parameters.remove_paramrefs_group!(qc.param_table, getparams(qc, mappedind), mappedind)
     end
     for (from, to) in
-        zip(inneighbors(qc, vmap(vinds[1])), outneighbors(qc, vmap(vinds[end])))
+        zip(inneighbors(qc, mappedinds[1]), outneighbors(qc, mappedinds[end]))
         Graphs.add_edge!(qc.graph, from, to)
     end
-    NodeStructs.rewire_across_nodes!(qc.nodes, vmap(vinds[1]), vmap(vinds[end]))
+    NodeStructs.rewire_across_nodes!(qc.nodes, mappedinds[1], mappedinds[end])
     RemoveVertices.remove_vertices!(qc, vinds, remove_vertex!, vmap)
     for vind in vinds
-        oldind = vmap(vind, Val(:Reverse))
-        newind = vind
-        if newind <= length(qc)
-            _reindex_param_table!(qc, oldind, newind)
+        if vind <= length(qc)
+            _reindex_param_table!(qc, vmap(vind, Val(:Reverse)), vind)
         end
     end
     return vmap
