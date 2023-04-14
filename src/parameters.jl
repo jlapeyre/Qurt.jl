@@ -1,5 +1,5 @@
 module Parameters
-using SymbolicUtils: SymbolicUtils, @syms, Sym, BasicSymbolic
+using SymbolicUtils: SymbolicUtils, @syms, Sym, BasicSymbolic, Symbolic
 
 import ..Interface
 
@@ -17,7 +17,7 @@ struct ParamRef
     ind::Int
 end
 
-struct ParameterMap{T, IntT}
+struct ParameterMap{T<:Symbolic, IntT}
     _itop::Dict{IntT,T}
     _ptoi::Dict{T,IntT}
 end
@@ -33,6 +33,8 @@ param_type(::ParameterMap{T}) where {T} = T
 int_type(::ParameterMap{<:Any,IntT}) where {IntT} = IntT
 
 Base.getindex(pm::ParameterMap, ind::Integer) = pm._itop[ind]
+Base.getindex(pm::ParameterMap, inds::AbstractVector{<:Integer}) = pm._itop[inds]
+
 Base.getindex(pm::ParameterMap{T}, param::T) where {T} = pm._ptoi[param]
 
 Base.get(pm::ParameterMap{T}, param::T, default) where {T} = get(pm._ptoi, param, default)
@@ -99,7 +101,9 @@ end
 function newparameter!(pm::ParameterMap, sym::Symbol, ::Type{T}=DEF_PARAM_TYPE) where {T}
     return newparameter!(pm, parameter(sym, T))
 end
-function newparameter!(pm::ParameterMap{T}, param::T; check=true) where {T}
+function newparameter!(pm::ParameterMap{T}, param::T; check::Bool=true) where {T}
+#    check && haskey(pm._ptoi, param) && error("Parameter $param already present")
+#    check && haskey(pm._ptoi, param) && error("Parameter already present") # JET does not allow $param
     check && (param in pm) && error("Parameter $param already present")
     push!(pm, param)
     return param

@@ -29,12 +29,14 @@ end
 
 Duration(x::T) where {T<:Real} = Duration{T}(x, tuple())
 
-function Base.:+(d1::Duration, d2::Duration)
-    (d1s, d2s) = (d1.stretch_terms, d2.stretch_terms)
-    if all(x -> !any(y -> x in y, d2s), d1s)
-        return Duration(d1.const_term + d2.const_term, (d1s..., d2s...))
-    end
-    return error("not implemented")
-end
+## TODO: Jet says this is broken. It is probably correct
+## But this is not yet tested
+# function Base.:+(d1::Duration, d2::Duration)
+#     (d1s, d2s) = (d1.stretch_terms, d2.stretch_terms)
+#     if all(x -> !any(y -> x in y, d2s), d1s)
+#         return Duration(d1.const_term + d2.const_term, (d1s..., d2s...))
+#     end
+#     return error("not implemented")
+# end
 
 end # module Durations
