@@ -2,12 +2,28 @@ using Test
 using QuantumDAGs
 using JET
 
+const package_to_analyze = QuantumDAGs
+
+## Ignore these errors. The first string in the pair is
+## the report message. The second is the file it occurs in.
+## Not very precise, but ok for now.
+const SKIP_MATCHES = [
+    # Trying to print a Sym could raise this error.
+    ("type Nothing has no field den", "parameters.jl"),
+]
+
+## Skip reports for which return true
+const SKIP_REP_TESTS = [
+    rep -> rep isa JET.NonBooleanCondErrorReport && rep.t == Any[Missing],
+    rep -> rep isa JET.UncaughtExceptionReport,
+]
+
 ##
 ## JET. Static analysis of the package
 ##
 
-function analyze_package()
-    result = report_package("QuantumDAGs";
+function analyze_package(package_name=package_to_analyze)
+    result = report_package(string(package_name),
                             report_pass=JET.BasicPass(),
                             ignored_modules=( # TODO fix issues with these modules or report them upstrem
                                               #                AnyFrameModule(Compose),
@@ -18,56 +34,52 @@ function analyze_package()
     return reports
 end
 
-
 """
     match_report(package, report::InferenceErrorReport, msg::String, file::String)
 
-Return `true` the message is `msg` and the first file in the stack trace is `file`.
+Return `true` if the message is `msg` and the first file in the stack trace is `file`.
 
 `file` should be given relative to the `src` directory of `package`.
 """
 function match_report(package, report::JET.InferenceErrorReport, msg::String, file::String)
+    hasproperty(report, :msg) || return false
     report.msg != msg && return false
     filepath = joinpath(dirname(pathof(package)), file)
     report_filepath = string(report.vst[1].file)
     return report_filepath == filepath
 end
 
+function match_reports(package, report::JET.InferenceErrorReport, match_data::Vector)
+    for (msg, file) in match_data
+        match_report(package, report, msg, file) && return true
+    end
+    return false
+end
+
+function do_rep_skip_test(rep, skip_rep_tests=SKIP_REP_TESTS)
+    for rep_test in skip_rep_tests
+        rep_test(rep) && return true
+    end
+    return false
+end
 
 # Filter out reports that we don't consider failures.
 # We could flag some that could be fixed as broken tests.
 # This could be more fine grained.
 
-const SKIP_MATCHES = [
-    # Trying to print a Sym could raise this error.
-    ("type Nothing has no field den", "parameters.jl"),
-]
-
-function filter_reports(reports, package=QuantumDAGs)
+function filter_reports(reports, package)
     somereports = empty(reports)
     for rep in reports
-        if rep isa JET.NonBooleanCondErrorReport && rep.t == Any[Missing]
-            continue
-        end
-        if rep isa JET.UncaughtExceptionReport
-            continue
-        end
-        gotmatch = false
-        for (msg, file) in SKIP_MATCHES
-            if match_report(package, rep, msg, file)
-                gotmatch = true
-                continue
-            end
-        end
-        gotmatch && continue
+        do_rep_skip_test(rep) && continue
+        match_reports(package, rep, SKIP_MATCHES) && continue
         push!(somereports, rep)
     end
     return somereports
 end
 
 @testset "jet" begin
-    reports = analyze_package()
-    somereports = filter_reports(reports)
+    reports = analyze_package(package_to_analyze)
+    somereports = filter_reports(reports, package_to_analyze)
     @show somereports
     @test length(somereports) == 0
 end # @testset "jet" begin
