@@ -46,7 +46,11 @@ import ..NodeStructs:
     setinwire_ind,
     wirenodes,
     setelement!,
-    substitute_node!
+    substitute_node!,
+    two_qubit_ops,
+    multi_qubit_ops,
+    n_qubit_ops,
+    find_nodes
 
 using GraphsExt: GraphsExt, split_edge!, dag_longest_path
 using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
@@ -624,64 +628,6 @@ function quantum_successors(qc::Circuit, vert)
     return unique!(s)
 end
 
-# function _dict_remove_vertices!(g::SimpleDiGraph{IntT}, vertices) where {IntT}
-#     vmap = Dict{IntT,IntT}()
-#     ivmap = Dict{IntT,IntT}()
-#     for v in vertices
-#         n = Graphs.nv(g)
-#         rv = get(vmap, v, v)
-#         delete!(vmap, v)
-#         Graphs.rem_vertex!(g, rv)
-#         if rv != n # If not last vertex, then swap and pop was done
-#             nval = get(vmap, rv, rv)
-#             nn = _follow_map(ivmap, n) # find inv map for current last vertex
-#             vmap[nn] = nval
-#             ivmap[nval] = nn
-#         end
-#     end
-#     return (vmap, ivmap)
-# end
-
-# TODO: following used in devel. Are they needed?
-# backward map
-# function __map_edges(g, vmap::AbstractVector)
-#     return [Graphs.Edge(vmap[e.src], vmap[e.dst]) for e in Graphs.edges(g)]
-# end
-
-# function __map_edges(g, vmap::Dict)
-#     ivmap = empty(vmap)
-#     for k in keys(vmap)
-#         v = vmap[k]
-#         if v in keys(ivmap)
-#             println(vmap)
-#             @show vmap
-#             throw(ArgumentError("Multiple vals"))
-#         end
-#         ivmap[v] = k
-#     end
-#     return [
-#         Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for
-#         e in Graphs.edges(g)
-#     ]
-# end
-
-# # Forward map
-# function __map_edges(g, vmap::AbstractDictionary)
-#     ivmap = empty(vmap)
-#     for k in keys(vmap)
-#         v = vmap[k]
-#         if v in keys(ivmap)
-#             println(vmap)
-#             @show vmap
-#             throw(ArgumentError("Multiple vals"))
-#         end
-#         insert!(ivmap, v, k)
-#     end
-#     return [
-#         Graphs.Edge(get(ivmap, e.src, e.src), get(ivmap, e.dst, e.dst)) for
-#         e in Graphs.edges(g)
-#     ]
-# end
 
 ###
 ### Forwarded methods
@@ -689,6 +635,7 @@ end
 
 # TODO: Do we really want to forward all of this stuff? Or just provide an accessor to the
 # nodes field of `Circuit`? Some should be forwarded. Audit them.
+#
 # TODO, we need to define these in nodes if we want them.
 # But we will not want Vector...
 # Forward these methods from `Circuit` to the container of nodes.
@@ -741,6 +688,11 @@ for f in (
     :substitute_node!,
     :setelement!,
     :node,
+    :find_nodes,
+    :named_nodes,
+    :two_qubit_ops,
+    :multi_qubit_ops,
+    :n_qubit_ops,
 )
     @eval $f(qc::Circuit, args...) = $f(qc.nodes, args...)
 end

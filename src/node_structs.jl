@@ -51,6 +51,7 @@ export Node,
     setinwire_ind,
     two_qubit_ops,
     multi_qubit_ops,
+    n_qubit_ops,
     named_nodes,
     wirenodes,
     substitute_node!,
@@ -531,14 +532,31 @@ function named_nodes(nodes::ANodeArrays, names...)
 end
 
 """
-    two_qubit_ops(nodes::ANodeArrays, names...)
+    n_qubit_ops(nodes::ANodeArrays, n::Integer)
 
 Return a view of `nodes` containing all with two qubit wires.
 """
-two_qubit_ops(nodes::ANodeArrays) = find_nodes(x -> x.numquwires == 2, nodes, :numquwires)
+n_qubit_ops(nodes::ANodeArrays, ::Val{N}) where {N} = find_nodes(x -> x.numquwires == N, nodes, :numquwires)
+n_qubit_ops(nodes::ANodeArrays, n::Integer) = n_qubit_ops(nodes, Val(n))
+
+# TODO: These are more efficient than n_qubit_ops(nodes, 2) in benchmarks, but it could be a testing artifact.
+"""
+    two_qubit_ops(nodes::ANodeArrays)
+
+Return a view of `nodes` containing all with two qubit wires.
+"""
+two_qubit_ops(nodes::ANodeArrays) = n_qubit_ops(nodes, Val(2))
 
 """
-    multi_qubit_ops(nodes::ANodeArrays, names...)
+    one_qubit_ops(nodes::ANodeArrays)
+
+Return a view of `nodes` containing all with two qubit wires.
+"""
+one_qubit_ops(nodes::ANodeArrays) = n_qubit_ops(nodes, Val(1))
+
+
+"""
+    multi_qubit_ops(nodes::ANodeArrays)
 
 Return a view of `nodes` containing all with two qubit wires.
 """

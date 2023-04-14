@@ -4,6 +4,11 @@ using Test
 
 using Dictionaries: Dictionary
 
+import QuantumDAGs
+
+# TODO: how to import Elements so that I can do further `import Elements: obj` ?
+# import QuantumDAGs.Elements
+
 using QuantumDAGs.Interface:
     count_wires, count_ops, num_qubits, num_clbits, getelement, getwires, getparams
 
@@ -55,6 +60,8 @@ using QuantumDAGs.NodeStructs: NodeVector
 using MEnums: @addinblock
 using QuantumDAGs: QuantumDAGs
 
+
+include("compound_gate_test.jl")
 include("symbolic_params_test.jl")
 include("elements_test.jl")
 include("passes/cancellation_test.jl")

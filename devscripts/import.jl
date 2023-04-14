@@ -12,4 +12,5 @@ using QuantumDAGs.Parameters
 # Only do import here
 import QuantumDAGs.Elements
 import QuantumDAGs.Elements.Element
+import QuantumDAGs.CompoundGates
 using Graphs
