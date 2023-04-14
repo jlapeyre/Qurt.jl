@@ -162,13 +162,13 @@ parameters(pt::ParameterTable) = parameters(pt.parammap)
 
 ParamRef(pt::ParameterTable{PT}, param::PT) where {PT} = ParamRef(pt.parammap[param])
 
-add_paramref!(pt::ParameterTable, sym::Symbol, node_ind::Integer) = add_paramref!(pt, parameter(sym), node_ind, param_pos)
-add_paramref!(pt::ParameterTable, sym::Symbol, ::Type{T}, node_ind::Integer) where {T} = add_paramref!(pt, parameter(sym, T), node_ind, param_pos)
+add_paramref!(pt::ParameterTable, sym::Symbol, node_ind::Integer, param_pos::Integer) = add_paramref!(pt, parameter(sym), node_ind, param_pos)
+add_paramref!(pt::ParameterTable, sym::Symbol, ::Type{T}, node_ind::Integer, param_pos::Integer) where {T} = add_paramref!(pt, parameter(sym, T), node_ind, param_pos)
 
 ## Record in `pt` that `node_ind` has reference to `param`
-function add_paramref!(pt::ParameterTable{PT}, param::PT, node_ind::Integer) where {PT}
+function add_paramref!(pt::ParameterTable{PT}, param::PT, node_ind::Integer, param_pos) where {PT}
     param_ind = getornew(pt.parammap, param)
-    _add_paramref!(pt, param_ind, node_ind)
+    _add_paramref!(pt, param_ind, node_ind, param_pos)
     return param_ind # Needed to creat reference in the other direction
 end
 
