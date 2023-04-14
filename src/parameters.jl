@@ -188,6 +188,17 @@ function _add_paramref!(pt::ParameterTable{PT}, param_ind::Integer, node_ind::In
     end
 end
 
+# Iterate over params, removing any ParamRef's found from the the table
+function remove_paramrefs_group!(pt::ParameterTable, params, node_ind)
+    if !isnothing(params)
+        for (pos, param) in enumerate(params)
+            if isa(param, ParamRef)
+                Parameters.remove_paramref!(pt, param, node_ind, pos)
+            end
+        end
+    end
+end
+
 remove_paramref!(pt::ParameterTable, param_ref::ParamRef, node_ind::Integer, param_pos::Integer) =
     remove_paramref!(pt, param_ref.ind, node_ind, param_pos)
 
