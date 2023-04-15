@@ -10,16 +10,10 @@ Gate representing a string of `n` Pauli operators acting as an `n`-qubit gate.
 """
 struct PauliGate
     paulis::Vector{Element}
-
     function PauliGate(oneqgates)
-        for pauli in oneqgates
-            pauli in Paulis || error("Only 1q Pauli gates are allowed in PauliGate")
-        end
-        return new(collect(oneqgates))
-    end
-    function PauliGate(oneqgates::AbstractVector)
-        all(x -> x in Paulis, oneqgates) || error("Only 1q Pauli gates are allowed in PauliGate")
-        return new(oneqgates)
+        all(x -> in(x, Paulis), oneqgates) || error("Only 1q Pauli gates are allowed in PauliGate")
+        isa(oneqgates, Tuple) && return new(collect(oneqgates))
+        return new(convert(Vector, oneqgates))
     end
 end
 
