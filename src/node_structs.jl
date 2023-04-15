@@ -57,7 +57,7 @@ export Node,
     multi_qubit_ops,
     n_qubit_ops,
     named_nodes,
-    wirenodes,
+    wirevertices,
     substitute_node!,
     setelement!
 
@@ -255,38 +255,39 @@ function _neighborind(fneighbor::Func, nodes, node_ind, wire) where {Func}
 end
 
 ###
-### WireNodes, iterator over vertices on a wire
+### WireVertices, iterator over vertices on a wire
 ###
 
 # TODO: Don't hardcode Int64 here.
-struct WireNodes{NodeT}
+# Iterator over vertices on a wire
+struct WireVertices{NodeT}
     nodes::NodeT
     wire::Int
     init_vertex::Int
 end
 
-Base.eltype(::WireNodes) = Int
+Base.eltype(::WireVertices) = Int
 
-function Base.show(io::IO, wn::WireNodes)
-    return print(io, "wirenodes(wire=$(wn.wire), vert=$(wn.init_vertex))")
+function Base.iterate(wn::WireVertices, vertex=wn.init_vertex)
+    isempty(getoutwiremap(wn.nodes, vertex)) && return nothing # Ought to be an output node
+    return (vertex, outneighbors(wn.nodes, vertex, wn.wire)) # vertex, next_vertex
 end
 
-Base.IteratorSize(::Type{<:WireNodes}) = Base.SizeUnknown()
+function Base.show(io::IO, wn::WireVertices)
+    return print(io, "wirevertices(wire=$(wn.wire), vert=$(wn.init_vertex))")
+end
+
+Base.IteratorSize(::Type{<:WireVertices}) = Base.SizeUnknown()
 
 """
-    wirenodes(nodes, wire, init_vertex)
+    wirevertices(nodes, wire, init_vertex)
 
 Return an iterator over the ordered vertices in `nodes` on `wire` beginning
 with `init_vertex`.
 
 The final output node is omitted.
 """
-wirenodes(nodes, wire, init_vertex) = WireNodes(nodes, wire, init_vertex)
-
-function Base.iterate(wn::WireNodes, vertex=wn.init_vertex)
-    isempty(getoutwiremap(wn.nodes, vertex)) && return nothing # Ought to be an output node
-    return (vertex, outneighbors(wn.nodes, vertex, wn.wire)) # vertex, next_vertex
-end
+wirevertices(nodes, wire, init_vertex) = WireVertices(nodes, wire, init_vertex)
 
 """
     outneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer)

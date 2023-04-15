@@ -45,7 +45,7 @@ import ..NodeStructs:
     inneighborind,
     setoutwire_ind,
     setinwire_ind,
-    wirenodes,
+    wirevertices,
     setelement!,
     substitute_node!,
     two_qubit_ops,
@@ -620,11 +620,11 @@ The returned data is a vector-of-structs view of the underlying data.
 topological_nodes(qc::Circuit) = view(qc.nodes, topological_vertices(qc))
 
 """
-    wirenodes(qc::Circuit, wire::Integer)
+    wirevertices(qc::Circuit, wire::Integer)
 
 Return an iterator over ordered vertices on `wire` beginning with the input node.
 """
-wirenodes(qc::Circuit, wire) = wirenodes(qc.nodes, input_vertex(qc, wire), wire)
+wirevertices(qc::Circuit, wire) = wirevertices(qc.nodes, input_vertex(qc, wire), wire)
 
 """
     predecessors(qc::Circuit, vert)

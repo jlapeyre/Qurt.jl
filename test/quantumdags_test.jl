@@ -1,3 +1,12 @@
+@testset "wirevertices" begin
+    using .Circuits: wirevertices
+
+    qc = Circuit(3)
+    (nx, ny, nz, ncx, ncz) = @build qc X(1) Y(2) Z(3) CX(1, 2) CZ(2, 3)
+    @test collect(wirevertices(qc, 1))[2:end] == [nx, ncx]
+    @test collect(wirevertices(qc, 2))[2:end] == [ny, ncx, ncz]
+    @test collect(wirevertices(qc, 3))[2:end] == [nz, ncz]
+end
 
 @testset "quantum and classical wires" begin
     qc = Circuit(1, 1)
