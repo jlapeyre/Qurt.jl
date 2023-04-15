@@ -3,6 +3,8 @@ module PauliGates
 import ..Elements: Element, I, X, Y, Z, Paulis
 import ..Interface: num_qubits, num_clbits, isinvolution
 
+# TODO: What is a good way to represent this? As a String?
+# That would be more compact than Vector{Element}
 """
     PauliGate
 
@@ -17,10 +19,8 @@ struct PauliGate
     end
 end
 
-Base.length(pg::PauliGate) = length(pg.paulis)
-
 PauliGate() = Element[]
-
+Base.length(pg::PauliGate) = length(pg.paulis)
 num_qubits(pg::PauliGate) = length(pg)
 num_clbits(pg::PauliGate) = 0
 

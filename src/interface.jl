@@ -15,6 +15,9 @@ export num_qubits,
     num_clbits,
     num_qu_cl_bits,
     num_parameters,
+    num_wires,
+    num_inwires,
+    num_outwires,
     count_ops,
     count_wires,
     check,
@@ -64,6 +67,16 @@ Return a `Tuple{Int, Int}` of number of quantum and classical bits associated wi
 This may be more efficient than calling `num_qu_bits` and `num_cl_bits`.
 """
 num_qu_cl_bits(args...) = (num_qubits(args...), num_clbits(args...)) # fallback method
+
+"""
+    num_wires(obj)
+
+Return the number of wires (quantum and classical) in `obj`.
+"""
+function num_wires end
+
+function num_inwires end
+function num_outwires end
 
 # Return a count_map (`Dictionary`) of the ops in an object
 function count_ops end

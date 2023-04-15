@@ -30,6 +30,9 @@ import ..Interface:
     num_qubits,
     num_clbits,
     num_qu_cl_bits,
+    num_wires,
+    num_inwires,
+    num_outwires,
     getelement,
     getwires,
     getparams,
@@ -156,7 +159,7 @@ end
 
 
 """
-    wireind(circuit, node_ind, wire::Integer)
+    wireind(nodes, node_ind, wire::Integer)
 
 Return the index of wire number `wire` in the list of wires for node `node_ind`.
 """
@@ -251,11 +254,18 @@ function _neighborind(fneighbor::Func, nodes, node_ind, wire) where {Func}
     return (vi=v, wi=wireind(nodes, v, wire))
 end
 
+###
+### WireNodes, iterator over vertices on a wire
+###
+
+# TODO: Don't hardcode Int64 here.
 struct WireNodes{NodeT}
     nodes::NodeT
     wire::Int
     init_vertex::Int
 end
+
+Base.eltype(::WireNodes) = Int
 
 function Base.show(io::IO, wn::WireNodes)
     return print(io, "wirenodes(wire=$(wn.wire), vert=$(wn.init_vertex))")
@@ -263,16 +273,19 @@ end
 
 Base.IteratorSize(::Type{<:WireNodes}) = Base.SizeUnknown()
 
-wirenodes(nodes, args...) = WireNodes(nodes, args...)
+"""
+    wirenodes(nodes, wire, init_vertex)
+
+Return an iterator over the ordered vertices in `nodes` on `wire` beginning
+with `init_vertex`.
+
+The final output node is omitted.
+"""
+wirenodes(nodes, wire, init_vertex) = WireNodes(nodes, wire, init_vertex)
 
 function Base.iterate(wn::WireNodes, vertex=wn.init_vertex)
-    isnothing(vertex) && return nothing
-    next_vertex = if Elements.isoutput(wn.nodes, vertex)
-        nothing
-    else
-        outneighbors(wn.nodes, vertex, wn.wire)
-    end
-    return (vertex, next_vertex)
+    isempty(getoutwiremap(wn.nodes, vertex)) && return nothing # Ought to be an output node
+    return (vertex, outneighbors(wn.nodes, vertex, wn.wire)) # vertex, next_vertex
 end
 
 """
@@ -347,6 +360,8 @@ The the `pos`th parameter at node index `ind` in `nodes`.
 """
 getparam(nodes::ANodeArrays, ind::Integer, pos::Integer) = getparams(nodes, ind)[pos]
 
+getinwiremap(nodes::ANodeArrays, inds...) = getindex(nodes.inwiremap, inds...)
+getoutwiremap(nodes::ANodeArrays, inds...) = getindex(nodes.outwiremap, inds...)
 getwires(nodes::ANodeArrays, inds...) = getindex(nodes.wires, inds...)
 getquwires(nodes::ANodeArrays, i) = nodes.wires[i][1:(nodes.numquwires[i])]
 function getclwires(nodes::ANodeArrays, i)
@@ -355,6 +370,9 @@ end
 
 num_qubits(nodes::ANodeArrays, i) = nodes.numquwires[i]
 num_clbits(nodes::ANodeArrays, i) = length(getwires(nodes, i)) - nodes.numquwires[i]
+num_wires(nodes::ANodeArrays, i) = length(getwires(nodes, i))
+num_inwires(nodes::ANodeArrays, i) = length(getinwiremap(nodes, i))
+num_outwires(nodes::ANodeArrays, i) = length(getinwiremap(nodes, i))
 node(nodes::ANodeArrays, i::Integer) = nodes[i]
 node(nodes::ANodeArrays, inds::Integer...) = view(nodes, [inds...])
 node(nodes::ANodeArrays, inds::AbstractVector{<:Integer}) = view(nodes, inds)

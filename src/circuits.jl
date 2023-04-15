@@ -25,6 +25,7 @@ import ..Interface:
     Interface,
     num_qubits,
     num_clbits,
+    num_wires,
     getelement,
     getparams,
     getparam,
@@ -72,7 +73,9 @@ export Circuit,
     remove_vertices!,
     longest_path,
     param_table,
-    param_map
+    param_map,
+    compose!,
+    compose
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -187,6 +190,7 @@ qu_wire_indices(nqu, _ncl=nothing) = 1:nqu
 cl_wire_indices(nqu, ncl) = (1:ncl) .+ nqu
 wire_indices(nqu, ncl) = 1:(nqu + ncl)
 wire_indices(qc::Circuit) = wire_indices(num_qubits(qc), num_clbits(qc))
+Interface.num_wires(qc::Circuit) = num_qubits(qc) + num_clbits(qc)
 
 """
     param_table(qc::Circuit)
@@ -573,6 +577,33 @@ function remove_blocks!(qc::Circuit, blocks)
 end
 
 """
+    compose(qc_to::Circuit, qc_from::Circuit, quwires=1:num_wires(qc_from))
+
+Append `qc_from` to a copy of `qc_to`
+"""
+compose(qc::Circuit, qc2::Circuit, quwires=1:num_wires(qc2)) = compose!(deepcopy(qc), qc2, quwires)
+
+# TODO: 
+"""
+    compose!(qc_to::Circuit, qc_from::Circuit, wireorder=1:num_wires(qc_from))
+
+Append `qc_from` to `qc_to`.
+
+`wireorder` specifies.
+"""
+function compose!(qc::Circuit, qc2::Circuit, wireorder=1:num_wires(qc2))
+    num_qubits(qc2) <= num_qubits(qc) || error("Can't compose wider circuit.")
+    wiremap = Dict(zip(wireorder, 1:num_wires(qc2)))
+    for vert in topological_vertices(qc2)
+        el = getelement(qc2, vert)
+        Elements.isionode(el) && continue
+        newwires = map(w -> wiremap[w], getwires(qc2, vert))
+        add_node!(qc, (el, getparams(qc2, vert)), newwires)
+    end
+    return qc
+end
+
+"""
     topological_vertices(qc::Circuit)::Vector{<:Integer}
 
 Return a topologically sorted vector of the vertices.
@@ -582,17 +613,16 @@ topological_vertices(qc::Circuit) = Graphs.topological_sort(qc.graph)
 """
     topological_nodes(qc::Circuit)::AbstractVector{<:Node}
 
-Return a topologically sorted vector of the vertices.
+Return a topologically sorted vector of the nodes.
 
 The returned data is a vector-of-structs view of the underlying data.
 """
 topological_nodes(qc::Circuit) = view(qc.nodes, topological_vertices(qc))
-#topological_nodes(qc::Circuit) = PermutedVector(qc.nodes, topological_vertices(qc))
 
 """
     wirenodes(qc::Circuit, wire::Integer)
 
-Return an iterator over vertices on `wire`.
+Return an iterator over ordered vertices on `wire` beginning with the input node.
 """
 wirenodes(qc::Circuit, wire) = wirenodes(qc.nodes, input_vertex(qc, wire), wire)
 
@@ -671,7 +701,7 @@ import .Elements: isinput, isoutput, isquinput, isquoutput, isclinput, iscloutpu
 for f in (
     :count_ops,
     :count_wires,
-    :wireind,
+#    :wireind,
     :outneighborind,
     :inneighborind,
     :setoutwire_ind,
@@ -696,6 +726,14 @@ for f in (
 )
     @eval $f(qc::Circuit, args...) = $f(qc.nodes, args...)
 end
+
+"""
+    wireind(circuit, node_ind, wire::Integer)
+
+Return the index of wire number `wire` in the list of wires for node `node_ind`.
+"""
+wireind(qc::Circuit, vertex::Integer, wire::Integer) = wireind(qc.nodes, vertex, wire)
+
 
 num_qubits(qc::Circuit, vert) = num_qubits(qc.nodes, vert)
 num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
