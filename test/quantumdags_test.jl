@@ -1,3 +1,9 @@
+# TODO: Do collect(wirevertices(...)) for each wire and compare to longest path
+# @testset "longest_path" begin
+#     qc = Circuit(3)
+#     (nx, ny, nz, ncx, ncz) = @build qc X(1) Y(2) Z(3) CX(1, 2) CZ(2, 3)
+# end
+
 @testset "wirevertices" begin
     using .Circuits: wirevertices
 

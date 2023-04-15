@@ -738,6 +738,19 @@ wireind(qc::Circuit, vertex::Integer, wire::Integer) = wireind(qc.nodes, vertex,
 num_qubits(qc::Circuit, vert) = num_qubits(qc.nodes, vert)
 num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
 
+# TODO: Implement dag_longest_path_length in GraphsExt.jl
+"""
+    depth(qc::Circuit)
+
+Compute the depth of `qc`.
+"""
+Interface.depth(qc::Circuit) = length(longest_path(qc))
+
+"""
+    longest_path(qc::Circuit)
+
+Compute a longest path of vertices in `qc`.
+"""
 longest_path(qc::Circuit) = dag_longest_path(qc.graph)
 
 ###

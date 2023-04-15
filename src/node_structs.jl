@@ -178,6 +178,7 @@ Return the index of wire number `wire` in the list of wires for node `node_ind`.
         throw(_cerror(wire, node_ind))
     end
     # General route is 100x slower than above. But not because of `==(wire)` that is actually faster than naive hand coding.
+    # TODO: Shouldn't this be nodes.wires[node_ind] ?
     wire_ind = findfirst(==(wire), nodes[node_ind].wires)
     isnothing(wire_ind) && throw(_cerror(wire, node_ind))
     return wire_ind

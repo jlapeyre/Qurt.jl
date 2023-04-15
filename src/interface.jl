@@ -21,6 +21,7 @@ export num_qubits,
     count_ops,
     count_wires,
     check,
+    depth,
     getcircuit,
     getelement,
     getwires,
@@ -133,6 +134,7 @@ function iscustomgate end
 
 function isgate end
 
+function depth end
 
 end # module Interface
 
