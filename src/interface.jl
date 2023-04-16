@@ -32,7 +32,9 @@ export num_qubits,
     getnodes,
     node,
     isclifford,
-    isinvolution
+    isinvolution,
+    count_elements,
+    count_op_elements
 
 ## TODO: we could include an export list for no reason than for the REPL to allow completion
 ## There must be another way to do this.
@@ -83,6 +85,9 @@ function count_ops end
 
 function count_ops_vertices end
 
+function count_elements end
+
+function count_op_elements end
 # Return a count map the number of nodes with `(nqu, ncl)` qubits and classical bits
 # for each value of the `Tuple`.
 function count_wires end

@@ -15,3 +15,10 @@
     qc = Circuit(4)
     @build qc CustomGate{pg}(1, 2, 3, 4)
 end
+
+@testset "some properties" begin
+    using .Circuits: Circuit, count_op_elements
+    qc = Circuit(2, 2)
+    @build qc X(1) CZ(1, 2)
+    @test count_op_elements(qc) == 2
+end

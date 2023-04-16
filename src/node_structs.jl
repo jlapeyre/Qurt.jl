@@ -27,6 +27,8 @@ import ..Interface:
     count_ops,
     count_ops_vertices,
     count_wires,
+    count_elements,
+    count_op_elements,
     check,
     num_qubits,
     num_clbits,
@@ -59,7 +61,8 @@ export Node,
     named_nodes,
     wirevertices,
     substitute_node!,
-    setelement!
+    setelement!,
+    count_elements
 
 struct NodesError <: Exception
     msg::AbstractString
@@ -155,6 +158,10 @@ function isinvolution(nodes::ANodeArrays, vertex)
     # After this branch, allocation occurs. Don't know why.
     el === Elements.CustomGate && return isinvolution(getparam(nodes, vertex, 1))
     return false
+end
+
+function getelements(na::ANodeArrays)
+    return na.element
 end
 
 """
@@ -546,6 +553,20 @@ function find_nodes(testfunc::F, nodes::ANodeArrays, ::Val{fieldnames}) where {F
     tup = ((getproperty(nodes, property) for property in fieldnames)...,)
     nt = NamedTuple{fieldnames,typeof(tup)}(tup)
     return @view nodes[findall(testfunc, StructArray(nt))]
+end
+
+
+"""
+    count_elements(testfunc::F, nodes::ANodeArrays)
+
+Count circuit elements for which `testfunc` returns true.
+"""
+function count_elements(testfunc::F, nodes::ANodeArrays) where {F}
+    return count(testfunc, getelements(nodes))
+end
+
+function count_op_elements(nodes::ANodeArrays)
+    return count_elements(!Elements.isionode, nodes)
 end
 
 # This is slower 4us. Only 2.6us for find_nodes above

@@ -35,6 +35,8 @@ import ..Interface:
     count_wires,
     count_ops,
     count_ops_vertices,
+    count_elements,
+    count_op_elements,
     node,
     check
 
@@ -719,6 +721,20 @@ for f in (
     :n_qubit_ops,
 )
     @eval $f(qc::Circuit, args...) = $f(qc.nodes, args...)
+end
+
+function count_elements(testfunc::F, qc::Circuit) where {F}
+    return count_elements(testfunc, nodes(qc))
+end
+
+"""
+    count_op_elements(qc::Circuit)
+
+Return the number of circuit elements that are not IO nodes. This
+should be the number that are operation or instruction nodes.
+"""
+function count_op_elements(qc::Circuit)
+    return count_op_elements(nodes(qc))
 end
 
 """
