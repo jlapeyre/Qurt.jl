@@ -11,6 +11,10 @@ using QuantumDAGs.Passes
 using QuantumDAGs.Parameters
 # Only do import here
 import QuantumDAGs.Elements
+
+# To get all of the gates
+using QuantumDAGs.Elements
+
 import QuantumDAGs.Elements.Element
 import QuantumDAGs.CompoundGates
 using Graphs

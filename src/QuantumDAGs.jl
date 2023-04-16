@@ -21,6 +21,8 @@ include("passes.jl")
 include("io_qdags.jl")
 include("builders.jl")
 
+let do_precompile = true
+if do_precompile
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the
     # precompile file and potentially make loading faster.
@@ -33,33 +35,36 @@ include("builders.jl")
     using QuantumDAGs.NodesGraphs
     using QuantumDAGs.Parameters
     using QuantumDAGs.Interface
+    using SymbolicUtils: SymbolicUtils, @syms, Sym
     @precompile_all_calls begin
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
-        # using SymbolicUtils: SymbolicUtils, @syms, Sym
-        # qc = Circuits.Circuit(2)
-        # Circuits.add_node!(qc, Elements.X, (1,))
-        # Circuits.add_node!(qc, Elements.Y, (2,))
-        # Circuits.add_node!(qc, Elements.CX, (1, 2))
-        # IOQDAGs.print_edges(devnull, qc) # stdout would precompile more
-        # Circuits.check(qc)
-        # Circuits.remove_node!(qc, 5)
-        # Circuits.remove_node!(qc, 5)
-        # Circuits.remove_node!(qc, 5)
-        # Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
-        # count_ops(qc)
-        # two_qubit_ops(qc)
-        # multi_qubit_ops(qc)
-        # qc = Circuits.Circuit(2)
-        # Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
-        # find_runs_two_wires(qc, CX)
-        # cx_cancellation!(qc)
-        # (theta,) = QuantumDAGs.Parameters.@makesyms θ
-        # qc = Circuits.Circuit(1)
-        # add_node!(qc, (Elements.RX, theta), (1,))
-        # t1 = Sym{Real}(:t1)
-        # Builders.@build qc RZ{t1}(1)
+        qc = Circuits.Circuit(2)
+        Circuits.add_node!(qc, Elements.X, (1,))
+        Circuits.add_node!(qc, Elements.Y, (2,))
+        Circuits.add_node!(qc, Elements.CX, (1, 2))
+        IOQDAGs.print_edges(devnull, qc) # stdout would precompile more
+        Circuits.check(qc)
+        Circuits.remove_node!(qc, 5)
+        Circuits.remove_node!(qc, 5)
+        Circuits.remove_node!(qc, 5)
+        Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
+        count_ops(qc)
+        two_qubit_ops(qc)
+        multi_qubit_ops(qc)
+        qc = Circuits.Circuit(2)
+        Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
+        depth(qc)
+        find_runs_two_wires(qc, CX)
+        cx_cancellation!(qc)
+        (theta,) = QuantumDAGs.Parameters.@makesyms θ
+        qc = Circuits.Circuit(1)
+        add_node!(qc, (Elements.RX, theta), (1,))
+        t1 = Sym{Real}(:t1)
+        Builders.@build qc RZ{t1}(1)
     end
 end
+end # let do_precompile =
+end # if do_precompile
 
 end
