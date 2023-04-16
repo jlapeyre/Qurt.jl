@@ -64,6 +64,7 @@ using ..Parameters: Parameters, ParameterTable, ParamRef
 
 export Circuit,
     global_phase,
+    nodes,
     add_node!,
     remove_node!,
     remove_block!,
@@ -334,6 +335,14 @@ Return the global phase of `qc`.
 """
 global_phase(qc::Circuit) = qc.global_phase[]
 
+
+"""
+    nodes(qc::Circuit)
+
+Return the nodes in the circuit.
+"""
+nodes(qc::Circuit) = qc.nodes
+
 ###
 ### adding vertices and nodes to the circuit and graph
 ###
@@ -378,10 +387,11 @@ function __add_io_node_data!(
     )
         for wire in wires
             vertex_ind += 1
+            _wireset = element in (Input, Output) ? wireset((wire,), ()) : wireset((), (wire,))
             NodeStructs.add_node!(
                 nodes,
                 element,
-                wireset((wire,), Tuple{}()), # TODO, I think for classical reverse these
+                _wireset,
                 copy(inneighbors(graph, vertex_ind)),
                 copy(outneighbors(graph, vertex_ind)),
             )
@@ -392,22 +402,22 @@ end
 
 """
     add_node!(qcircuit::Circuit, op::Element, wires::NTuple{<:Any, IntT},
-                   clwires=Tuple{}()) where {IntT <: Integer}
+                   clwires=()) where {IntT <: Integer}
 
     add_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
-                       wires::NTuple{<:Any, IntT}, clwires=Tuple{}()) where {IntT <: Integer}
+                       wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
 
 Add `op` or `(op, params)` to the back of `qcircuit` with the specified classical and quantum wires.
 
 The new node is inserted between the output nodes and their current predecessor nodes.
 """
-function add_node!(qc::Circuit, op::Element, wires, clwires=Tuple{}())
+function add_node!(qc::Circuit, op::Element, wires, clwires=())
     return add_node!(qc, (op, nothing), wires, clwires)
 end
 
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector
 function add_node!(
-    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=Tuple{}()
+    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=()
 )
     if isnothing(_inparams)
         params = tuple()

@@ -76,6 +76,7 @@ function new_node_vector end
 # Takes tuple of quantum and classical wires and packages them for insertion into node management
 # structure.
 wireset(quwires::Tuple{Int,Vararg{Int}}, ::Tuple{}) = (quwires, length(quwires))
+wireset(::Tuple{}, clwires::Tuple{Int,Vararg{Int}}) = (clwires, 0)
 wireset(quwires::AbstractVector, ::Tuple{}) = ((quwires...,), length(quwires))
 function wireset(quwires::Tuple{Int,Vararg{Int}}, clwires::Tuple{Int,Vararg{Int}})
     return ((quwires..., clwires...), length(quwires))
@@ -83,7 +84,7 @@ end
 
 # TODO: Fix these
 getquwires(wires::Tuple{Int,Vararg{Int}}) = wires
-getclwires(wires::Tuple{Int,Vararg{Int}}) = Tuple{}()
+getclwires(wires::Tuple{Int,Vararg{Int}}) = ()
 
 ###
 ### Node

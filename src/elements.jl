@@ -37,6 +37,7 @@ import ..Interface: Interface
 @menum OpBlock begin
     Q1NoParam = 1
     Q2NoParam
+    Q3NoParam
     QNNoParam
     UserNoParam
     Q1Params1Float
@@ -55,6 +56,7 @@ end
 
 @addinblock Element Q1NoParam I X Y Z H P SX S T
 @addinblock Element Q2NoParam CX CY CZ CH CP DCX ECR SWAP iSWAP
+@addinblock Element Q3NoParam CCX
 # Why did ? Put `Float` here ?
 @addinblock Element Q1Params1Float RX RY RZ R
 @addinblock Element Q2Params1Float RXX RYY RZZ RZX

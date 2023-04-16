@@ -1,7 +1,8 @@
 module PauliGates
 
-import ..Elements: Element, I, X, Y, Z, Paulis
+import ..Elements: Element, I, X, Y, Z, Paulis, MiscGates
 import ..Interface: num_qubits, num_clbits, isinvolution
+import MEnums: @addinblock
 
 # TODO: What is a good way to represent this? As a String?
 # That would be more compact than Vector{Element}
@@ -23,6 +24,8 @@ PauliGate() = Element[]
 Base.length(pg::PauliGate) = length(pg.paulis)
 num_qubits(pg::PauliGate) = length(pg)
 num_clbits(pg::PauliGate) = 0
+
+@addinblock Element MiscGates PauliGate
 
 Base.show(io::IO, pg::PauliGate) = print(io, string("PauliGate(", string.(pg.paulis)..., ")"))
 isinvolution(::PauliGate) = true
