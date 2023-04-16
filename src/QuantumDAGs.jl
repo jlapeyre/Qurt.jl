@@ -12,7 +12,7 @@ include("elements.jl")
 include("control_flow.jl")
 include("node_structs.jl")
 include("graph_utils.jl")
-#include("remove_vertices.jl")
+include("wires.jl")
 include("circuits.jl")
 include("nodes_graphs.jl")
 include("compound_gate.jl")
@@ -21,7 +21,7 @@ include("passes.jl")
 include("io_qdags.jl")
 include("builders.jl")
 
-let do_precompile = true
+let do_precompile = false
 if do_precompile
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the

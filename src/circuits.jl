@@ -21,6 +21,8 @@ using Dictionaries: Dictionaries, AbstractDictionary, Dictionary
 
 using SymbolicUtils: BasicSymbolic
 
+import ..WiresMod: Wires, WiresMod
+
 import ..Interface:
     Interface,
     num_qubits,
@@ -112,32 +114,18 @@ struct Circuit{GT, NT, PT, GPT}
     graph::GT
     nodes::NT
     param_table::PT
-    input_qu_vertices::Vector{Int}
-    output_qu_vertices::Vector{Int}
-    input_cl_vertices::Vector{Int}
-    output_cl_vertices::Vector{Int}
-    input_vertices::Vector{Int}
-    output_vertices::Vector{Int}
-    nqubits::Ref{Int}
-    nclbits::Ref{Int}
-    global_phase::Ref{GPT} # Should be called just "phase", but Qiskit uses this.
+    wires::Wires
+    global_phase::GPT # Should be called just "phase", but Qiskit uses this.
 end
 
+# We could use this
 # @concrete struct Circuit
 #     graph
 #     nodes
 #     param_table
-#     input_qu_vertices::Vector{Int}
-#     output_qu_vertices::Vector{Int}
-#     input_cl_vertices::Vector{Int}
-#     output_cl_vertices::Vector{Int}
-#     input_vertices::Vector{Int}
-#     output_vertices::Vector{Int}
-#     nqubits::Int
-#     nclbits::Int
-#     global_phase # Should be called just "phase", but Qiskit uses this.
+#     wires
+#     global_phase
 # end
-
 
 function Circuit(nqubits::Integer, nclbits=0; global_phase=0)
     return Circuit(
@@ -155,37 +143,19 @@ function Circuit(
     graph = GraphT(0) # Assumption about constructor of graph.
     nodes = new_node_vector(NodesT) # Store operator and wire data
     param_table = ParameterTable()
-
+    wires = Wires(nqubits, nclbits)
     __add_io_nodes!(graph, nodes, nqubits, nclbits) # Add edges to graph and node type and wires
-    # Store indices of io vertices
-    input_qu_vertices = collect(1:nqubits)
-    output_qu_vertices = collect((1:nqubits) .+ input_qu_vertices[end])
-    if nclbits > 0
-        input_cl_vertices = collect((1:nclbits) .+ output_qu_vertices[end])
-        output_cl_vertices = collect((1:nclbits) .+ input_cl_vertices[end])
-    else
-        input_cl_vertices = Int[]
-        output_cl_vertices = Int[]
-    end
-    input_vertices = vcat(input_qu_vertices, input_cl_vertices)
-    output_vertices = vcat(output_qu_vertices, output_cl_vertices)
 
     return Circuit(
         graph,
         nodes,
         param_table,
-        input_qu_vertices,
-        output_qu_vertices,
-        input_cl_vertices,
-        output_cl_vertices,
-        input_vertices,
-        output_vertices,
-        Ref(nqubits),
-        Ref(nclbits),
-        Ref(global_phase),
+        wires,
+        Ref(global_phase)
     )
 end
 
+# TODO: Move this to Wires
 qu_wire_indices(nqu, _ncl=nothing) = 1:nqu
 cl_wire_indices(nqu, ncl) = (1:ncl) .+ nqu
 wire_indices(nqu, ncl) = 1:(nqu + ncl)
@@ -210,10 +180,10 @@ function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     c1 === c2 && return true
     for field in fieldnames(T)
         (f1, f2) = (getfield(c1, field), getfield(c2, field))
-        if field in (:nqubits, :nclbits, :global_phase)
+        if field in (:global_phase,)
             f1[] == f2[] || return false
         else
-            getfield(c1, field) == getfield(c2, field) || return false
+            f1 == f2 || return false
         end
     end
     return true
@@ -232,23 +202,11 @@ end
 
 function Base.copy(qc::Circuit)
     # We need to deepcopy nodes. I think because of Vectors in Vectors.
-    copies = [
-        copy(x) for x in (
-            qc.input_qu_vertices,
-            qc.output_qu_vertices,
-            qc.input_cl_vertices,
-            qc.output_cl_vertices,
-            qc.input_vertices,
-            qc.output_vertices,
-        )
-    ]
     return Circuit(
         copy(qc.graph),
         deepcopy(qc.nodes),
         copy(qc.param_table), # TODO: deepcopy ?
-        copies...,
-        Ref(num_qubits(qc)),
-        Ref(num_clbits(qc)),
+        copy(qc.wires),
         Ref(global_phase(qc))
     )
 end
@@ -308,16 +266,10 @@ Interface.num_parameters(qc::Circuit) = Interface.num_parameters(qc.param_table)
 Parameters.ParamRef(qc::Circuit, args...) = Parameters.ParamRef(qc.param_table, args...)
 
 # Index into all Qu and Cl input vertex indices
-input_vertex(qc::Circuit, wireind::Integer) = qc.input_vertices[wireind]
+input_vertex(qc::Circuit, wireind::Integer) = WiresMod.input_vertex(qc.wires, wireind)
 
 # Index into all Qu and Cl output vertex indices
-output_vertex(qc::Circuit, wireind::Integer) = qc.output_vertices[wireind]
-
-# Index into Cl input vertices
-input_cl_vertex(qc::Circuit, wireind::Integer) = qc.input_cl_vertices[wireind]
-
-# Index into Cl output vertices
-output_cl_vertex(qc::Circuit, wireind::Integer) = qc.output_cl_vertices[wireind]
+output_vertex(qc::Circuit, wireind::Integer) = WiresMod.output_vertex(qc.wires, wireind)
 
 getelement(qc::Circuit, ind) = getelement(qc.nodes, ind)
 elementsym(qc::Circuit, ind) = Symbol(getelement(qc, ind))
@@ -350,14 +302,14 @@ end
 
 Return the number of qubits in `qc`.
 """
-num_qubits(qc::Circuit) = qc.nqubits[]
+num_qubits(qc::Circuit) = num_qubits(qc.wires)
 
 """
     num_clbits(qc::Circuit)
 
 Return the number of classical bits in `qc`.
 """
-num_clbits(qc::Circuit) = qc.nclbits[]
+num_clbits(qc::Circuit) = num_clbits(qc.wires)
 
 """
     global_phase(qc::Circuit)
@@ -381,12 +333,11 @@ end
 function __add_io_vertices!(
     graph::SimpleDiGraph, num_qu_wires::Integer, num_cl_wires::Integer=0
 )
-    (in_qc, out_qc, in_cl, out_cl) =
-        _add_vertices!.(
-            Ref(graph), (num_qu_wires, num_qu_wires, num_cl_wires, num_cl_wires)
-        )
-
-    for pairs in zip.((in_qc, in_cl), (out_qc, out_cl))
+    in_qc_verts = _add_vertices!(graph, num_qu_wires)
+    out_qc_verts = _add_vertices!(graph, num_qu_wires)
+    in_cl_verts = _add_vertices!(graph, num_cl_wires)
+    out_cl_verts = _add_vertices!(graph, num_cl_wires)
+    for pairs in zip.((in_qc_verts, in_cl_verts), (out_qc_verts, out_cl_verts))
         Graphs.add_edge!.(Ref(graph), pairs) # Wrap with `Ref` forces broadcast as a scalar.
     end
 end
@@ -403,7 +354,7 @@ function __add_io_node_data!(
     quantum_wires = qu_wire_indices(nqubits) # 1:nqubits # the first `nqubits` wires
     classical_wires = cl_wire_indices(nqubits, nclbits) # (1:nclbits) .+ nqubits # `nqubits + 1, nqubits + 2, ...`
     vertex_ind = 0
-    for (node, wires) in (
+    for (element, wires) in (
         (Input, quantum_wires),
         (Output, quantum_wires),
         (ClInput, classical_wires),
@@ -413,8 +364,8 @@ function __add_io_node_data!(
             vertex_ind += 1
             NodeStructs.add_node!(
                 nodes,
-                node,
-                wireset((wire,), Tuple{}()),
+                element,
+                wireset((wire,), Tuple{}()), # TODO, I think for classical reverse these
                 copy(inneighbors(graph, vertex_ind)),
                 copy(outneighbors(graph, vertex_ind)),
             )
@@ -595,7 +546,7 @@ Append `qc_from` to a copy of `qc_to`
 """
 compose(qc::Circuit, qc2::Circuit, quwires=1:num_wires(qc2)) = compose!(deepcopy(qc), qc2, quwires)
 
-# TODO: 
+# TODO:
 """
     compose!(qc_to::Circuit, qc_from::Circuit, wireorder=1:num_wires(qc_from))
 
@@ -713,7 +664,6 @@ import .Elements: isinput, isoutput, isquinput, isquoutput, isclinput, iscloutpu
 for f in (
     :count_ops,
     :count_wires,
-#    :wireind,
     :outneighborind,
     :inneighborind,
     :setoutwire_ind,
@@ -745,7 +695,6 @@ end
 Return the index of wire number `wire` in the list of wires for node `node_ind`.
 """
 wireind(qc::Circuit, vertex::Integer, wire::Integer) = wireind(qc.nodes, vertex, wire)
-
 
 num_qubits(qc::Circuit, vert) = num_qubits(qc.nodes, vert)
 num_clbits(qc::Circuit, vert) = num_clbits(qc.nodes, vert)
@@ -816,14 +765,15 @@ function check(qc::Circuit)
     if Graphs.nv(qc.graph) != length(qc.nodes)
         throw(CircuitError("Number of nodes in DAG is not equal to length(qc.nodes)"))
     end
-    for v in qc.input_qu_vertices
-        isquinput(qc, v) ||
-            throw(CircuitError("Expecting Input, got $(getelement(qc, v))."))
-    end
-    for v in qc.output_qu_vertices
-        isquoutput(qc, v) ||
-            throw(CircuitError("Expecting Output, got $(getelement(qc, v))."))
-    end
+    # TODO: Removed these for refactor. Could reinstate
+    # for v in qc.input_qu_vertices
+    #     isquinput(qc, v) ||
+    #         throw(CircuitError("Expecting Input, got $(getelement(qc, v))."))
+    # end
+    # for v in qc.output_qu_vertices
+    #     isquoutput(qc, v) ||
+    #         throw(CircuitError("Expecting Output, got $(getelement(qc, v))."))
+    # end
     for v in vertices(qc)
         indeg = indegree(qc, v)
         outdeg = outdegree(qc, v)
