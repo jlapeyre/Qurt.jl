@@ -63,6 +63,7 @@ using ..GraphUtils: GraphUtils, _add_vertex!, _add_vertices!, _empty_simple_grap
 using ..Parameters: Parameters, ParameterTable, ParamRef
 
 export Circuit,
+    global_phase,
     add_node!,
     remove_node!,
     remove_block!,
@@ -127,18 +128,33 @@ end
 #     global_phase
 # end
 
-function Circuit(nqubits::Integer, nclbits=0; global_phase=0)
+"""
+    Circuit(;global_phase=0.0)
+
+Create a circuit with no qubits, no clbits, and global phase equal to zero.
+"""
+Circuit(;global_phase=0.0) = Circuit(0, 0; global_phase=global_phase)
+
+"""
+    Circuit(nqubits::Integer, nclbits::Integer=0; global_phase=0.0)
+
+Create a circuit with `nqubits` qubits, `nclbits` clbits.
+
+Pairs of input and output nodes connected by an edges are created for each quantum
+and classical bit.
+"""
+function Circuit(nqubits::Integer, nclbits::Integer=0; global_phase=0.0)
     return Circuit(
         DefaultGraphType, DefaultNodesType, nqubits, nclbits; global_phase=global_phase
     )
 end
 
-function Circuit(::Type{GraphT}, nqubits::Integer, nclbits=0; global_phase=0) where {GraphT}
+function Circuit(::Type{GraphT}, nqubits::Integer, nclbits=0; global_phase=0.0) where {GraphT}
     return Circuit(GraphT, DefaultNodesType, nqubits, nclbits; global_phase=global_phase)
 end
 
 function Circuit(
-    ::Type{GraphT}, ::Type{NodesT}, nqubits::Integer, nclbits=0; global_phase=0
+    ::Type{GraphT}, ::Type{NodesT}, nqubits::Integer, nclbits=0; global_phase=0.0
 ) where {NodesT,GraphT}
     graph = GraphT(0) # Assumption about constructor of graph.
     nodes = new_node_vector(NodesT) # Store operator and wire data

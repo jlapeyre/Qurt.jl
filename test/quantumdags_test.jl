@@ -4,6 +4,12 @@
 #     (nx, ny, nz, ncx, ncz) = @build qc X(1) Y(2) Z(3) CX(1, 2) CZ(2, 3)
 # end
 
+@testset "circuit initialization" begin
+    @test Circuit() == Circuit(0) == Circuit(0, 0)
+    @test num_qubits(Circuit()) == 0
+    @test num_clbits(Circuit()) == 0
+end
+
 @testset "wirevertices" begin
     using .Circuits: wirevertices
 

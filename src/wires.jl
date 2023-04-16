@@ -17,6 +17,7 @@ Wires() = Wires(Int[], Int[], Int[], Int[], Int[], Int[], Int[], Int[])
 
 # TODO: do this while building structures, via add_... interface
 function Wires(nqubits, nclbits)
+    iszero(nqubits) && iszero(nclbits) && return Wires()
     input_qu_vertices = collect(1:nqubits)
     output_qu_vertices = collect((1:nqubits) .+ input_qu_vertices[end])
     if nclbits > 0
