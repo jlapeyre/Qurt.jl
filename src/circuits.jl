@@ -83,7 +83,8 @@ export Circuit,
     param_map,
     compose!,
     compose,
-    count_ops_longest_path
+    count_ops_longest_path,
+    num_tensor_factors
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -732,9 +733,40 @@ end
 
 Return the number of circuit elements that are not IO nodes. This
 should be the number that are operation or instruction nodes.
+
+# Examples
+```jldoctest
+julia> qc = Circuit(2);
+
+julia> count_op_elements(qc)
+0
+
+julia> @build qc H(1) CX(1, 2);
+
+julia> count_op_elements(qc)
+2
+```
 """
 function count_op_elements(qc::Circuit)
     return count_op_elements(nodes(qc))
+end
+
+# Python Qiskit gives same answer as doctest below.
+"""
+    num_tensor_factors(qc::Circuit)
+
+Return the number of tensor factors in an operator representation of `qc`.
+
+The meaning of this in the presence of classical components is unclear.
+
+# Examples
+```jldoctest
+julia> num_tensor_factors(Circuit(3, 2))
+5
+```
+"""
+function num_tensor_factors(qc::Circuit)
+    return length(Graphs.connected_components(qc.graph))
 end
 
 """
