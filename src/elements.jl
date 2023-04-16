@@ -25,7 +25,6 @@ import ..Interface: Interface
 # export Q2Params2Float, XXmYY, XXpYY
 # export Q1Params3Float, U
 # export UserNoParam, UserParams
-
 # export QuCl, Measure
 # export IONodes, ClInput, ClOutput, Input, Output
 # export isinput,
@@ -119,18 +118,51 @@ struct ParamElement{ParamsT}
     element::Element
     params::ParamsT
 end
+
 struct NoParamElement
     element::Element
 end
 
-struct WiresElement{WiresT}
+struct WiresElement{QuWiresT, ClWiresT}
     element::Element
-    wires::WiresT
+    quwires::QuWiresT
+    clwires::ClWiresT
 end
-struct WiresParamElement{WiresT,ParamsT}
+
+struct WiresParamElement{QuWiresT, ClWiresT, ParamsT}
     element::Element
-    wires::WiresT
     params::ParamsT
+    quwires::QuWiresT
+    clwires::ClWiresT
+end
+
+Interface.getquwires(x::Union{WiresParamElement, WiresElement}) = x.quwires
+Interface.getclwires(x::Union{WiresParamElement, WiresElement}) = x.clwires
+Interface.getwires(x::Union{WiresParamElement, WiresElement}) = (x.quwires..., x.clwires...)
+
+function Base.show(io::IO, pe::ParamElement)
+    print(io, pe.element, '{', join(pe.params, ","), '}')
+end
+
+function Base.show(io::IO, npe::NoParamElement)
+    print(io, npe.element, "{}")
+end
+
+function Base.show(io::IO, we::WiresElement)
+    if isempty(we.clwires)
+        print(io, we.element, '(', join(we.quwires, ","), ')')
+    else
+        print(io, we.element, '(', join(we.quwires, ","), "; ", join(we.clwires, ","), ')')
+    end
+end
+
+function Base.show(io::IO, wpe::WiresParamElement)
+    print(io, wpe.element, '{', join(wpe.params, ","), '}')
+    if isempty(wpe.clwires)
+        print(io, '(', join(wpe.quwires, ","), ')')
+    else
+        print(io, '(', join(wpe.quwires, ","), "; ", join(wpe.clwires, ","), ')')
+    end
 end
 
 function Base.:(==)(x::ParamElement, y::ParamElement)
@@ -146,10 +178,10 @@ end
 (element::Element)() = NoParamElement(element)
 (element::Element)(param) = ParamElement(element, param)
 (element::Element)(params...) = ParamElement(element, params)
-function (pelement::ParamElement)(wires::Int...)
-    return WiresParamElement(pelement.element, wires, pelement.params)
+function (pelement::ParamElement)(quwires::Int...)
+    return WiresParamElement(pelement.element, pelement.params, quwires, ())
 end
-(npelement::NoParamElement)(wires::Int...) = WiresElement(npelement.element, wires)
+(npelement::NoParamElement)(quwires::Int...) = WiresElement(npelement.element, quwires, ())
 
 Interface.getelement(x::ParamElement) = x.element
 Interface.getparams(x::ParamElement) = x.params
@@ -218,6 +250,21 @@ function Interface.isinvolution(el::Element)
     insorted(el, _NOT_INVOLUTIONS) && return false
     return nothing
 end
+
+"""
+    X::Element
+
+The `X` gate circuit element.
+"""
+X
+
+"""
+    Y::Element
+
+The `Y` gate circuit element.
+"""
+Y
+
 
 # TODO: We already keep track of largest used index in blocks. We can use them
 # To do the following automatically. Eg define range and get `range(Q1NoParam)`.

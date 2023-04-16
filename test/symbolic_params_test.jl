@@ -42,6 +42,8 @@ using .Elements: G1, G2, G3, G4, G5, G6, G7, G8
 end
 
 @testset "symbolic params remove block" begin
+    using .Builders: @build
+
     @syms t1 t2 t3 t4
     qc = Circuit(1)
     verts = @build qc begin

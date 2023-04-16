@@ -1,0 +1,12 @@
+[deps]
+AirspeedVelocity = "1c8270ee-6884-45cc-9545-60fa71ec23e4"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+ControlFlow = "da1032b5-7410-4fe7-baa6-5cca8121c0cc"
+Cthulhu = "f68482b8-f384-11e8-15f7-abe071a5a75f"
+InteractiveCodeSearch = "54eb57ff-b09b-5185-b2f4-7a93509e494f"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
+TermInterface = "8ea1fca8-c5ef-4a55-8b96-4e9afe9c9a3c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

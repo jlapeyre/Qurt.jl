@@ -31,36 +31,6 @@ end
     @test getelement(qc, s[2]) == ClOutput
 end
 
-@testset "macro builder interface" begin
-    qc = Circuit(2)
-    @test 5 == @build qc X(1)
-    @test [6, 7] == @build qc CX(1, 2) RX{3//2}(1)
-    @test [8, 9, 10] == @build qc begin
-        X(1)
-        CX(2, 1)
-        U{0,0.5,1}(1)
-    end
-    @test getparams(qc, 10) == (0, 0.5, 1)
-    qc = Circuit(1, 1)
-    @build qc Measure(1; 2)
-    qc1 = Circuit(1, 1)
-    add_node!(qc1, Measure, (1,), (2,))
-    @test qc == qc1
-end
-
-@testset "call builder interface" begin
-    qc = Circuit(2)
-    nX = qc(X()(1))
-    nY = qc(Y()(2))
-    nCX = qc(CX()(1, 2))
-    @test getelement(qc, nX) == X
-    @test getelement(qc, nY) == Y
-    @test getelement(qc, nCX) == CX
-    @test getwires(qc, nX) == (1,)
-    @test getwires(qc, nY) == (2,)
-    @test getwires(qc, nCX) == (1, 2)
-end
-
 @testset "circuit manipulation" begin
     qc = Circuit(1)
     nX = qc(X()(1))

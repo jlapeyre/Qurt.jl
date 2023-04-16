@@ -1,6 +1,11 @@
-using Test
 using QuantumDAGs
+
+include("./devutils.jl")
+
+activate_dev()
 using JET
+using Test
+activate_package()
 
 const package_to_analyze = QuantumDAGs
 

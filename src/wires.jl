@@ -30,7 +30,7 @@ function Wires(nqubits, nclbits)
     input_vertices = vcat(input_qu_vertices, input_cl_vertices)
     output_vertices = vcat(output_qu_vertices, output_cl_vertices)
     qu_wires = collect(1:nqubits)
-    cl_wires = collect(1:nclbits)
+    cl_wires = collect((1:nclbits) .+ nqubits)
     return Wires(qu_wires, cl_wires, input_qu_vertices, output_qu_vertices, input_cl_vertices, output_cl_vertices,
                  input_vertices, output_vertices)
 end
@@ -52,6 +52,9 @@ end
 num_qubits(w::Wires) = length(w.qu_wires)
 num_clbits(w::Wires) = length(w.cl_wires)
 num_wires(w::Wires) = num_qubits(w) + num_clbits(w)
+
+qu_wires(w::Wires) = w.qu_wires
+cl_wires(w::Wires) = w.cl_wires
 
 function add_qu_wire!(w::Wires)
     next_wire = num_wires(w) + 1

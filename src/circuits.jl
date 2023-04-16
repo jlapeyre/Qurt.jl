@@ -232,9 +232,10 @@ end
 ### Call builder interface. "Callable" object methods for building the circuit
 ###
 
-(qc::Circuit)(el::WiresElement) = add_node!(qc, el.element, el.wires)
-(qc::Circuit)(els::WiresElement...) = [add_node!(qc, el.element, el.wires) for el in els]
-(qc::Circuit)(el::WiresParamElement) = add_node!(qc, (el.element, el.params), el.wires)
+(qc::Circuit)(wel::WiresElement) = add_node!(qc, wel)
+(qc::Circuit)(wpe::WiresParamElement) = add_node!(qc, wpe)
+(qc::Circuit)(gates...) = qc(gates) # Maybe get rid of this
+(qc::Circuit)(gates::Tuple) = [qc(gate) for gate in gates]
 
 """
     empty(qc::Circuit)
@@ -413,6 +414,18 @@ The new node is inserted between the output nodes and their current predecessor 
 """
 function add_node!(qc::Circuit, op::Element, wires, clwires=())
     return add_node!(qc, (op, nothing), wires, clwires)
+end
+
+function add_node!(qc::Circuit, wpe::WiresParamElement)
+    return add_node!(qc, (wpe.element, wpe.params), wpe.quwires, wpe.clwires)
+end
+
+function add_node!(qc::Circuit, we::WiresElement)
+    return add_node!(qc, we.element, we.quwires, we.clwires)
+end
+
+function add_node!(qc::Circuit, pe::ParamElement, wires, clwires=())
+    return add_node!(qc, (pe.element, pe.params), wires, clwires)
 end
 
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector

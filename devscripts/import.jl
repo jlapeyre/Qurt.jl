@@ -13,7 +13,7 @@ using QuantumDAGs.Parameters
 import QuantumDAGs.Elements
 
 # To get all of the gates
-using QuantumDAGs.Elements
+# using QuantumDAGs.Elements
 
 import QuantumDAGs.Elements.Element
 import QuantumDAGs.CompoundGates

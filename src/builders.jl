@@ -1,11 +1,13 @@
 """
     module Builders
 
-Macro builder interface. Build circuit with macro.
+Macro builder interface.
+
+Build gates and circuits with macros `@build`, `@gate`, and `@gates`.
 """
 module Builders
 
-export @build
+export @build, @gate, @gates
 
 function __parse_builds!(circ, addgates, ex)
     isa(ex, LineNumberNode) && return nothing
@@ -56,15 +58,76 @@ function __build(exprs)
     return (:([$(addgates...)]))
 end
 
+"""
+    @build qcircuit gate1 gate2 ...
+
+Add gates to `qcircuit`.
+"""
 macro build(exprs...)
     return :($(esc(__build(exprs))))
 end
 
-# function dotest!(f, coll, x)
-#     println("Got x = $x, returning f(x) = $(f(x))")
-#     push!(coll, f(x))
-#     println("coll is ", coll)
-#     return nothing
-# end
+function _qualify_element_sym(sym::Symbol)
+    oexpr = :(QuantumDAGs.Elements.xxx)
+    oexpr.args[2] = QuoteNode(sym)
+    return oexpr
+end
+
+function _parse_wires(args::Vector)
+    isempty(args) && error("No wire arguments found.")
+    if args[1] isa Expr
+        args[1].head === :parameters || error("Expecting semicolon for classical wires")
+        return (quwires=Expr(:tuple, args[2:end]...), clwires=Expr(:tuple, args[1].args...))
+    else
+        return (quwires=Expr(:tuple, args...), clwires=Expr(:tuple))
+    end
+end
+
+function _gate(expr)
+    expr isa Symbol && return _qualify_element_sym(expr)
+    isa(expr, Expr) || error("Expecting a Symbol or Expr.")
+    if expr.head === :curly
+        return Expr(:call, :(QuantumDAGs.Elements.ParamElement), expr.args[1], Expr(:tuple, expr.args[2:end]...))
+    end
+    expr.head === :call || error("Expecting parens or curlies.")
+    if isa(expr.args[1], Symbol)
+        return Expr(:call, :(QuantumDAGs.Elements.WiresElement), _qualify_element_sym(expr.args[1]), _parse_wires(expr.args[2:end])...)
+    end
+    isa(expr.args[1], Expr) || error("Expecting a curlies expression, got $(expr.args[1])")
+    expr.args[1].head === :curly || error("Expecting a curlies expression, got expression type $(expr.args[1].head)")
+    return Expr(:call, :(QuantumDAGs.Elements.WiresParamElement), _qualify_element_sym(expr.args[1].args[1]),
+                Expr(:tuple, expr.args[1].args[2:end]...),
+                _parse_wires(expr.args[2:end])...)
+end
+
+function _gates(exprs...)
+    return Expr(:tuple, [_gate(expr) for expr in exprs]...)
+end
+
+"""
+    @gate GateName
+    @gate GateName{param1, [pararam2,...]}
+    @gate GateName(wire1, [wire2,...])
+    @gate GateName{param1, [pararam2,...]}(wire1, [wire2,...])
+
+"Build" a gate.
+
+This macro actually packages information about applying a gate into a struct, which can then
+be unpacked and inserted into a circuit.
+"""
+macro gate(expr)
+    return :($(esc(_gate(expr))))
+end
+
+"""
+    @gates gate1 gate2 ...
+
+Return a `Tuple` of gates where `gates1`, `gates2`, etc. follow the syntax
+required by `@gate`.
+"""
+macro gates(exprs...)
+    return :($(esc(_gates(exprs...))))
+end
+
 
 end # module Builders
