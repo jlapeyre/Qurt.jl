@@ -210,7 +210,7 @@ end
 # Element is not an Integer. Julia assumes it is not integer like. That is x / y makes sense, etc.
 Base.in(x::Element, r::AbstractRange{Element}) = first(r) <= x <= last(r)
 
-const _INVOLUTIONS = sort!(Element[I, X, Y, Z, H, CX, CY, CZ, CH, SWAP])
+const _INVOLUTIONS = sort!(Element[I, X, Y, Z, H, CX, CCX, CY, CZ, CH, SWAP])
 const _NOT_INVOLUTIONS = sort!(Element[SX, S, T])
 
 function Interface.isinvolution(el::Element)
@@ -218,7 +218,6 @@ function Interface.isinvolution(el::Element)
     insorted(el, _NOT_INVOLUTIONS) && return false
     return nothing
 end
-
 
 # TODO: We already keep track of largest used index in blocks. We can use them
 # To do the following automatically. Eg define range and get `range(Q1NoParam)`.
