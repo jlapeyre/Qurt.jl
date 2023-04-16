@@ -118,9 +118,9 @@ struct Circuit{GT, NT, PT, GPT}
     output_cl_vertices::Vector{Int}
     input_vertices::Vector{Int}
     output_vertices::Vector{Int}
-    nqubits::Int
-    nclbits::Int
-    global_phase::GPT # Should be called just "phase", but Qiskit uses this.
+    nqubits::Ref{Int}
+    nclbits::Ref{Int}
+    global_phase::Ref{GPT} # Should be called just "phase", but Qiskit uses this.
 end
 
 # @concrete struct Circuit
@@ -180,9 +180,9 @@ function Circuit(
         output_cl_vertices,
         input_vertices,
         output_vertices,
-        nqubits,
-        nclbits,
-        global_phase,
+        Ref(nqubits),
+        Ref(nclbits),
+        Ref(global_phase),
     )
 end
 
@@ -209,7 +209,12 @@ param_map(qc::Circuit) = qc.param_table.parammap
 function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     c1 === c2 && return true
     for field in fieldnames(T)
-        getfield(c1, field) == getfield(c2, field) || return false
+        (f1, f2) = (getfield(c1, field), getfield(c2, field))
+        if field in (:nqubits, :nclbits, :global_phase)
+            f1[] == f2[] || return false
+        else
+            getfield(c1, field) == getfield(c2, field) || return false
+        end
     end
     return true
 end
@@ -242,9 +247,9 @@ function Base.copy(qc::Circuit)
         deepcopy(qc.nodes),
         copy(qc.param_table), # TODO: deepcopy ?
         copies...,
-        qc.nqubits,
-        qc.nclbits,
-        qc.global_phase,
+        Ref(num_qubits(qc)),
+        Ref(num_clbits(qc)),
+        Ref(global_phase(qc))
     )
 end
 
@@ -345,14 +350,21 @@ end
 
 Return the number of qubits in `qc`.
 """
-num_qubits(qc::Circuit) = qc.nqubits
+num_qubits(qc::Circuit) = qc.nqubits[]
 
 """
     num_clbits(qc::Circuit)
 
 Return the number of classical bits in `qc`.
 """
-num_clbits(qc::Circuit) = qc.nclbits
+num_clbits(qc::Circuit) = qc.nclbits[]
+
+"""
+    global_phase(qc::Circuit)
+
+Return the global phase of `qc`.
+"""
+global_phase(qc::Circuit) = qc.global_phase[]
 
 ###
 ### adding vertices and nodes to the circuit and graph
