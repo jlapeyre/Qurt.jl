@@ -25,6 +25,7 @@ using ..Elements: Elements, Element, CustomGate
 
 import ..Interface:
     count_ops,
+    count_ops_vertices,
     count_wires,
     check,
     num_qubits,
@@ -492,6 +493,24 @@ function count_ops(nodes::ANodeArrays)
     d = DictTools.count_map(reinterpret(MEnums.basetype(Element), nodes.element))
     return Dictionaries.Dictionary(Element.(keys(d)), values(d))
 end
+
+"""
+    count_ops_vertices(nodes::ANodeArrays, vertices)
+
+Return a count map of elements on `vertices`.
+"""
+function count_ops_vertices(nodes::ANodeArrays, vertices)
+#    intnodes = reinterpret(MEnums.basetype(Element), nodes.element)
+#    dict = Dictionaries.Dictionary{MEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(MEnums.basetype(Element), nodes.element))
+#    dict = Dict{MEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(MEnums.basetype(Element), nodes.element))
+    dict = Dictionaries.Dictionary{Element,Int}()
+    for v in vertices
+        DictTools.add_counts!(dict, getelement(nodes, v))
+    end
+    return dict
+end
+
+
 
 function find_nodes(testfunc::F, nodes::ANodeArrays, fieldname::Symbol) where {F}
     return find_nodes(testfunc, nodes, Val((fieldname,)))

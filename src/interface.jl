@@ -81,6 +81,8 @@ function num_outwires end
 # Return a count_map (`Dictionary`) of the ops in an object
 function count_ops end
 
+function count_ops_vertices end
+
 # Return a count map the number of nodes with `(nqu, ncl)` qubits and classical bits
 # for each value of the `Tuple`.
 function count_wires end

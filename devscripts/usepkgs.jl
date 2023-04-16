@@ -1,7 +1,6 @@
 ## Load packages for use when developing
 
-# using Revise
-
+using Revise
 ## Assume we have the project activated already
 ## eg with julia --project="."
 using QuantumDAGs: QuantumDAGs

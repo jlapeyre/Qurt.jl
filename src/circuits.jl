@@ -34,6 +34,7 @@ import ..Interface:
     getwires,
     count_wires,
     count_ops,
+    count_ops_vertices,
     node,
     check
 
@@ -79,7 +80,8 @@ export Circuit,
     param_table,
     param_map,
     compose!,
-    compose
+    compose,
+    count_ops_longest_path
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -692,6 +694,7 @@ import .Elements: isinput, isoutput, isquinput, isquoutput, isclinput, iscloutpu
 
 for f in (
     :count_ops,
+    :count_ops_vertices,
     :count_wires,
     :outneighborind,
     :inneighborind,
@@ -742,6 +745,13 @@ Interface.depth(qc::Circuit) = length(longest_path(qc))
 Compute a longest path of vertices in `qc`.
 """
 longest_path(qc::Circuit) = dag_longest_path(qc.graph)
+
+"""
+    count_ops_longest_path(qc::Circuit)
+
+Return a count map of the circuit elements on a longest path in `qc`.
+"""
+count_ops_longest_path(qc::Circuit) = count_ops_vertices(qc, longest_path(qc))
 
 ###
 ### Check integrity of Circuit
