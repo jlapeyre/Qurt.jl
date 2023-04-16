@@ -25,14 +25,14 @@ function __parse_builds!(circ, addgates, ex)
     if gate isa Expr
         gate.head === :curly || throw(ArgumentError("expecting curly"))
         params = gate.args[2:end]
-        gate = first(gate.args)
+        gate = _qualify_element_sym(first(gate.args))
         if length(params) == 1
             gatetup = Expr(:tuple, gate, only(params))
         else
             gatetup = Expr(:tuple, gate, Expr(:tuple, params...))
         end
     else
-        gatetup = gate
+        gatetup = _qualify_element_sym(gate)
     end
     quwiretup = Expr(:tuple, wires...)
     clwiretup = Expr(:tuple, clwires...)
@@ -120,7 +120,7 @@ function _gates(exprs...)
 end
 
 """
-    @gate GateName
+    @gate GateName::Element
     @gate GateName{param1, [pararam2,...]}
     @gate GateName(wire1, [wire2,...])
     @gate GateName{param1, [pararam2,...]}(wire1, [wire2,...])
@@ -129,6 +129,8 @@ end
 
 This macro actually packages information about applying a gate into a struct, which can then
 be unpacked and inserted into a circuit.
+
+`GateName::Element` does not need to be imported. The macro will qualify the name for you.
 """
 macro gate(expr)
     return :($(esc(_gate(expr))))

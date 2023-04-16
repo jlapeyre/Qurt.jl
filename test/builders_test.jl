@@ -1,5 +1,5 @@
 @testset "@gate, @gates macro builder interface" begin
-    using .Elements: Element, I, Y, CX, Measure, WiresElement
+    using .Elements: Element, WiresElement
     using .Interface: getwires, getquwires, getclwires, getparams
 
     gi = @gate I
@@ -18,7 +18,7 @@
 end
 
 @testset "@build macro builder interface" begin
-    using .Elements: CX, RX, X, U, Measure
+    using .Elements: Measure
     using .Circuits: Circuit, getparams, add_node!
 
     qc = Circuit(2)
