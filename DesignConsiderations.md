@@ -1,8 +1,10 @@
 ## Broad Requirements
 
-The title includes "DAG", but we may want something else, or something that includes a DAG as a component.
+* We want a data structure sufficiently general to handle a hybrid quantum/classical circuit. Something similar to what Qiskit does or is planned for Qiskit in the not-to-distant future.
 
-We want a data structure sufficiently general to handle a hybrid quantum/classical circuit. Something similar to what Qiskit does or is planned for Qiskit in the not-to-distant future.
+* Process gates like `X`, `CZ` very efficiently. They are not represented by Julia types
+
+* Allow users and developers to very easily create a new gate with flexible properties and implementation.
 
 ## Definitions
 
@@ -32,16 +34,15 @@ Suppose we want to represent just unitarily evolving qubits plus measurement to 
 
 * The vertices of a graph have no structure. The edges of a digraph are ordered pairs of these vertices. Edges may be repeated in a multigraph. This is not enough to represent a unitary circuit. A two-qubit gate has two forward and two backward edges. A graph does not distinguish among multiple edges connecting two vertices. But the inputs to a gate must be distinguished.
 
-### Typical basic operations performed on quantum circuit
+### Operations that should be supported
 
-Which of the following are needed frequently?
+I would prefer to make things a bit more constrained and immutable. But Python-Qiskit is very flexible. I want to preserve that flexibility to the
+extent possible.
 
 * Traverse in a topological order. Topological sort of vertices
 * Look up data for node while traversing. Discriminate quickly. For example, is this a 1q or 2q gate?
-
-### Operations that should be supported
-
-* Remove idle wire from circuit
+* Add and remove qubits and clbits from a circuit.
+* Add and remove nodes efficiently. With number of operations independent of $|V|$.
 
 ## Various data structures to represent quantum circuits with a DAG
 
@@ -50,8 +51,11 @@ An implementation of quantum circuits may rely on a library implementation of DA
 Why might you choose to implement quantum circuits with the DAG included implicitly, or explicitly, but in house?
 
 * Our required DAGS are not generic, perhaps not even typical. For example graph libraries are used to study scale-free networks. The larger the graph, the larger the degree of the highest-degree nodes. Our graphs have vertices of  limited, often well-characterized and non-random degrees.
+
 * A "subclass" handling circuits of 1q and 2q gates only would be very useful and presents optimization opportunities.
-* Even allowing $n$-qubit gates, you might be able to represent edges more efficiently. Some or maybe even all vertices can be added together with their edges "statically". The degree may be known to the compiler. This is possible in Julia (barring some unforeseen road block). I guess it is also possible in Rust. If not for all, at least for some gates. The graph libraries, on the other hand, typically use only dynamically sized adjacency lists. The size of the lists is data that is looked up at run time, rather than encoded for instance in the type.
+
+* Even allowing $n$-qubit gates, you might be able to represent edges more efficiently. Some or maybe even all vertices can be added together with their edges "statically". The degree may be known to the compiler. This is possible in Julia (barring some unforeseen road block). I guess it is also possible in Rust. If not for all, at least for some gates. The graph libraries, on the other hand, typically use only dynamically sized adjacency lists. The size of the lists is data that is looked up at run time, rather than encoded for instance in the type. [EDIT] This looks like it will be rather difficult. For the moment, I am using wire lists of arbitrary size with no special organization.
+
 * If a gate is attached to a vertex, then information about which edge attaches to which port must be stored outside of core DAG structure.
 
 A remark: My guess is that if you try to invent data structures for quantum circuits and then refine them, you'll converge on one or a very small number of implementations.
