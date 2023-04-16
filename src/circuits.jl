@@ -610,18 +610,9 @@ successors(qc::Circuit, vert) = Graphs.outneighbors(qc.graph, vert)
 
 Return the successors of `vert` in `qc` that are connnected by at least one quantum wire.
 
-The return value is not guaranteed to be a copy.
+The return value is may or may not be a copy of node data.
 """
-function quantum_successors(qc::Circuit, vert)
-    owmap = qc.nodes.outwiremap[vert]
-    length(owmap) == 1 && return owmap
-    if length(owmap) == 2
-        @inbounds (owmap[1] != owmap[2]) && return owmap
-    end
-    s = qc.nodes.outwiremap[vert][1:qc.nodes.numquwires[vert]]
-    return unique!(s)
-end
-
+quantum_successors(qc::Circuit, vert) = NodeStructs.quantum_successors(qc.nodes, vert)
 
 ###
 ### Forwarded methods

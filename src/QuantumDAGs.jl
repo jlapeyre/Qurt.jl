@@ -21,7 +21,7 @@ include("passes.jl")
 include("io_qdags.jl")
 include("builders.jl")
 
-let do_precompile = false
+let do_precompile = true
 if do_precompile
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the
@@ -54,7 +54,17 @@ if do_precompile
         multi_qubit_ops(qc)
         qc = Circuits.Circuit(2)
         Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
+
         depth(qc)
+        topological_vertices(qc)
+        topological_nodes(qc)
+
+        num_qubits(qc)
+        num_clbits(qc)
+        num_wires(qc)
+        qc == qc
+        qc == copy(qc)
+        compose(qc, qc)
         find_runs_two_wires(qc, CX)
         cx_cancellation!(qc)
         (theta,) = QuantumDAGs.Parameters.@makesyms θ

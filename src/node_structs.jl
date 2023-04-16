@@ -463,6 +463,20 @@ function _move_wires!(nodes::ANodeArrays, src::Integer, dst::Integer)
     end
 end
 
+function quantum_successors(nodes::ANodeArrays, vert)
+    owmap = outneighbors(nodes, vert)
+    nq = num_qubits(nodes, vert)
+    if nq == 1
+        length(owmap) == 1 && return owmap
+        return owmap[1:1]
+    end
+    if nq == 2
+        owmap[1] != owmap[2] && return owmap
+        return owmap[1:1]
+    end
+    return unique!(owmap[1:nq])
+end
+
 # TODO: allow passing function, instead of `num_qu_cl_bits`.
 function count_wires(nodes::ANodeArrays)
     dict = Dictionaries.Dictionary{Tuple{Int32,Int},Int}()
