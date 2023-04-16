@@ -23,13 +23,12 @@ const SKIP_REP_TESTS = [
 ##
 
 function analyze_package(package_name=package_to_analyze)
-    result = report_package(string(package_name),
-                            report_pass=JET.BasicPass(),
-                            ignored_modules=( # TODO fix issues with these modules or report them upstrem
-                                              #                AnyFrameModule(Compose),
-                                              #                AnyFrameModule(Base),
-                                              ),
-                            )
+    result = report_package(
+        string(package_name); report_pass=JET.BasicPass(), ignored_modules=( # TODO fix issues with these modules or report them upstrem
+        #                AnyFrameModule(Compose),
+        #                AnyFrameModule(Base),
+    )
+    )
     reports = JET.get_reports(result)
     return reports
 end
@@ -80,7 +79,7 @@ end
 # print just some of the report
 function print_report(report)
     hasproperty(report, :msg) && println(report.msg)
-    hasproperty(report, :vst) && println(report.vst)
+    return hasproperty(report, :vst) && println(report.vst)
 end
 
 function run_reports()
@@ -88,7 +87,7 @@ function run_reports()
     somereports = filter_reports(reports, package_to_analyze)
     @show somereports
     number_of_ignored_jet_reports = length(reports) - length(somereports)
-    @info string(number_of_ignored_jet_reports, " reports ignoreda.")
+    @info string(number_of_ignored_jet_reports, " reports ignored.")
     @info string(length(somereports), " reports not ignored.")
     for rep in somereports
         print_report(rep)

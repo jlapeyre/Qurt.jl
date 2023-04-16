@@ -8,10 +8,10 @@
         @test isinvolution(gate)
     end
     for gate in (SX, S, T)
-        @test ! isinvolution(gate)
+        @test !isinvolution(gate)
     end
     pg = PauliGate([X, Y, Z, I])
     @test isinvolution(pg)
     qc = Circuit(4)
-    @build qc CustomGate{pg}(1,2,3,4)
+    @build qc CustomGate{pg}(1, 2, 3, 4)
 end

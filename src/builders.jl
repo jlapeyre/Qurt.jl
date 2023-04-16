@@ -87,17 +87,32 @@ function _gate(expr)
     expr isa Symbol && return _qualify_element_sym(expr)
     isa(expr, Expr) || error("Expecting a Symbol or Expr.")
     if expr.head === :curly
-        return Expr(:call, :(QuantumDAGs.Elements.ParamElement), expr.args[1], Expr(:tuple, expr.args[2:end]...))
+        return Expr(
+            :call,
+            :(QuantumDAGs.Elements.ParamElement),
+            expr.args[1],
+            Expr(:tuple, expr.args[2:end]...),
+        )
     end
     expr.head === :call || error("Expecting parens or curlies.")
     if isa(expr.args[1], Symbol)
-        return Expr(:call, :(QuantumDAGs.Elements.WiresElement), _qualify_element_sym(expr.args[1]), _parse_wires(expr.args[2:end])...)
+        return Expr(
+            :call,
+            :(QuantumDAGs.Elements.WiresElement),
+            _qualify_element_sym(expr.args[1]),
+            _parse_wires(expr.args[2:end])...,
+        )
     end
     isa(expr.args[1], Expr) || error("Expecting a curlies expression, got $(expr.args[1])")
-    expr.args[1].head === :curly || error("Expecting a curlies expression, got expression type $(expr.args[1].head)")
-    return Expr(:call, :(QuantumDAGs.Elements.WiresParamElement), _qualify_element_sym(expr.args[1].args[1]),
-                Expr(:tuple, expr.args[1].args[2:end]...),
-                _parse_wires(expr.args[2:end])...)
+    expr.args[1].head === :curly ||
+        error("Expecting a curlies expression, got expression type $(expr.args[1].head)")
+    return Expr(
+        :call,
+        :(QuantumDAGs.Elements.WiresParamElement),
+        _qualify_element_sym(expr.args[1].args[1]),
+        Expr(:tuple, expr.args[1].args[2:end]...),
+        _parse_wires(expr.args[2:end])...,
+    )
 end
 
 function _gates(exprs...)
@@ -128,6 +143,5 @@ required by `@gate`.
 macro gates(exprs...)
     return :($(esc(_gates(exprs...))))
 end
-
 
 end # module Builders

@@ -12,11 +12,9 @@ function copyresize!(dst, src)
     return copy!(dst, src)
 end
 
-
 # function maybecollect(v)
 #     return HasO1GetIndexMeth(v) ? v : collect(v)
 # end
-
 
 # TODO: We don't need this I think
 # Why does Julia not have this?

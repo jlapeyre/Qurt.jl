@@ -4,9 +4,10 @@ using Test
 
 using Dictionaries: Dictionary
 
-import QuantumDAGs
+using QuantumDAGs: QuantumDAGs
 
-import QuantumDAGs: Circuits, NodeStructs, Elements, CompoundGates, Interface, WiresMod, Builders
+import QuantumDAGs:
+    Circuits, NodeStructs, Elements, CompoundGates, Interface, WiresMod, Builders, Angle
 
 ## Macros can't be imported inside @testset blocks like normal variable.
 ## So we import them here.
@@ -15,56 +16,6 @@ import QuantumDAGs: Circuits, NodeStructs, Elements, CompoundGates, Interface, W
 ##
 import .Builders: @build, @gate, @gates
 using MEnums: @addinblock
-
-using QuantumDAGs.Interface:
-    count_wires, count_ops, num_qubits, num_clbits, getelement, getwires, getparams
-
-using QuantumDAGs.Circuits:
-    Circuits,
-    Circuit,
-    DefaultGraphType,
-    DefaultNodesType,
-    add_node!,
-    remove_node!,
-    outneighbors,
-    inneighbors,
-    nv,
-    check,
-    substitute_node!,
-    successors,
-    predecessors,
-    edges
-
-#using QuantumDAGs.Builders: @build
-
-using QuantumDAGs.Elements:
-    Elements,
-    Element,
-    ParamElement,
-    RX,
-    I,
-    X,
-    Y,
-    Z,
-    H,
-    RZ,
-    SX,
-    Input,
-    Output,
-    CX,
-    CZ,
-    CH,
-    U,
-    ClOutput,
-    ClInput,
-    UserNoParam,
-    Measure
-
-# TODO: import from proper place
-using QuantumDAGs.Angle:
-    isapprox_turn, normalize_turn, equal_turn, cos_turn, sin_turn, tan_turn
-using QuantumDAGs.NodeStructs: NodeVector
-using QuantumDAGs: QuantumDAGs
 
 include("wires_test.jl")
 include("builders_test.jl")
@@ -77,4 +28,3 @@ include("passes/cancellation_test.jl")
 include("remove_node_test.jl")
 include("aqua_test.jl")
 include("jet_test.jl")
-

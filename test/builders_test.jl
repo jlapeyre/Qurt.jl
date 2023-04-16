@@ -1,6 +1,6 @@
 @testset "@gate, @gates macro builder interface" begin
     using .Elements: Element, I, Y, CX, Measure, WiresElement
-    using .Interface: getwires, getquwires, getclwires
+    using .Interface: getwires, getquwires, getclwires, getparams
 
     gi = @gate I
     gy = @gate Y(2)
@@ -19,6 +19,7 @@ end
 
 @testset "@build macro builder interface" begin
     using .Elements: CX, RX, X, U, Measure
+    using .Circuits: Circuit, getparams, add_node!
 
     qc = Circuit(2)
     @test 5 == @build qc X(1)
@@ -37,6 +38,7 @@ end
 end
 
 @testset "element call builder interface" begin
+    using .Circuits: Circuit, getelement, getwires
     using .Elements: X, Y, CX
 
     qc = Circuit(2)
@@ -51,8 +53,9 @@ end
     @test getwires(qc, nCX) == (1, 2)
 end
 
-
 @testset "circuit call builder interface" begin
+    using .Circuits: Circuit, getelement, getparams
+    using .Elements: X, Y
     using .Elements: X, RX
 
     qc = Circuit(2)

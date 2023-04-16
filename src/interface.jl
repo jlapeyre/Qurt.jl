@@ -34,7 +34,6 @@ export num_qubits,
     isclifford,
     isinvolution
 
-
 ## TODO: we could include an export list for no reason than for the REPL to allow completion
 ## There must be another way to do this.
 
@@ -137,4 +136,3 @@ function isgate end
 function depth end
 
 end # module Interface
-

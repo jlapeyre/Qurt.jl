@@ -19,11 +19,11 @@ num_clbits(cg::CompoundGate) = num_qubits(cg.qc)
 getcircuit(cg::CompoundGate) = cg.qc
 
 function Base.show(io::IO, ::MIME"text/plain", cg::CompoundGate)
-    print(io, "CompoundGate(nq=$(num_qubits(cg)))")
+    return print(io, "CompoundGate(nq=$(num_qubits(cg)))")
 end
 
 function Base.show(io::IO, cg::CompoundGate)
-    print(io, "CompoundGate(nq=$(num_qubits(cg)))")
+    return print(io, "CompoundGate(nq=$(num_qubits(cg)))")
 end
 
 end # module CompoundGates

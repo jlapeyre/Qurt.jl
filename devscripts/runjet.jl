@@ -28,13 +28,12 @@ const SKIP_REP_TESTS = [
 ##
 
 function analyze_package(package_name=package_to_analyze)
-    result = report_package(string(package_name),
-                            report_pass=JET.BasicPass(),
-                            ignored_modules=( # TODO fix issues with these modules or report them upstrem
-                                              #                AnyFrameModule(Compose),
-                                              #                AnyFrameModule(Base),
-                                              ),
-                            )
+    result = report_package(
+        string(package_name); report_pass=JET.BasicPass(), ignored_modules=( # TODO fix issues with these modules or report them upstrem
+        #                AnyFrameModule(Compose),
+        #                AnyFrameModule(Base),
+    )
+    )
     reports = JET.get_reports(result)
     return reports
 end
@@ -85,7 +84,7 @@ end
 # print just some of the report
 function print_report(report)
     hasproperty(report, :msg) && println(report.msg)
-    hasproperty(report, :vst) && println(report.vst)
+    return hasproperty(report, :vst) && println(report.vst)
 end
 
 function run_reports()

@@ -31,8 +31,16 @@ function Wires(nqubits, nclbits)
     output_vertices = vcat(output_qu_vertices, output_cl_vertices)
     qu_wires = collect(1:nqubits)
     cl_wires = collect((1:nclbits) .+ nqubits)
-    return Wires(qu_wires, cl_wires, input_qu_vertices, output_qu_vertices, input_cl_vertices, output_cl_vertices,
-                 input_vertices, output_vertices)
+    return Wires(
+        qu_wires,
+        cl_wires,
+        input_qu_vertices,
+        output_qu_vertices,
+        input_cl_vertices,
+        output_cl_vertices,
+        input_vertices,
+        output_vertices,
+    )
 end
 
 function Base.:(==)(c1::T, c2::T) where {T<:Wires}
@@ -44,9 +52,16 @@ function Base.:(==)(c1::T, c2::T) where {T<:Wires}
 end
 
 function Base.copy(w::Wires)
-    return Wires(copy(w.qu_wires), copy(w.cl_wires), copy(w.quinverts),
-                 copy(w.quoutverts), copy(w.clinverts), copy(w.cloutverts),
-                 copy(w.input_vertices), copy(w.output_vertices))
+    return Wires(
+        copy(w.qu_wires),
+        copy(w.cl_wires),
+        copy(w.quinverts),
+        copy(w.quoutverts),
+        copy(w.clinverts),
+        copy(w.cloutverts),
+        copy(w.input_vertices),
+        copy(w.output_vertices),
+    )
 end
 
 num_qubits(w::Wires) = length(w.qu_wires)
@@ -58,12 +73,12 @@ cl_wires(w::Wires) = w.cl_wires
 
 function add_qu_wire!(w::Wires)
     next_wire = num_wires(w) + 1
-    push!(w.qu_wires, next_wire)
+    return push!(w.qu_wires, next_wire)
 end
 
 function add_cl_wire!(w::Wires)
     next_wire = num_wires(w) + 1
-    push!(w.cl_wires, next_wire)
+    return push!(w.cl_wires, next_wire)
 end
 
 # We could do swap and pop to delete wires.

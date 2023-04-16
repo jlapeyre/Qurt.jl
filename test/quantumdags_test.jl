@@ -5,13 +5,17 @@
 # end
 
 @testset "circuit initialization" begin
+    using .Interface: num_qubits, num_clbits
+    using .Circuits: Circuit
+
     @test Circuit() == Circuit(0) == Circuit(0, 0)
     @test num_qubits(Circuit()) == 0
     @test num_clbits(Circuit()) == 0
 end
 
 @testset "wirevertices" begin
-    using .Circuits: wirevertices
+    using .Circuits: wirevertices, Circuit
+    using .Elements: X, Y, Z, CX, CZ
 
     qc = Circuit(3)
     (nx, ny, nz, ncx, ncz) = @build qc X(1) Y(2) Z(3) CX(1, 2) CZ(2, 3)
@@ -21,6 +25,10 @@ end
 end
 
 @testset "quantum and classical wires" begin
+    using .Elements: Measure, Output, ClOutput
+    using .Circuits: Circuit, add_node!, successors
+    using .Interface: num_qubits, num_clbits, getelement
+
     qc = Circuit(1, 1)
     nM = add_node!(qc, Measure, (1,), (2,))
     @test num_qubits(qc, nM) == 1
@@ -32,6 +40,10 @@ end
 end
 
 @testset "circuit manipulation" begin
+    using .Circuits: Circuit, add_node!, successors, predecessors, substitute_node!
+    using .Elements: X, Y
+    using .Interface: getelement, getwires
+
     qc = Circuit(1)
     nX = qc(X()(1))
     substitute_node!(qc, Y, nX)
@@ -43,6 +55,10 @@ end
 end
 
 @testset "wire mapping" begin
+    using .Circuits: Circuit, outneighbors, inneighbors, add_node!, nv
+    using .Interface: getelement, getwires
+    using .Elements: Input, Output, X, Y, CX, CZ, CH
+
     inout(qc, node, wire) = (inneighbors(qc, node, wire), outneighbors(qc, node, wire))
 
     qc = Circuit(1)
@@ -98,6 +114,11 @@ end
 end
 
 @testset "user-defined gate" begin
+    using .Interface: count_wires, count_ops
+    using .Elements: UserNoParam, Element, Input, Output
+    using .NodeStructs: NodeVector
+    using .Circuits: DefaultNodesType, DefaultGraphType
+
     @addinblock Element UserNoParam MyGate
     for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, 3)
@@ -110,6 +131,8 @@ end
 end
 
 @testset "circuit compare" begin
+    using .Circuits: Circuit, add_node!
+
     qc1 = Circuit(2)
     qc2 = Circuit(2)
     qc3 = Circuit(3)
@@ -131,6 +154,9 @@ end
 end
 
 @testset "empty" begin
+    using .Circuits: DefaultNodesType, DefaultGraphType, Circuit, add_node!
+    using .NodeStructs: NodeVector
+
     (nq, nc) = (2, 2)
     for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
@@ -141,6 +167,9 @@ end
 end
 
 @testset "Circuit" begin
+    using .Circuits: Circuit, check, edges
+    using .Interface: num_qubits, num_clbits
+
     for (nq, nc) in ((1, 1), (3, 2), (20, 10))
         qc = Circuit(nq, nc)
         @test check(qc)
@@ -165,6 +194,9 @@ end
 end
 
 @testset "node structs" begin
+    using .Circuits: DefaultNodesType, DefaultGraphType, Circuit, add_node!
+    using .NodeStructs: NodeVector
+
     for nodetype in (DefaultNodesType, NodeVector)
         (nq, nc) = (3, 3)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
@@ -178,6 +210,9 @@ end
 end
 
 @testset "elements" begin
+    using .Elements: RX, ParamElement
+    using .Angle: isapprox_turn
+
     @test RX(1 / 2) === ParamElement(RX, 1 / 2)
     @test !isapprox_turn(RX(1.5), RX(0.5 + 1e-8))
     @test isapprox_turn(RX(1.5), RX(0.5 + 1e-17))
@@ -185,6 +220,8 @@ end
 end
 
 @testset "angle" begin
+    using .Angle: isapprox_turn, normalize_turn, sin_turn, cos_turn, tan_turn, equal_turn
+
     t1 = 0.12345
     t2 = t1 + 2
     @test (t1 + 2.0) - 2.0 != t1 # choice of t1 is important

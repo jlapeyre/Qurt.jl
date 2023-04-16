@@ -1,7 +1,8 @@
-using .Elements: CompoundGateOp
-using .CompoundGates: CompoundGate
-
 @testset "compound gate" begin
+    using .Elements: CompoundGateOp, X
+    using .CompoundGates: CompoundGate
+    using .Circuits: Circuit, check, add_node!
+
     qcin = Circuit(1)
     @build qcin X(1)
     qcout = Circuit(1)

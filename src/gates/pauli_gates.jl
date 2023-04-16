@@ -14,7 +14,8 @@ Gate representing a string of `n` Pauli operators acting as an `n`-qubit gate.
 struct PauliGate
     paulis::Vector{Element}
     function PauliGate(oneqgates)
-        all(x -> in(x, Paulis), oneqgates) || error("Only 1q Pauli gates are allowed in PauliGate")
+        all(x -> in(x, Paulis), oneqgates) ||
+            error("Only 1q Pauli gates are allowed in PauliGate")
         isa(oneqgates, Tuple) && return new(collect(oneqgates))
         return new(convert(Vector, oneqgates))
     end
@@ -27,7 +28,9 @@ num_clbits(pg::PauliGate) = 0
 
 @addinblock Element MiscGates PauliGate
 
-Base.show(io::IO, pg::PauliGate) = print(io, string("PauliGate(", string.(pg.paulis)..., ")"))
+function Base.show(io::IO, pg::PauliGate)
+    return print(io, string("PauliGate(", string.(pg.paulis)..., ")"))
+end
 isinvolution(::PauliGate) = true
 
 end # module PauliGates

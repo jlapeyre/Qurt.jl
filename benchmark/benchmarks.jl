@@ -25,5 +25,4 @@ function make_big_cx(nq::Integer=1000, ncl::Integer=0, layers=1)
     return qc
 end
 
-SUITE["main"]["count_ops"] = @benchmarkable count_ops(qc) setup=(qc=make_big_cx(10000))
-
+SUITE["main"]["count_ops"] = @benchmarkable count_ops(qc) setup = (qc = make_big_cx(10000))

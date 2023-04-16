@@ -123,29 +123,29 @@ struct NoParamElement
     element::Element
 end
 
-struct WiresElement{QuWiresT, ClWiresT}
+struct WiresElement{QuWiresT,ClWiresT}
     element::Element
     quwires::QuWiresT
     clwires::ClWiresT
 end
 
-struct WiresParamElement{QuWiresT, ClWiresT, ParamsT}
+struct WiresParamElement{QuWiresT,ClWiresT,ParamsT}
     element::Element
     params::ParamsT
     quwires::QuWiresT
     clwires::ClWiresT
 end
 
-Interface.getquwires(x::Union{WiresParamElement, WiresElement}) = x.quwires
-Interface.getclwires(x::Union{WiresParamElement, WiresElement}) = x.clwires
-Interface.getwires(x::Union{WiresParamElement, WiresElement}) = (x.quwires..., x.clwires...)
+Interface.getquwires(x::Union{WiresParamElement,WiresElement}) = x.quwires
+Interface.getclwires(x::Union{WiresParamElement,WiresElement}) = x.clwires
+Interface.getwires(x::Union{WiresParamElement,WiresElement}) = (x.quwires..., x.clwires...)
 
 function Base.show(io::IO, pe::ParamElement)
-    print(io, pe.element, '{', join(pe.params, ","), '}')
+    return print(io, pe.element, '{', join(pe.params, ","), '}')
 end
 
 function Base.show(io::IO, npe::NoParamElement)
-    print(io, npe.element, "{}")
+    return print(io, npe.element, "{}")
 end
 
 function Base.show(io::IO, we::WiresElement)
@@ -264,7 +264,6 @@ X
 The `Y` gate circuit element.
 """
 Y
-
 
 # TODO: We already keep track of largest used index in blocks. We can use them
 # To do the following automatically. Eg define range and get `range(Q1NoParam)`.

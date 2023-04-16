@@ -5,13 +5,15 @@
 ## Assume we have the project activated already
 ## eg with julia --project="."
 using QuantumDAGs: QuantumDAGs
-Pkg.activate(joinpath(dirname(dirname(pathof(QuantumDAGs))), "Dev"))
+
+include("devutils.jl")
+activate_dev()
 # using InteractiveCodeSearch
 # import AirspeedVelocity
 using ControlFlow: @dotimes
-using JuliaFormatter: format
+using JuliaFormatter: JuliaFormatter
 using TermInterface: TermInterface
 using Aqua
 using JET
 
-Pkg.activate(dirname(dirname(pathof(QuantumDAGs))))
+activate_package()

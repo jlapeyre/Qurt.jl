@@ -22,7 +22,12 @@ const NodeVector{NodeT,IntT} = NodeArray{NodeT,1,IntT}
 
 function NodeArray{Node{IntT}}() where {IntT}
     return NodeArray{Node{IntT},1,IntT}(
-        Element[], Tuple{IntT,Vararg{IntT}}[], Int32[], Vector{Int}[], Vector{Int}[], Tuple[]
+        Element[],
+        Tuple{IntT,Vararg{IntT}}[],
+        Int32[],
+        Vector{Int}[],
+        Vector{Int}[],
+        Tuple[],
     )
 end
 

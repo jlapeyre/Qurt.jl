@@ -112,7 +112,7 @@ There is no meaning in the order of neighboring vertices in the edge lists, in f
 
 The number of wires is equal to `nqubits + nclbits`.
 """
-struct Circuit{GT, NT, PT, GPT}
+struct Circuit{GT,NT,PT,GPT}
     graph::GT
     nodes::NT
     param_table::PT
@@ -134,7 +134,7 @@ end
 
 Create a circuit with no qubits, no clbits, and global phase equal to zero.
 """
-Circuit(;global_phase=0.0) = Circuit(0, 0; global_phase=global_phase)
+Circuit(; global_phase=0.0) = Circuit(0, 0; global_phase=global_phase)
 
 """
     Circuit(nqubits::Integer, nclbits::Integer=0; global_phase=0.0)
@@ -150,7 +150,9 @@ function Circuit(nqubits::Integer, nclbits::Integer=0; global_phase=0.0)
     )
 end
 
-function Circuit(::Type{GraphT}, nqubits::Integer, nclbits=0; global_phase=0.0) where {GraphT}
+function Circuit(
+    ::Type{GraphT}, nqubits::Integer, nclbits=0; global_phase=0.0
+) where {GraphT}
     return Circuit(GraphT, DefaultNodesType, nqubits, nclbits; global_phase=global_phase)
 end
 
@@ -163,13 +165,7 @@ function Circuit(
     wires = Wires(nqubits, nclbits)
     __add_io_nodes!(graph, nodes, nqubits, nclbits) # Add edges to graph and node type and wires
 
-    return Circuit(
-        graph,
-        nodes,
-        param_table,
-        wires,
-        Ref(global_phase)
-    )
+    return Circuit(graph, nodes, param_table, wires, Ref(global_phase))
 end
 
 # TODO: Move this to Wires
@@ -224,7 +220,7 @@ function Base.copy(qc::Circuit)
         deepcopy(qc.nodes),
         copy(qc.param_table), # TODO: deepcopy ?
         copy(qc.wires),
-        Ref(global_phase(qc))
+        Ref(global_phase(qc)),
     )
 end
 
@@ -269,7 +265,9 @@ end
 
 ## TODO: maybe move other forwarded methods up here.
 
-Parameters.newparameter!(qc::Circuit, args...) = Parameters.newparameter!(qc.param_table, args...)
+function Parameters.newparameter!(qc::Circuit, args...)
+    return Parameters.newparameter!(qc.param_table, args...)
+end
 Parameters.parameters(qc::Circuit) = Parameters.parameters(qc.param_table)
 
 """
@@ -336,7 +334,6 @@ Return the global phase of `qc`.
 """
 global_phase(qc::Circuit) = qc.global_phase[]
 
-
 """
     nodes(qc::Circuit)
 
@@ -388,7 +385,8 @@ function __add_io_node_data!(
     )
         for wire in wires
             vertex_ind += 1
-            _wireset = element in (Input, Output) ? wireset((wire,), ()) : wireset((), (wire,))
+            _wireset =
+                element in (Input, Output) ? wireset((wire,), ()) : wireset((), (wire,))
             NodeStructs.add_node!(
                 nodes,
                 element,
@@ -429,9 +427,7 @@ function add_node!(qc::Circuit, pe::ParamElement, wires, clwires=())
 end
 
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector
-function add_node!(
-    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=()
-)
+function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
@@ -485,7 +481,7 @@ end
 
 # reindexing after node reindexing has happened.
 function _reindex_param_table!(qc::Circuit, from_vert, to_vert)
-    from_vert == to_vert && return
+    from_vert == to_vert && return nothing
     params = getparams(qc, to_vert)
     table = param_table(qc)
     for (pos, param) in enumerate(params)
@@ -541,14 +537,15 @@ Remove the nodes in the block given by collection `vinds` and connect incoming a
 neighbors of the block on each wire. Assume the first and last elements are on incoming and outgoing
 wires to the block, respectively.
 """
-function remove_block!(qc::Circuit, vinds, vmap = VertexMap(index_type(qc.graph)))
+function remove_block!(qc::Circuit, vinds, vmap=VertexMap(index_type(qc.graph)))
     isempty(vinds) && return vmap
     mappedinds = vmap.(vinds)
     for mappedind in mappedinds
-        Parameters.remove_paramrefs_group!(qc.param_table, getparams(qc, mappedind), mappedind)
+        Parameters.remove_paramrefs_group!(
+            qc.param_table, getparams(qc, mappedind), mappedind
+        )
     end
-    for (from, to) in
-        zip(inneighbors(qc, mappedinds[1]), outneighbors(qc, mappedinds[end]))
+    for (from, to) in zip(inneighbors(qc, mappedinds[1]), outneighbors(qc, mappedinds[end]))
         Graphs.add_edge!(qc.graph, from, to)
     end
     NodeStructs.rewire_across_nodes!(qc.nodes, mappedinds[1], mappedinds[end])
@@ -583,7 +580,9 @@ end
 
 Append `qc_from` to a copy of `qc_to`
 """
-compose(qc::Circuit, qc2::Circuit, quwires=1:num_wires(qc2)) = compose!(deepcopy(qc), qc2, quwires)
+function compose(qc::Circuit, qc2::Circuit, quwires=1:num_wires(qc2))
+    return compose!(deepcopy(qc), qc2, quwires)
+end
 
 # TODO:
 """
@@ -756,11 +755,15 @@ This check could fail if reindexing is not done properly.
 """
 function check_param_table(qc)
     table = param_table(qc)
-    for param_index = keys(table.tab)
+    for param_index in keys(table.tab)
         for coords in table.tab[param_index]
             ref = getparam(qc, coords[1], coords[2])
             if ref.ind != param_index
-                throw(CircuitError("Parmeter $param_index not found at node/position $coords. Found $(ref.ind)"))
+                throw(
+                    CircuitError(
+                        "Parmeter $param_index not found at node/position $coords. Found $(ref.ind)",
+                    ),
+                )
             end
         end
     end

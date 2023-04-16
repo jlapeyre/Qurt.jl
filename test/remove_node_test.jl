@@ -1,4 +1,6 @@
 @testset "remove_node!" begin
+    using .Circuits: Circuit, check, remove_node!, add_node!
+
     CIRCUITS = Dict{Symbol,Any}()
 
     # empty

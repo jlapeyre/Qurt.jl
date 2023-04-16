@@ -42,7 +42,6 @@ import ..Interface:
     node,
     isinvolution
 
-
 using ..Utils: copyresize!
 
 export Node,
@@ -148,7 +147,6 @@ for f in (:isinput, :isoutput, :isquinput, :isquoutput, :isclinput, :iscloutput,
     @eval (Elements.$f)(nv::ANodeArrays, ind) = (Elements.$f)(getelement(nv, ind))
 end
 
-
 function isinvolution(nodes::ANodeArrays, vertex)
     el = getelement(nodes, vertex)
     result = isinvolution(el)
@@ -157,7 +155,6 @@ function isinvolution(nodes::ANodeArrays, vertex)
     el === Elements.CustomGate && return isinvolution(getparam(nodes, vertex, 1))
     return false
 end
-
 
 """
     wireind(nodes, node_ind, wire::Integer)
@@ -556,7 +553,9 @@ end
 
 Return a view of `nodes` containing all with two qubit wires.
 """
-n_qubit_ops(nodes::ANodeArrays, ::Val{N}) where {N} = find_nodes(x -> x.numquwires == N, nodes, :numquwires)
+function n_qubit_ops(nodes::ANodeArrays, ::Val{N}) where {N}
+    return find_nodes(x -> x.numquwires == N, nodes, :numquwires)
+end
 n_qubit_ops(nodes::ANodeArrays, n::Integer) = n_qubit_ops(nodes, Val(n))
 
 # TODO: These are more efficient than n_qubit_ops(nodes, 2) in benchmarks, but it could be a testing artifact.
@@ -573,7 +572,6 @@ two_qubit_ops(nodes::ANodeArrays) = n_qubit_ops(nodes, Val(2))
 Return a view of `nodes` containing all with two qubit wires.
 """
 one_qubit_ops(nodes::ANodeArrays) = n_qubit_ops(nodes, Val(1))
-
 
 """
     multi_qubit_ops(nodes::ANodeArrays)
