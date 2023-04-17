@@ -7,6 +7,8 @@ Build gates and circuits with macros `@build`, `@gate`, and `@gates`.
 """
 module Builders
 
+import ..Utils: _qualify_element_sym
+
 export @build, @gate, @gates
 
 function __parse_builds!(circ, addgates, ex)
@@ -65,12 +67,6 @@ Add gates to `qcircuit`.
 """
 macro build(exprs...)
     return :($(esc(__build(exprs))))
-end
-
-function _qualify_element_sym(sym::Symbol)
-    oexpr = :(QuantumDAGs.Elements.xxx)
-    oexpr.args[2] = QuoteNode(sym)
-    return oexpr
 end
 
 function _parse_wires(args::Vector)

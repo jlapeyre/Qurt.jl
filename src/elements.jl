@@ -13,6 +13,8 @@ using MEnums: MEnums, MEnum, @menum, @addinblock, inblock, ltblock
 using ..Angle: Angle
 using ..QuantumDAGs: QuantumDAGs
 import ..Interface: Interface
+import ..Utils: _qualify_element_sym
+
 
 # Note that all creations, @addinblock, etc, put the new symbol on the export list.
 # We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
@@ -32,6 +34,35 @@ import ..Interface: Interface
 
 # Elements are ops, input/output, ... everything that lives on a vertex
 @menum (Element, blocklength=10^3, numblocks=50, compactshow=true)
+
+# TODO: Could move these two functions elsewhere. They are copied from MEnums.jl
+function _check_begin_block(syms)
+    if length(syms) == 1 && syms[1] isa Expr && syms[1].head === :block
+        syms = syms[1].args
+    end
+    return syms
+end
+
+function _get_qsyms(syms)
+    syms = _check_begin_block(syms)
+    return (QuoteNode(sym) for sym in syms if ! isa(sym, LineNumberNode))
+end
+
+"""
+    @new_elements BlockName sym1 sym2 ...
+
+Add new circuit element symbols to the block of elements named `BlockName`.
+
+# Examples
+```julia-repl
+julia> @new_elements MiscGates MyGate1 MyGate2
+```
+"""
+macro new_elements(blockname, syms...)
+    qsyms = _get_qsyms(syms)
+    qualblock = _qualify_element_sym(blockname)
+    :(MEnums.add_in_block!(QuantumDAGs.Elements.Element, $(esc(qualblock)), $(qsyms...)))
+end
 
 @menum OpBlock begin
     Q1NoParam = 1
@@ -67,9 +98,10 @@ end
 # Try this. CustomGate has no properties. You have to look further in params
 @addinblock Element MiscGates CustomGate
 # Quantum, non-classical, but not a gate
-@addinblock Element QuNonGate Reset
+#@addinblock Element QuNonGate
 # Does Barrier belong here?
-@addinblock Element QuNonGate Barrier
+@addinblock Element QuNonGate Barrier Reset Delay Snapshot
+#{"measure", "reset", "barrier", "snapshot", "delay"}
 # Try putting all quantum gates before all other elements
 @addinblock Element QuCl Q1Measure Measure
 @addinblock Element IONodes ClInput ClOutput Input Output

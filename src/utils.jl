@@ -54,4 +54,18 @@ macro node(expr)
     return :($(esc(_node(expr))))
 end
 
+"""
+    _qualify_element_sym(sym::Symbol)
+
+Return an expression that fully qualifies `sym` in `Elements` module.
+
+For example `:X` -> `:(QuantumDAGs.Elements.X)`
+"""
+function _qualify_element_sym(sym::Symbol)
+    oexpr = :(QuantumDAGs.Elements.xxx)
+    oexpr.args[2] = QuoteNode(sym)
+    return oexpr
+end
+
+
 end # module Utils
