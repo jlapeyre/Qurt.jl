@@ -9,6 +9,7 @@ using QuantumDAGs.Interface
 using QuantumDAGs.NodesGraphs
 using QuantumDAGs.Passes
 using QuantumDAGs.Parameters
+using QuantumDAGs.CouplingMaps
 # Only do import here
 import QuantumDAGs.Elements
 
@@ -17,4 +18,5 @@ import QuantumDAGs.Elements
 
 import QuantumDAGs.Elements.Element
 import QuantumDAGs.CompoundGates
+
 using Graphs

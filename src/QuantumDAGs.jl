@@ -20,6 +20,8 @@ include("gates/pauli_gates.jl")
 include("passes.jl")
 include("io_qdags.jl")
 include("builders.jl")
+include("compiler/coupling_map.jl")
+#include("quantum_info/two_qubit_decompose.jl")
 
 let do_precompile = true
     if do_precompile

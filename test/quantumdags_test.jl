@@ -4,6 +4,20 @@
 #     (nx, ny, nz, ncx, ncz) = @build qc X(1) Y(2) Z(3) CX(1, 2) CZ(2, 3)
 # end
 
+@testset "barrier" begin
+    using .Circuits: Circuit, barrier, outdegree, indegree
+    qc = Circuit(10)
+    nBarrier = barrier(qc)
+    @test outdegree(qc, nBarrier) == 10
+    @test indegree(qc, nBarrier) == 10
+
+    qc = Circuit(10)
+    nBarrier = barrier(qc, 1:2:10)
+    @test outdegree(qc, nBarrier) == 5
+    @test indegree(qc, nBarrier) == 5
+end
+
+
 @testset "circuit initialization" begin
     using .Interface: num_qubits, num_clbits
     using .Circuits: Circuit

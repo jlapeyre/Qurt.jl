@@ -25,6 +25,7 @@ export num_qubits,
     getcircuit,
     getelement,
     getwires,
+    getwireselement,
     getquwires,
     getclwires,
     getparams,
@@ -102,6 +103,7 @@ function check end
 function getelement end
 
 function getwires end
+function getwireselement end
 function getquwires end
 function getclwires end
 function getparams end

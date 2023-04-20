@@ -42,7 +42,7 @@ import ..Interface:
 
 using ..Elements: Elements, Element, Input, Output, ClInput, ClOutput
 using ..Elements: ParamElement, WiresParamElement, WiresElement
-using ..NodeStructs: Node, new_node_vector, NodeStructs, wireset
+using ..NodeStructs: Node, new_node_vector, NodeStructs, packwires
 
 import ..NodeStructs:
     wireind,
@@ -84,7 +84,8 @@ export Circuit,
     compose!,
     compose,
     count_ops_longest_path,
-    num_tensor_factors
+    num_tensor_factors,
+    barrier
 
 const DefaultGraphType = SimpleDiGraph
 const DefaultNodesType = StructVector{Node{Int}}
@@ -390,12 +391,12 @@ function __add_io_node_data!(
     )
         for wire in wires
             vertex_ind += 1
-            _wireset =
-                element in (Input, Output) ? wireset((wire,), ()) : wireset((), (wire,))
+            _packwires =
+                element in (Input, Output) ? packwires((wire,), ()) : packwires((), (wire,))
             NodeStructs.add_node!(
                 nodes,
                 element,
-                _wireset,
+                _packwires,
                 copy(inneighbors(graph, vertex_ind)),
                 copy(outneighbors(graph, vertex_ind)),
             )
@@ -479,7 +480,7 @@ function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, cl
         end
     end
     new_node_ind = NodeStructs.add_node!(
-        qc.nodes, op, wireset(wires, clwires), inwiremap, outwiremap, newparams
+        qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
     )
     return new_vert
 end
@@ -607,6 +608,10 @@ function compose!(qc::Circuit, qc2::Circuit, wireorder=1:num_wires(qc2))
         add_node!(qc, (el, getparams(qc2, vert)), newwires)
     end
     return qc
+end
+
+function barrier(qc::Circuit, qubits=1:num_qubits(qc))
+    add_node!(qc, Elements.Barrier, (qubits...,), ())
 end
 
 """

@@ -38,6 +38,7 @@ import ..Interface:
     num_outwires,
     getelement,
     getwires,
+    getwireselement,
     getparams,
     getparam,
     getquwires,
@@ -78,13 +79,28 @@ function new_node_vector end
 
 # Takes tuple of quantum and classical wires and packages them for insertion into node management
 # structure.
-wireset(quwires::Tuple{Int,Vararg{Int}}, ::Tuple{}) = (quwires, length(quwires))
-wireset(::Tuple{}, clwires::Tuple{Int,Vararg{Int}}) = (clwires, 0)
-wireset(quwires::AbstractVector, ::Tuple{}) = ((quwires...,), length(quwires))
-function wireset(quwires::Tuple{Int,Vararg{Int}}, clwires::Tuple{Int,Vararg{Int}})
+packwires(quwires::Tuple{Int,Vararg{Int}}, ::Tuple{}) = (quwires, length(quwires))
+packwires(::Tuple{}, clwires::Tuple{Int,Vararg{Int}}) = (clwires, 0)
+packwires(quwires::AbstractVector, ::Tuple{}) = ((quwires...,), length(quwires))
+function packwires(quwires::Tuple{Int,Vararg{Int}}, clwires::Tuple{Int,Vararg{Int}})
     return ((quwires..., clwires...), length(quwires))
 end
 
+"""
+    unpackwires(wires, nqu::Integer)
+
+Return a tuple of two tuples, where the first contains the quantum wires and
+the second contains the classical wires.
+
+`wires` contains all of the wires, with quantum wires first.
+"""
+function unpackwires(wires, nqu::Integer)
+    if nqu == length(wires)
+        return (wires, ())
+    else
+        return     ((wires[1:nqu]...,), (wires[nqu+1:end]...,))
+    end
+end
 # TODO: Fix these
 getquwires(wires::Tuple{Int,Vararg{Int}}) = wires
 getclwires(wires::Tuple{Int,Vararg{Int}}) = ()
@@ -118,8 +134,10 @@ function Base.:(==)(n1::Node, n2::Node)
     return true
 end
 
+unpackwires(node::Node) = unpackwires(getwires(node), num_qubits(node))
 getelement(node::Node) = node.element
 getwires(node::Node) = node.wires
+getwireselement(node::Node) = Elements.WiresElement(getelement(node), unpackwires(node)...)
 getparams(node::Node) = node.params
 getparam(node::Node, i::Integer) = getparams(node)[i]
 num_qubits(node::Node) = node.numquwires
@@ -359,6 +377,13 @@ setelement!(nodes::ANodeArrays, op::Element, vert::Integer) = nodes.element[vert
 # Disable this. No test uses it
 #getparams(nodes::ANodeArrays, inds...) = getindex(nodes.params, inds...)
 getparams(nodes::ANodeArrays, ind) = getindex(nodes.params, ind)
+
+unpackwires(nodes::ANodeArrays, ind::Integer) = unpackwires(getwires(nodes, ind), num_qubits(nodes, ind))
+
+function getwireselement(nodes::ANodeArrays, ind::Integer)
+    Elements.WiresElement2(getelement(nodes, ind), getwires(nodes, ind), num_qubits(nodes, ind))
+#    Elements.WiresElement(getelement(nodes, ind), unpackwires(nodes, ind)...)
+end
 
 # Get the `pos`th param from params at node `ind`.
 """

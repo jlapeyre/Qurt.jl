@@ -19,7 +19,6 @@ import ..Utils: _qualify_element_sym
 # Note that all creations, @addinblock, etc, put the new symbol on the export list.
 # We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
 # TODO: Find a way to keep export and defs in sync automtically.
-# export Element, ParamElement, WiresElement, WiresParamElement, NoParamElement
 # export Q1NoParam, I, X, Y, Z, H, P, SX, S, T
 # export Q2NoParam, CX, CY, CZ, CH, CP, DCX, ECR, SWAP, iSWAP
 # export Q1Params1Float, RX, RY, RZ, R
@@ -155,10 +154,18 @@ struct NoParamElement
     element::Element
 end
 
+# TODO: packing and unpacking these Tuples of wires is pretty slow.
+# Try storing this as wires and nqu::Int instead.
 struct WiresElement{QuWiresT,ClWiresT}
     element::Element
     quwires::QuWiresT
     clwires::ClWiresT
+end
+
+struct WiresElement2{WiresT, IntT}
+    element::Element
+    wires::WiresT
+    numq::IntT
 end
 
 struct WiresParamElement{QuWiresT,ClWiresT,ParamsT}
@@ -185,6 +192,15 @@ function Base.show(io::IO, we::WiresElement)
         print(io, we.element, '(', join(we.quwires, ","), ')')
     else
         print(io, we.element, '(', join(we.quwires, ","), "; ", join(we.clwires, ","), ')')
+    end
+end
+
+function Base.show(io::IO, we::WiresElement2)
+    nq = we.numq
+    if nq == length(we.wires)
+        print(io, we.element, '(', join(we.wires, ","), ')')
+    else
+        print(io, we.element, '(', join(we.wires[1:nq], ","), "; ", join(we.wires[nq+1:end], ","), ')')
     end
 end
 
