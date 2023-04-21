@@ -22,7 +22,7 @@ mutable struct DiGraph{T}
     badjlist::Vector{Vector{T}} # backward edges
 end
 
-DiGraph(nv::Integer) = DiGraph{Int64}(nv)
+DiGraph(nv::Integer) = DiGraph{Int}(nv)
 DiGraph{T}(nv::Integer) where {T} = DiGraph(0, [T[] for _ in 1:nv], [T[] for _ in 1:nv])
 
 struct Port{T}
