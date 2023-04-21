@@ -19,8 +19,8 @@ lack of library support.
 
 ## How to install
 
-`Qurt.jl` depends on [MEnums.jl](https://github.com/jlapeyre/MEnums.jl) which is not in the Julia General Registry.
-`MEnums.jl` is registered in another registry which can be added like this:
+`Qurt.jl` depends on a couple of packages, including [MEnums.jl](https://github.com/jlapeyre/MEnums.jl), which are not in the Julia General Registry.
+These packages are registered in another registry which can be added like this:
 ```julia
 pkg> registry add https://github.com/jlapeyre/LapeyreRegistry
 ```
