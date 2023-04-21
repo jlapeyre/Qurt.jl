@@ -11,7 +11,7 @@ module Elements
 
 using MEnums: MEnums, MEnum, @menum, @addinblock, inblock, ltblock
 using ..Angle: Angle
-using ..QuantumDAGs: QuantumDAGs
+using ..Qurt: Qurt
 import ..Interface: Interface
 import ..Utils: _qualify_element_sym
 
@@ -60,7 +60,7 @@ julia> @new_elements MiscGates MyGate1 MyGate2
 macro new_elements(blockname, syms...)
     qsyms = _get_qsyms(syms)
     qualblock = _qualify_element_sym(blockname)
-    :(MEnums.add_in_block!(QuantumDAGs.Elements.Element, $(esc(qualblock)), $(qsyms...)))
+    :(MEnums.add_in_block!(Qurt.Elements.Element, $(esc(qualblock)), $(qsyms...)))
 end
 
 @menum OpBlock begin

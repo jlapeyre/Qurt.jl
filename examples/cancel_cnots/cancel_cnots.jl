@@ -1,7 +1,7 @@
-using QuantumDAGs.Circuits
-using QuantumDAGs.Elements
-using QuantumDAGs.Passes: cx_cancellation!
-using QuantumDAGs.Builders: @build
+using Qurt.Circuits
+using Qurt.Elements
+using Qurt.Passes: cx_cancellation!
+using Qurt.Builders: @build
 
 function make_cnot_circuit()
     nq = 2

@@ -2,9 +2,9 @@ using DictTools
 
 # TODO: tests on this testset ?
 @testset "Four op involution simplification" begin
-    using QuantumDAGs.Passes: cx_cancellation!
-    using QuantumDAGs.NodesGraphs: find_runs_two_wires
-    using QuantumDAGs.Passes: simplify_involution!
+    using Qurt.Passes: cx_cancellation!
+    using Qurt.NodesGraphs: find_runs_two_wires
+    using Qurt.Passes: simplify_involution!
 
     qc = Circuit(1)
     @build qc X(1) X(1) X(1) X(1)
@@ -16,8 +16,8 @@ using DictTools
 end
 
 @testset "CX cancellation" begin
-    using QuantumDAGs.Passes: cx_cancellation!
-    using QuantumDAGs.NodesGraphs: find_runs_two_wires
+    using Qurt.Passes: cx_cancellation!
+    using Qurt.NodesGraphs: find_runs_two_wires
 
     qc = Circuits.Circuit(2)
     @build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)

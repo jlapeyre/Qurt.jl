@@ -1,7 +1,7 @@
-# QuantumDAGs
+# Qurt
 
-[![Build Status](https://github.com/jlapeyre/QuantumDAGs.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/jlapeyre/QuantumDAGs.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/jlapeyre/QuantumDAGs.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/jlapeyre/QuantumDAGs.jl)
+[![Build Status](https://github.com/jlapeyre/Qurt.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/jlapeyre/Qurt.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/jlapeyre/Qurt.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/jlapeyre/Qurt.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![JET QA](https://img.shields.io/badge/JET.jl-%E2%9C%88%EF%B8%8F-%23aa4444)](https://github.com/aviatesk/JET.jl)
 
@@ -12,14 +12,14 @@ This repo explores design of data structures and functions for quantum circuits.
 The repo includes an implementation of some ideas in Julia. Many of the design choices are not specific to Julia.
 
 Here are some [notes on design considerations](./DesignConsiderations.md). The notes are ~~somewhat~~ out of date, as my understanding
-has evolved since I have been implementing `QuantumDAGs.jl`.
+has evolved since I have been implementing `Qurt.jl`.
 
-I am getting closer to committing to developing `QuantumDAGs.jl` in Julia. I have not run into big show stoppers in performance or
+I am getting closer to committing to developing `Qurt.jl` in Julia. I have not run into big show stoppers in performance or
 lack of library support.
 
 ## How to install
 
-`QuantumDAGs.jl` depends on [MEnums.jl](https://github.com/jlapeyre/MEnums.jl) which is not in the Julia General Registry.
+`Qurt.jl` depends on [MEnums.jl](https://github.com/jlapeyre/MEnums.jl) which is not in the Julia General Registry.
 `MEnums.jl` is registered in another registry which can be added like this:
 ```julia
 pkg> registry add https://github.com/jlapeyre/LapeyreRegistry
@@ -35,13 +35,13 @@ At the time I am writing this sentence the [test suite](./test/runtests.jl) pass
 
 Tallying occurences of things on nodes is pretty fast.
 ```julia
-julia> using QuantumDags.jl
+julia> using Qurt.jl
 
 julia> num_gates = 10^6
 1000000
 
 julia> qc = Circuit(10)
-circuit {nq=10, ncl=0, nv=20, ne=10} QuantumDAGs.Nodes.NodeStructOfVec Int64 
+circuit {nq=10, ncl=0, nv=20, ne=10} Qurt.Nodes.NodeStructOfVec Int64 
 
 
 julia> foreach(((gate, wire),) -> add_node!(qc, gate, (wire,)),
@@ -62,7 +62,7 @@ julia> @btime count_ops($qc)
 
 What the DAG looks like:
 ```julia
-julia> using QuantumDags.jl
+julia> using Qurt.jl
 
 julia> qc = Circuit(2, 2)
 circuit {nq=2, ncl=2, nv=8, ne=4} Int64 NodeStructOfVec 

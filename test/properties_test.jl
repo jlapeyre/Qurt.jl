@@ -1,5 +1,5 @@
 @testset "isinvolution" begin
-    import QuantumDAGs.PauliGates.PauliGate
+    import Qurt.PauliGates.PauliGate
     import .Elements: CustomGate, SWAP, I, X, Y, Z, H, CX, CY, CZ
     import .Elements: SX, S, T
     import .Interface: isinvolution

@@ -1,4 +1,4 @@
-module QuantumDAGs
+module Qurt
 
 # For compiling workflows for statically-compiled-like latency
 using SnoopPrecompile: @precompile_setup, @precompile_all_calls
@@ -29,14 +29,14 @@ let do_precompile = true
             # Putting some things in `setup` can reduce the size of the
             # precompile file and potentially make loading faster.
             nothing
-            using QuantumDAGs.Circuits
-            using QuantumDAGs.Circuits: two_qubit_ops, multi_qubit_ops
-            using QuantumDAGs.Elements
-            using QuantumDAGs.Builders
-            using QuantumDAGs.Passes
-            using QuantumDAGs.NodesGraphs
-            using QuantumDAGs.Parameters
-            using QuantumDAGs.Interface
+            using Qurt.Circuits
+            using Qurt.Circuits: two_qubit_ops, multi_qubit_ops
+            using Qurt.Elements
+            using Qurt.Builders
+            using Qurt.Passes
+            using Qurt.NodesGraphs
+            using Qurt.Parameters
+            using Qurt.Interface
             using SymbolicUtils: SymbolicUtils, @syms, Sym
             @precompile_all_calls begin
                 # all calls in this block will be precompiled, regardless of whether
@@ -71,7 +71,7 @@ let do_precompile = true
                 compose(qc, qc)
                 find_runs_two_wires(qc, CX)
                 cx_cancellation!(qc)
-                (theta,) = QuantumDAGs.Parameters.@makesyms θ
+                (theta,) = Qurt.Parameters.@makesyms θ
                 qc = Circuits.Circuit(1)
                 add_node!(qc, (Elements.RX, theta), (1,))
                 t1 = Sym{Real}(:t1)

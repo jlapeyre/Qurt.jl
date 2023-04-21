@@ -1,22 +1,22 @@
 using Revise
-#@time_imports using QuantumDAGs
-using QuantumDAGs
-using QuantumDAGs.Circuits
-using QuantumDAGs.NodeStructs
-using QuantumDAGs.IOQDAGs
-using QuantumDAGs.Builders
-using QuantumDAGs.Interface
-using QuantumDAGs.NodesGraphs
-using QuantumDAGs.Passes
-using QuantumDAGs.Parameters
-using QuantumDAGs.CouplingMaps
+#@time_imports using Qurt
+using Qurt
+using Qurt.Circuits
+using Qurt.NodeStructs
+using Qurt.IOQDAGs
+using Qurt.Builders
+using Qurt.Interface
+using Qurt.NodesGraphs
+using Qurt.Passes
+using Qurt.Parameters
+using Qurt.CouplingMaps
 # Only do import here
-import QuantumDAGs.Elements
+import Qurt.Elements
 
 # To get all of the gates
-# using QuantumDAGs.Elements
+# using Qurt.Elements
 
-import QuantumDAGs.Elements.Element
-import QuantumDAGs.CompoundGates
+import Qurt.Elements.Element
+import Qurt.CompoundGates
 
 using Graphs

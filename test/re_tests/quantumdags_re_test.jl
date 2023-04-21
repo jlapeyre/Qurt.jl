@@ -1,7 +1,7 @@
 @testitem "quantum and classical wires" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Interface
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Interface
     qc = Circuit(1, 1)
     nM = add_node!(qc, Measure, (1,), (2,))
     @test num_qubits(qc, nM) == 1
@@ -13,10 +13,10 @@
 end
 
 @testitem "macro builder interface" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Builders
-    using QuantumDAGs.Interface
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Builders
+    using Qurt.Interface
     qc = Circuit(2)
     @test 5 == @build qc X(1)
     @test [6, 7] == @build qc CX(1, 2) RX{3//2}(1)
@@ -34,10 +34,10 @@ end
 end
 
 @testitem "call builder interface" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Builders
-    using QuantumDAGs.Interface
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Builders
+    using Qurt.Interface
     qc = Circuit(2)
     nX = qc(X()(1))
     nY = qc(Y()(2))
@@ -51,10 +51,10 @@ end
 end
 
 @testitem "circuit manipulation" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Interface
-    using QuantumDAGs.NodeStructs
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Interface
+    using Qurt.NodeStructs
     qc = Circuit(1)
     nX = qc(X()(1))
     substitute_node!(qc, Y, nX)
@@ -66,10 +66,10 @@ end
 end
 
 @testitem "wire mapping" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Interface
-    using QuantumDAGs.NodeStructs
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Interface
+    using Qurt.NodeStructs
     using Graphs
 
     inout(qc, node, wire) = (inneighbors(qc, node, wire), outneighbors(qc, node, wire))
@@ -127,11 +127,11 @@ end
 end
 
 @testitem "user-defined gate" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Circuits: DefaultGraphType, DefaultNodesType
-    using QuantumDAGs.Elements
-    using QuantumDAGs.NodeStructs
-    using QuantumDAGs.Interface
+    using Qurt.Circuits
+    using Qurt.Circuits: DefaultGraphType, DefaultNodesType
+    using Qurt.Elements
+    using Qurt.NodeStructs
+    using Qurt.Interface
     using Dictionaries
     using MEnums
     @addinblock Element UserNoParam MyGate
@@ -146,8 +146,8 @@ end
 end
 
 @testitem "circuit compare" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
+    using Qurt.Circuits
+    using Qurt.Elements
     qc1 = Circuit(2)
     qc2 = Circuit(2)
     qc3 = Circuit(3)
@@ -169,10 +169,10 @@ end
 end
 
 @testitem "empty" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.NodeStructs
-    using QuantumDAGs.Circuits: DefaultGraphType, DefaultNodesType
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.NodeStructs
+    using Qurt.Circuits: DefaultGraphType, DefaultNodesType
     (nq, nc) = (2, 2)
     for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
@@ -183,9 +183,9 @@ end
 end
 
 @testitem "Circuit" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Interface
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Interface
     using Graphs
     for (nq, nc) in ((1, 1), (3, 2), (20, 10))
         qc = Circuit(nq, nc)
@@ -211,11 +211,11 @@ end
 end
 
 @testitem "node structs" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.NodeStructs
-    using QuantumDAGs.Interface
-    using QuantumDAGs.Circuits: DefaultGraphType, DefaultNodesType
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.NodeStructs
+    using Qurt.Interface
+    using Qurt.Circuits: DefaultGraphType, DefaultNodesType
     for nodetype in (DefaultNodesType, NodeVector)
         (nq, nc) = (3, 3)
         qc = Circuit(DefaultGraphType, nodetype, nq, nc)
@@ -229,8 +229,8 @@ end
 end
 
 @testitem "elements" begin
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Angle
+    using Qurt.Elements
+    using Qurt.Angle
     @test RX(1 / 2) === ParamElement(RX, 1 / 2)
     @test !isapprox_turn(RX(1.5), RX(0.5 + 1e-8))
     @test isapprox_turn(RX(1.5), RX(0.5 + 1e-17))
@@ -238,7 +238,7 @@ end
 end
 
 @testitem "angle" begin
-    using QuantumDAGs.Angle
+    using Qurt.Angle
     t1 = 0.12345
     t2 = t1 + 2
     @test (t1 + 2.0) - 2.0 != t1 # choice of t1 is important

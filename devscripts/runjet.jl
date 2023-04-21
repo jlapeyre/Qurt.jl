@@ -1,4 +1,4 @@
-using QuantumDAGs
+using Qurt
 
 include("./devutils.jl")
 
@@ -7,7 +7,7 @@ using JET
 using Test
 activate_package()
 
-const package_to_analyze = QuantumDAGs
+const package_to_analyze = Qurt
 
 ## Ignore these errors. The first string in the pair is
 ## the report message. The second is the file it occurs in.

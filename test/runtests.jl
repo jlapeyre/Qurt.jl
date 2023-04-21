@@ -1,12 +1,12 @@
 #using ReTestItems
-using QuantumDAGs
+using Qurt
 using Test
 
 using Dictionaries: Dictionary
 
-using QuantumDAGs: QuantumDAGs
+using Qurt: Qurt
 
-import QuantumDAGs:
+import Qurt:
     Circuits, NodeStructs, Elements, CompoundGates, Interface, WiresMod, Builders, Angle
 
 ## Macros can't be imported inside @testset blocks like normal variable.
@@ -20,7 +20,7 @@ using MEnums: @addinblock
 include("jet_test.jl")
 include("wires_test.jl")
 include("builders_test.jl")
-include("quantumdags_test.jl")
+include("qurt_test.jl")
 include("properties_test.jl")
 include("compound_gate_test.jl")
 include("symbolic_params_test.jl")

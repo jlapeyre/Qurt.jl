@@ -59,10 +59,10 @@ end
 
 Return an expression that fully qualifies `sym` in `Elements` module.
 
-For example `:X` -> `:(QuantumDAGs.Elements.X)`
+For example `:X` -> `:(Qurt.Elements.X)`
 """
 function _qualify_element_sym(sym::Symbol)
-    oexpr = :(QuantumDAGs.Elements.xxx)
+    oexpr = :(Qurt.Elements.xxx)
     oexpr.args[2] = QuoteNode(sym)
     return oexpr
 end

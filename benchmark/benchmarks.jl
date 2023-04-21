@@ -1,7 +1,7 @@
 using BenchmarkTools
 using AirspeedVelocity
 
-using QuantumDAGs.Interface: count_ops
+using Qurt.Interface: count_ops
 
 const SUITE = BenchmarkGroup()
 

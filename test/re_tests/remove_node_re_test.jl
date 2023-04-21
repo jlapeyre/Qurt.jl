@@ -1,7 +1,7 @@
 @testitem "remove_node!" begin
-    using QuantumDAGs.Circuits
-    using QuantumDAGs.Elements
-    using QuantumDAGs.Interface
+    using Qurt.Circuits
+    using Qurt.Elements
+    using Qurt.Interface
 
     CIRCUITS = Dict{Symbol,Any}()
 

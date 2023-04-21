@@ -1,6 +1,6 @@
 module GraphPlotsExt
 
-using QuantumDAGs: QuantumDAGs
+using Qurt: Qurt
 
 using GraphPlot: GraphPlot
 using Graphs: Graphs
@@ -10,8 +10,8 @@ using Compose: cm
 using Cairo: Cairo
 using Fontconfig: Fontconfig
 
-using QuantumDAGs.Circuits: Circuit
-using QuantumDAGs.Interface: getelement
+using Qurt.Circuits: Circuit
+using Qurt.Interface: getelement
 
 function _compose(qc::Circuit)
     g = qc.graph
@@ -37,7 +37,7 @@ function _compose(qc::Circuit)
 end
 
 # Don't know how to check for success
-function QuantumDAGs.draw(qc::Circuit, filename="circ.pdf")
+function Qurt.draw(qc::Circuit, filename="circ.pdf")
     composition = _compose(qc)
     if endswith(filename, ".pdf")
         Compose.draw(Compose.PDF(filename), composition)

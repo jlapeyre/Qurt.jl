@@ -1,4 +1,4 @@
-name = "QuantumDAGs"
+name = "Qurt"
 uuid = "c5e1564c-46d0-4d88-984f-9aacba45ce63"
 authors = ["John Lapeyre <jlapeyre@users.noreply.github.com> and contributors"]
 version = "0.0.1"

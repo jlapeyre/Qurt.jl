@@ -1,37 +1,37 @@
-using QuantumDAGs
+using Qurt
 using Aqua: Aqua
 
 @testset "aqua deps compat" begin
-    Aqua.test_deps_compat(QuantumDAGs)
+    Aqua.test_deps_compat(Qurt)
 end
 
 # This often gives false positive
 # @testset "aqua project toml formatting" begin
-#     Aqua.test_project_toml_formatting(QuantumDAGs)
+#     Aqua.test_project_toml_formatting(Qurt)
 # end
 
 @testset "aqua unbound_args" begin
-    Aqua.test_unbound_args(QuantumDAGs)
+    Aqua.test_unbound_args(Qurt)
 end
 
 @testset "aqua undefined exports" begin
-    Aqua.test_undefined_exports(QuantumDAGs)
+    Aqua.test_undefined_exports(Qurt)
 end
 
 # Perhaps some of these should be fixed. Some are for combinations of types
 # that make no sense.
 # @testset "aqua test ambiguities" begin
-#     Aqua.test_ambiguities([QuantumDAGs, Core, Base])
+#     Aqua.test_ambiguities([Qurt, Core, Base])
 # end
 
 @testset "aqua piracy" begin
-    Aqua.test_piracy(QuantumDAGs)
+    Aqua.test_piracy(Qurt)
 end
 
 @testset "aqua project extras" begin
-    Aqua.test_project_extras(QuantumDAGs)
+    Aqua.test_project_extras(Qurt)
 end
 
 @testset "aqua state deps" begin
-    Aqua.test_stale_deps(QuantumDAGs)
+    Aqua.test_stale_deps(Qurt)
 end

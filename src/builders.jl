@@ -85,7 +85,7 @@ function _gate(expr)
     if expr.head === :curly
         return Expr(
             :call,
-            :(QuantumDAGs.Elements.ParamElement),
+            :(Qurt.Elements.ParamElement),
             expr.args[1],
             Expr(:tuple, expr.args[2:end]...),
         )
@@ -94,7 +94,7 @@ function _gate(expr)
     if isa(expr.args[1], Symbol)
         return Expr(
             :call,
-            :(QuantumDAGs.Elements.WiresElement),
+            :(Qurt.Elements.WiresElement),
             _qualify_element_sym(expr.args[1]),
             _parse_wires(expr.args[2:end])...,
         )
@@ -104,7 +104,7 @@ function _gate(expr)
         error("Expecting a curlies expression, got expression type $(expr.args[1].head)")
     return Expr(
         :call,
-        :(QuantumDAGs.Elements.WiresParamElement),
+        :(Qurt.Elements.WiresParamElement),
         _qualify_element_sym(expr.args[1].args[1]),
         Expr(:tuple, expr.args[1].args[2:end]...),
         _parse_wires(expr.args[2:end])...,

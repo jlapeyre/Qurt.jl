@@ -3,7 +3,7 @@
 using Revise
 ## Assume we have the project activated already
 ## eg with julia --project="."
-using QuantumDAGs: QuantumDAGs
+using Qurt: Qurt
 
 include("devutils.jl")
 activate_dev()

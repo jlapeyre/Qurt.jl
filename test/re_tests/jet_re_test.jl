@@ -4,7 +4,7 @@
 # using Compose
 
 @testitem "jet" begin
-    using QuantumDAGs
+    using Qurt
     using JET
 
     using JET: ReportPass, BasicPass, InferenceErrorReport, UncaughtExceptionReport
@@ -27,7 +27,7 @@
 
     if get(ENV, "QUANTUMDAGS_JET_TEST", "") == "true"
         rep = report_package(
-            "QuantumDAGs";
+            "Qurt";
             report_pass=MayThrowIsOk(), # TODO have something more fine grained than a generic "do not care about thrown errors"
             ignored_modules=( # TODO fix issues with these modules or report them upstrem
             #                AnyFrameModule(Compose),
