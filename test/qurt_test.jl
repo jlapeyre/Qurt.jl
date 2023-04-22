@@ -5,15 +5,18 @@
 # end
 
 @testset "insert_node!" begin
-    using .Circuits: Circuit, insert_node!, add_node!, wirevertices
+    using .Circuits: Circuit, insert_node!, add_node!, elementvertices
     using .Interface: getelement
     qc = Circuit(2)
     (nx, ny) = @build qc X(1) Y(2)
     insert_node!(qc, @gate(CX(1, 2)), (nx, ny))
     qc2 = Circuit(2)
     @build qc2 CX(1, 2) Y(2) X(1)
-    @test getelement(qc, collect(wirevertices(qc, 1))) == getelement(qc2, collect(wirevertices(qc2, 1)))
-    @test getelement(qc, collect(wirevertices(qc, 2))) == getelement(qc2, collect(wirevertices(qc2, 2)))
+    # Circuits are equivalent but nodes entered in different orders.
+    # We can't detect this equivalence at present. Exponentially hard in general.
+    # So we check nodes on wires.
+    @test collect(elementvertices(qc, 1)) == collect(elementvertices(qc2, 1))
+    @test collect(elementvertices(qc, 2)) == collect(elementvertices(qc2, 2))
 end
 
 @testset "barrier" begin
@@ -28,7 +31,6 @@ end
     @test outdegree(qc, nBarrier) == 5
     @test indegree(qc, nBarrier) == 5
 end
-
 
 @testset "circuit initialization" begin
     using .Interface: num_qubits, num_clbits

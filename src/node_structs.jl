@@ -61,6 +61,8 @@ export Node,
     n_qubit_ops,
     named_nodes,
     wirevertices,
+    itemvertices,
+    elementvertices,
     substitute_node!,
     setelement!,
     count_elements
@@ -313,6 +315,41 @@ with `init_vertex`.
 The final output node is omitted.
 """
 wirevertices(nodes, wire, init_vertex) = WireVertices(nodes, wire, init_vertex)
+
+# Iterate over vertices on a wire, calling `item_func` on each.
+struct ItemVertices{NodeT, F, RT}
+    nodes::NodeT
+    wire::Int
+    item_func::F
+    init_vertex::Int
+    return_type::RT
+end
+
+itemvertices(nodes, wire, item_func, init_vertex, return_type) =
+    ItemVertices(nodes, wire, item_func, init_vertex, return_type)
+
+itemvertices(nodes, wire, item_func, init_vertex) =
+    ItemVertices(nodes, wire, item_func, init_vertex, Any)
+
+function Base.show(io::IO, wn::ItemVertices)
+    return print(io, "itemvertices(wire=$(wn.wire), vert=$(wn.init_vertex))")
+end
+
+Base.eltype(iv::ItemVertices) =  iv.return_type
+
+function Base.iterate(wn::ItemVertices, vertex=wn.init_vertex)
+    isempty(getoutwiremap(wn.nodes, vertex)) && return nothing # Ought to be an output node
+    return (wn.item_func(wn.nodes, vertex, wn.wire), outneighbors(wn.nodes, vertex, wn.wire)) # vertex, next_vertex
+end
+
+Base.IteratorSize(::Type{<:ItemVertices}) = Base.SizeUnknown()
+
+# For some reason this is fastest. > 3x faster than the default
+Base.collect(iv::ItemVertices) = collect(x for x in iv)
+
+function elementvertices(nodes::ANodeArrays, wire, init_vertex)
+    return itemvertices(nodes, wire, (n, v, w) -> getelement(nodes, v), init_vertex, Elements.Element)
+end
 
 """
     outneighborind(nodes::ANodeArrays, node_ind::Integer, wire::Integer)

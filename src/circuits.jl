@@ -51,6 +51,7 @@ import ..NodeStructs:
     setoutwire_ind,
     setinwire_ind,
     wirevertices,
+    elementvertices,
     setelement!,
     substitute_node!,
     two_qubit_ops,
@@ -73,6 +74,8 @@ export Circuit,
     remove_node!,
     remove_block!,
     remove_blocks!,
+    wirevertices,
+    elementvertices,
     topological_nodes,
     topological_vertices,
     predecessors,
@@ -732,6 +735,17 @@ topological_nodes(qc::Circuit) = view(qc.nodes, topological_vertices(qc))
 Return an iterator over ordered vertices on `wire` beginning with the input node.
 """
 wirevertices(qc::Circuit, wire) = wirevertices(qc.nodes, input_vertex(qc, wire), wire)
+
+"""
+    elementvertices(qc::Circuit,  wire::Integer, [init_vertex])
+
+Return an iterator elements on `wire`.
+
+If `init_vertex` is supplied, start on that vertex, rather than the input vertex.
+"""
+function elementvertices(qc::Circuit, wire, init_vertex=input_vertex(qc, wire))
+    return elementvertices(qc.nodes, wire, init_vertex)
+end
 
 """
     predecessors(qc::Circuit, vert)
