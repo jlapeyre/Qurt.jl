@@ -17,10 +17,9 @@ import Qurt:
 import .Builders: @build, @gate, @gates
 using MEnums: @addinblock
 
-include("jet_test.jl")
+include("qurt_test.jl")
 include("wires_test.jl")
 include("builders_test.jl")
-include("qurt_test.jl")
 include("properties_test.jl")
 include("compound_gate_test.jl")
 include("symbolic_params_test.jl")
@@ -28,4 +27,5 @@ include("elements_test.jl")
 include("passes/cancellation_test.jl")
 include("remove_node_test.jl")
 include("aqua_test.jl")
+include("jet_test.jl")
 

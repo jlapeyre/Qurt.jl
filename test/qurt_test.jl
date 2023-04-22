@@ -4,6 +4,18 @@
 #     (nx, ny, nz, ncx, ncz) = @build qc X(1) Y(2) Z(3) CX(1, 2) CZ(2, 3)
 # end
 
+@testset "insert_node!" begin
+    using .Circuits: Circuit, insert_node!, add_node!, wirevertices
+    using .Interface: getelement
+    qc = Circuit(2)
+    (nx, ny) = @build qc X(1) Y(2)
+    insert_node!(qc, @gate(CX(1, 2)), (nx, ny))
+    qc2 = Circuit(2)
+    @build qc2 CX(1, 2) Y(2) X(1)
+    @test getelement(qc, collect(wirevertices(qc, 1))) == getelement(qc2, collect(wirevertices(qc2, 1)))
+    @test getelement(qc, collect(wirevertices(qc, 2))) == getelement(qc2, collect(wirevertices(qc2, 2)))
+end
+
 @testset "barrier" begin
     using .Circuits: Circuit, barrier, outdegree, indegree
     qc = Circuit(10)

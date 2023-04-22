@@ -69,6 +69,7 @@ export Circuit,
     global_phase,
     nodes,
     add_node!,
+    insert_node!,
     remove_node!,
     remove_block!,
     remove_blocks!,
@@ -432,64 +433,9 @@ function add_node!(qc::Circuit, pe::ParamElement, wires, clwires=())
     return add_node!(qc, (pe.element, pe.params), wires, clwires)
 end
 
-# We could require wires::Tuple. This typically makes construction faster than wires::Vector
-function old_add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
-    if isnothing(_inparams)
-        params = tuple()
-    elseif isa(_inparams, Tuple)
-        params = _inparams
-    else
-        params = (_inparams,) # Won't catch mistake [p1, p2] for (p1, p2)
-    end
-    allwires = (wires..., clwires...)
-    new_vert = _add_vertex!(qc.graph)
-    inwiremap = Vector{Int}(undef, length(allwires))
-    outwiremap = Vector{Int}(undef, length(allwires))
-    # Each wire terminates at an output node.
-    wr = wire_indices(qc)
-    for wire in allwires
-        wire in wr || throw(CircuitError("Wire $wire is not in circuit"))
-    end
-    for (i, wire) in enumerate(allwires)
-        out_vertex = output_vertex(qc, wire) # Output node for wire
-        prev = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
-        # Replace prev -> out_vertex with prev -> new_vert -> out_vertex
-        split_edge!(qc.graph, prev, out_vertex, new_vert)
-        setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
-        setinwire_ind(qc.nodes, out_vertex, 1, new_vert)
-        inwiremap[i] = prev
-        outwiremap[i] = out_vertex
-    end
-    # Much of the following if/else block is probably pretty slow.
-    if isempty(params)
-        newparams = params
-    else
-        syminds = findall(x -> isa(x, BasicSymbolic), params)
-        if isempty(syminds)
-            newparams = params
-        else
-            _newparams = Any[x for x in params]
-            new_node_ind = new_vert #  length(qc.nodes) + 1 # not happy with doing this
-            for i in syminds
-                param_ind = Parameters.getornew(qc.param_table.parammap, params[i])
-                param_ref = ParamRef(param_ind)
-                Parameters.add_paramref!(qc.param_table, param_ref, new_node_ind, i)
-                _newparams[i] = param_ref
-            end
-            newparams = (_newparams...,)
-        end
-    end
-    new_node_ind = NodeStructs.add_node!(
-        qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
-    )
-    return new_vert
-end
-
-# function insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=(), out_vertices)
-#     vert_func(wire) =
-# end
-
-# A less verbose solution to iterating would be nice
+## This struct is just for packaging an iterator over wire,vertex pairs
+## used when inserting an element before an output node.
+## A less verbose solution to iterating would be nice
 struct WiresVerts{T, F}
     wires::T
     vfunc::F
@@ -499,7 +445,8 @@ Base.length(wv::WiresVerts) = length(wv.wires)
 Base.eltype(::WiresVerts) = Tuple{Int, Int}
 function Base.iterate(wv::WiresVerts, i=1)
     i > length(wv.wires) && return nothing
-    return ((wv.wires[i], wv.vfunc(wv.wires[i])), i + 1)
+    wire = wv.wires[i]
+    return ((wire, wv.vfunc(wire)), i + 1)
 end
 
 function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
@@ -508,6 +455,41 @@ function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, cl
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
 end
 
+"""
+    insert_node!(qcircuit::Circuit, op::Element, out_vertices, wires::NTuple{<:Any, IntT},
+                   clwires=()) where {IntT <: Integer}
+
+    add_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
+                       out_vertices, wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
+
+Insert `op` or `(op, params)` to `qcircuit` before `out_vertices` on `wires` and `clwires`.
+
+`op` is wired into the circuit at pairs in `zip((wires..., clwires...), out_vertices)`
+"""
+function insert_node!(qc::Circuit, op::Element, out_vertices, wires, clwires=())
+    return insert_node!(qc, (op, nothing), out_vertices, wires, clwires)
+end
+
+function insert_node!(qc::Circuit, wpe::WiresParamElement, out_vertices)
+    return insert_node!(qc, (wpe.element, wpe.params), out_vertices, wpe.quwires, wpe.clwires)
+end
+
+function insert_node!(qc::Circuit, we::WiresElement, out_vertices)
+    return insert_node!(qc, we.element, out_vertices, we.quwires, we.clwires)
+end
+
+function insert_node!(qc::Circuit, pe::ParamElement, out_vertices, wires, clwires=())
+    return insert_node!(qc, (pe.element, pe.params), out_vertices, wires, clwires)
+end
+
+function insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element, <:Any}, out_vertices, wires, clwires=())
+    allwires = (wires..., clwires...)
+    vertex_wires = zip(allwires, out_vertices)
+    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
+end
+
+# This function does work for both add_node! and insert_node!, the first for inserting a node at the end, the
+# second for inserting a node before specified vertices.
 function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires::F, wires, clwires, allwires) where {F}
     if isnothing(_inparams)
         params = tuple()
@@ -527,9 +509,9 @@ function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, verte
     for (i, (wire, out_vertex)) in enumerate(vertex_wires)
         # out_vertex = output_vertex(qc, wire) # Output node for wire
         prev = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
+        setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
         # Replace prev -> out_vertex with prev -> new_vert -> out_vertex
         split_edge!(qc.graph, prev, out_vertex, new_vert)
-        setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
         setinwire_ind(qc.nodes, out_vertex, 1, new_vert)
         inwiremap[i] = prev
         outwiremap[i] = out_vertex
@@ -694,9 +676,6 @@ function remove_blocks!(qc::Circuit, blocks)
     end
     return vmap
 end
-
-# function insert_op!(qc::Circuit, op, vertex_in, vertex_out, wires)
-# end
 
 """
     compose(qc_to::Circuit, qc_from::Circuit, quwires=1:num_wires(qc_from))
