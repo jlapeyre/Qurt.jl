@@ -433,7 +433,7 @@ function add_node!(qc::Circuit, pe::ParamElement, wires, clwires=())
 end
 
 # We could require wires::Tuple. This typically makes construction faster than wires::Vector
-function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
+function old_add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
@@ -451,14 +451,88 @@ function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, cl
         wire in wr || throw(CircuitError("Wire $wire is not in circuit"))
     end
     for (i, wire) in enumerate(allwires)
-        outvert = output_vertex(qc, wire) # Output node for wire
-        prev = only(Graphs.inneighbors(qc.graph, outvert)) # Output node has one inneighbor
-        # Replace prev -> outvert with prev -> new_vert -> outvert
-        split_edge!(qc.graph, prev, outvert, new_vert)
+        out_vertex = output_vertex(qc, wire) # Output node for wire
+        prev = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
+        # Replace prev -> out_vertex with prev -> new_vert -> out_vertex
+        split_edge!(qc.graph, prev, out_vertex, new_vert)
         setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
-        setinwire_ind(qc.nodes, outvert, 1, new_vert)
+        setinwire_ind(qc.nodes, out_vertex, 1, new_vert)
         inwiremap[i] = prev
-        outwiremap[i] = outvert
+        outwiremap[i] = out_vertex
+    end
+    # Much of the following if/else block is probably pretty slow.
+    if isempty(params)
+        newparams = params
+    else
+        syminds = findall(x -> isa(x, BasicSymbolic), params)
+        if isempty(syminds)
+            newparams = params
+        else
+            _newparams = Any[x for x in params]
+            new_node_ind = new_vert #  length(qc.nodes) + 1 # not happy with doing this
+            for i in syminds
+                param_ind = Parameters.getornew(qc.param_table.parammap, params[i])
+                param_ref = ParamRef(param_ind)
+                Parameters.add_paramref!(qc.param_table, param_ref, new_node_ind, i)
+                _newparams[i] = param_ref
+            end
+            newparams = (_newparams...,)
+        end
+    end
+    new_node_ind = NodeStructs.add_node!(
+        qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
+    )
+    return new_vert
+end
+
+# function insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=(), out_vertices)
+#     vert_func(wire) =
+# end
+
+# A less verbose solution to iterating would be nice
+struct WiresVerts{T, F}
+    wires::T
+    vfunc::F
+end
+WiresVerts(qc::Circuit, wires::Tuple) = WiresVerts(wires, wire -> output_vertex(qc, wire))
+Base.length(wv::WiresVerts) = length(wv.wires)
+Base.eltype(::WiresVerts) = Tuple{Int, Int}
+function Base.iterate(wv::WiresVerts, i=1)
+    i > length(wv.wires) && return nothing
+    return ((wv.wires[i], wv.vfunc(wv.wires[i])), i + 1)
+end
+
+function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
+    allwires = (wires..., clwires...)
+    vertex_wires = WiresVerts(qc, allwires)
+    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
+end
+
+function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires::F, wires, clwires, allwires) where {F}
+    if isnothing(_inparams)
+        params = tuple()
+    elseif isa(_inparams, Tuple)
+        params = _inparams
+    else
+        params = (_inparams,) # Won't catch mistake [p1, p2] for (p1, p2)
+    end
+    new_vert = _add_vertex!(qc.graph)
+    inwiremap = Vector{Int}(undef, length(allwires))
+    outwiremap = Vector{Int}(undef, length(allwires))
+    # Each wire terminates at an output node.
+    wr = wire_indices(qc)
+    for wire in allwires
+        wire in wr || throw(CircuitError("Wire $wire is not in circuit"))
+    end
+    for (i, (wire, out_vertex)) in enumerate(vertex_wires)
+        # out_vertex = output_vertex(qc, wire) # Output node for wire
+        prev = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
+        # Replace prev -> out_vertex with prev -> new_vert -> out_vertex
+        split_edge!(qc.graph, prev, out_vertex, new_vert)
+        setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
+        setinwire_ind(qc.nodes, out_vertex, 1, new_vert)
+        inwiremap[i] = prev
+        outwiremap[i] = out_vertex
     end
     # Much of the following if/else block is probably pretty slow.
     if isempty(params)
@@ -534,6 +608,10 @@ end
 RemoveVertices.index_type(::StructVector{<:Node{IntT}}) where {IntT} = IntT
 RemoveVertices.num_vertices(nodes::StructVector{<:Node{<:Integer}}) = length(nodes)
 
+# This works only with a sequence of single gates. Or at least the beginning and
+# end nodes touch all wires being removed.
+# Note that we need three generarions of node indices. The nominal inds, and
+# both forward and backward mapped of these.
 # TODO: more efficient to remove possible ParamRefs in `remove_blocks!` than here.
 # Need a flag here to skip it. But it is nice to see that vmap works correctly here.
 """
@@ -545,17 +623,24 @@ wires to the block, respectively.
 """
 function remove_block!(qc::Circuit, vinds, vmap=VertexMap(index_type(qc.graph)))
     isempty(vinds) && return vmap
+    # Nodes may have been removed since vinds were generated. mappedinds are current inds
     mappedinds = vmap.(vinds)
+    # The table records nodes that have refs to params in table. Remove these records
     for mappedind in mappedinds
         Parameters.remove_paramrefs_group!(
             qc.param_table, getparams(qc, mappedind), mappedind
         )
     end
+    # Assume that ends of block are first and last nodes. Add graph edges from inneighbors of
+    # first node to be removed to outneighbors of last node to be removed.
     for (from, to) in zip(inneighbors(qc, mappedinds[1]), outneighbors(qc, mappedinds[end]))
         Graphs.add_edge!(qc.graph, from, to)
     end
+    # Do the same with wires.
     NodeStructs.rewire_across_nodes!(qc.nodes, mappedinds[1], mappedinds[end])
+    # Now remove all vertices
     RemoveVertices.remove_vertices!(qc, vinds, remove_vertex!, vmap)
+    # Change indices in param table.
     for vind in vinds
         if vind <= length(qc)
             _reindex_param_table!(qc, vmap(vind, Val(:Reverse)), vind)
@@ -563,6 +648,35 @@ function remove_block!(qc::Circuit, vinds, vmap=VertexMap(index_type(qc.graph)))
     end
     return vmap
 end
+
+# function replace_block!(qc::Circuit, vinds, newvertex_1, newvertex_2,
+#                         vmap=VertexMap(index_type(qc.graph)))
+#     isempty(vinds) && return vmap
+#         # Nodes may have been removed since vinds were generated. mappedinds are current inds
+#     mappedinds = vmap.(vinds)
+#     # The table records nodes that have refs to params in table. Remove these records
+#     for mappedind in mappedinds
+#         Parameters.remove_paramrefs_group!(
+#             qc.param_table, getparams(qc, mappedind), mappedind
+#         )
+#     end
+#     # Assume that ends of block are first and last nodes. Add graph edges from inneighbors of
+#     # first node to be removed to outneighbors of last node to be removed.
+#     for (from, to) in zip(inneighbors(qc, mappedinds[1]), outneighbors(qc, mappedinds[end]))
+#         Graphs.add_edge!(qc.graph, from, to)
+#     end
+#     # Do the same with wires.
+#     NodeStructs.rewire_across_nodes!(qc.nodes, mappedinds[1], mappedinds[end])
+#     # Now remove all vertices
+#     RemoveVertices.remove_vertices!(qc, vinds, remove_vertex!, vmap)
+#     # Change indices in param table.
+#     for vind in vinds
+#         if vind <= length(qc)
+#             _reindex_param_table!(qc, vmap(vind, Val(:Reverse)), vind)
+#         end
+#     end
+#     return vmap
+# end
 
 RemoveVertices.num_vertices(qc::Circuit) = RemoveVertices.num_vertices(qc.graph)
 RemoveVertices.index_type(qc::Circuit) = RemoveVertices.index_type(qc.graph)
@@ -580,6 +694,9 @@ function remove_blocks!(qc::Circuit, blocks)
     end
     return vmap
 end
+
+# function insert_op!(qc::Circuit, op, vertex_in, vertex_out, wires)
+# end
 
 """
     compose(qc_to::Circuit, qc_from::Circuit, quwires=1:num_wires(qc_from))
