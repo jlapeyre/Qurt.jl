@@ -83,10 +83,14 @@ function _gate(expr)
     expr isa Symbol && return _qualify_element_sym(expr)
     isa(expr, Expr) || error("Expecting a Symbol or Expr.")
     if expr.head === :curly
+        gate = expr.args[1]
+        if isa(gate, Symbol)
+            gate = _qualify_element_sym(gate)
+        end
         return Expr(
             :call,
             :(Qurt.Elements.ParamElement),
-            expr.args[1],
+            gate,
             Expr(:tuple, expr.args[2:end]...),
         )
     end

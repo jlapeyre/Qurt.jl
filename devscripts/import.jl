@@ -12,11 +12,14 @@ using Qurt.Parameters
 using Qurt.CouplingMaps
 # Only do import here
 import Qurt.Elements
+import Qurt.Elements.Element
+import Qurt.Elements: ParamElement, Element
+import Qurt.Elements.@new_elements
 
 # To get all of the gates
 # using Qurt.Elements
 
-import Qurt.Elements.Element
+
 import Qurt.CompoundGates
 
 using Graphs

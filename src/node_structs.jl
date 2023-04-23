@@ -39,6 +39,7 @@ import ..Interface:
     getelement,
     getwires,
     getwireselement,
+    getparamelement,
     getparams,
     getparam,
     getquwires,
@@ -62,7 +63,8 @@ export Node,
     named_nodes,
     wirevertices,
     itemvertices,
-    elementvertices,
+    wireelements,
+    wireparamelements,
     substitute_node!,
     setelement!,
     count_elements
@@ -344,11 +346,16 @@ end
 
 Base.IteratorSize(::Type{<:ItemVertices}) = Base.SizeUnknown()
 
-# For some reason this is fastest. > 3x faster than the default
+# For some reason this is fastest. > 3x faster than the fallback in Base
 Base.collect(iv::ItemVertices) = collect(x for x in iv)
 
-function elementvertices(nodes::ANodeArrays, wire, init_vertex)
+function wireelements(nodes::ANodeArrays, wire, init_vertex)
     return itemvertices(nodes, wire, (n, v, w) -> getelement(nodes, v), init_vertex, Elements.Element)
+end
+
+# Return type is as good as Any
+function wireparamelements(nodes::ANodeArrays, wire, init_vertex)
+    itemvertices(nodes, wire, (n, v, w) -> getparamelement(nodes, v), init_vertex, Union{Elements.ParamElement, Elements.Element})
 end
 
 """
@@ -414,6 +421,13 @@ setelement!(nodes::ANodeArrays, op::Element, vert::Integer) = nodes.element[vert
 # Disable this. No test uses it
 #getparams(nodes::ANodeArrays, inds...) = getindex(nodes.params, inds...)
 getparams(nodes::ANodeArrays, ind) = getindex(nodes.params, ind)
+
+function getparamelement(nodes::ANodeArrays, ind)
+    params = getparams(nodes, ind)
+    element = getelement(nodes, ind)
+    isempty(params) && return element
+    return Elements.ParamElement(element, params)
+end
 
 unpackwires(nodes::ANodeArrays, ind::Integer) = unpackwires(getwires(nodes, ind), num_qubits(nodes, ind))
 

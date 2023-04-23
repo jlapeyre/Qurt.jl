@@ -1,36 +1,40 @@
 module PauliGates
 
-import ..Elements: Element, I, X, Y, Z, Paulis, MiscGates
+import ..Elements: Element, I, X, Y, Z, Paulis, MiscGates, @new_elements
 import ..Interface: num_qubits, num_clbits, isinvolution
+import ..Qurt # for call to  @new_elements
 import MEnums: @addinblock
 
 # TODO: What is a good way to represent this? As a String?
 # That would be more compact than Vector{Element}
 """
-    PauliGate
+    _PauliGate
 
 Gate representing a string of `n` Pauli operators acting as an `n`-qubit gate.
 """
-struct PauliGate
+struct _PauliGate
     paulis::Vector{Element}
-    function PauliGate(oneqgates)
+    function _PauliGate(oneqgates)
         all(x -> in(x, Paulis), oneqgates) ||
-            error("Only 1q Pauli gates are allowed in PauliGate")
+            error("Only 1q Pauli gates are allowed in _PauliGate")
         isa(oneqgates, Tuple) && return new(collect(oneqgates))
         return new(convert(Vector, oneqgates))
     end
 end
 
-PauliGate() = Element[]
-Base.length(pg::PauliGate) = length(pg.paulis)
-num_qubits(pg::PauliGate) = length(pg)
-num_clbits(pg::PauliGate) = 0
+_PauliGate() = Element[]
+Base.length(pg::_PauliGate) = length(pg.paulis)
+num_qubits(pg::_PauliGate) = length(pg)
+num_clbits(pg::_PauliGate) = 0
 
+# This is causing JET failure
+# @new_elements MiscGates PauliGate
+# So use this instead for now
 @addinblock Element MiscGates PauliGate
 
-function Base.show(io::IO, pg::PauliGate)
-    return print(io, string("PauliGate(", string.(pg.paulis)..., ")"))
+function Base.show(io::IO, pg::_PauliGate)
+    return print(io, string("_PauliGate(", string.(pg.paulis)..., ")"))
 end
-isinvolution(::PauliGate) = true
+isinvolution(::_PauliGate) = true
 
 end # module PauliGates

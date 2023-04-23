@@ -11,6 +11,7 @@ module Elements
 
 using MEnums: MEnums, MEnum, @menum, @addinblock, inblock, ltblock
 using ..Angle: Angle
+import Qurt
 using ..Qurt: Qurt
 import ..Interface: Interface
 import ..Utils: _qualify_element_sym
@@ -18,18 +19,6 @@ import ..Utils: _qualify_element_sym
 
 # Note that all creations, @addinblock, etc, put the new symbol on the export list.
 # We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
-# TODO: Find a way to keep export and defs in sync automtically.
-# export Q1NoParam, I, X, Y, Z, H, P, SX, S, T
-# export Q2NoParam, CX, CY, CZ, CH, CP, DCX, ECR, SWAP, iSWAP
-# export Q1Params1Float, RX, RY, RZ, R
-# export Q2Params1Float, RXX, RYY, RZZ, RZX
-# export Q2Params2Float, XXmYY, XXpYY
-# export Q1Params3Float, U
-# export UserNoParam, UserParams
-# export QuCl, Measure
-# export IONodes, ClInput, ClOutput, Input, Output
-# export isinput,
-#     isoutput, isquinput, isclinput, isquoutput, iscloutput, isionode, isgate, Paulis
 
 # Elements are ops, input/output, ... everything that lives on a vertex
 @menum (Element, blocklength=10^3, numblocks=50, compactshow=true)
