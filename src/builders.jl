@@ -13,6 +13,12 @@ export @build, @gate, @gates
 
 function __parse_builds!(circ, addgates, ex)
     isa(ex, LineNumberNode) && return nothing
+    if isa(ex, Symbol)
+        return push!(addgates, :(add_node!($circ, $ex)))
+    end
+    if !isa(ex, Expr)
+        throw(ArgumentError("Expecting operation expression, got $(ex)"))
+    end
     ex.head === :call || throw(ArgumentError("expecting call, got $(ex.head)"))
     gate = ex.args[1]
     if ex.args[2] isa Expr
@@ -46,7 +52,7 @@ function __build(exprs)
     exprs = exprs[2:end]
     addgates = Any[]
     for ex in exprs
-        if ex.head === :block
+        if isa(ex, Expr) && ex.head === :block
             for exb in ex.args
                 __parse_builds!(circ, addgates, exb)
             end
