@@ -7,9 +7,12 @@ Build gates and circuits with macros `@build`, `@gate`, and `@gates`.
 """
 module Builders
 
-import ..Utils: _qualify_element_sym
+# import ..Utils: _qualify_element_sym
 
 export @build, @gate, @gates
+
+# we now don't want to qualify
+_dont_qualify_element_sym(x) = x
 
 function __parse_builds!(circ, addgates, ex)
     isa(ex, LineNumberNode) && return nothing
@@ -33,14 +36,14 @@ function __parse_builds!(circ, addgates, ex)
     if gate isa Expr
         gate.head === :curly || throw(ArgumentError("expecting curly"))
         params = gate.args[2:end]
-        gate = _qualify_element_sym(first(gate.args))
+        gate = _dont_qualify_element_sym(first(gate.args))
         if length(params) == 1
             gatetup = Expr(:tuple, gate, only(params))
         else
             gatetup = Expr(:tuple, gate, Expr(:tuple, params...))
         end
     else
-        gatetup = _qualify_element_sym(gate)
+        gatetup = _dont_qualify_element_sym(gate)
     end
     quwiretup = Expr(:tuple, wires...)
     clwiretup = Expr(:tuple, clwires...)
@@ -86,12 +89,12 @@ function _parse_wires(args::Vector)
 end
 
 function _gate(expr)
-    expr isa Symbol && return _qualify_element_sym(expr)
+    expr isa Symbol && return _dont_qualify_element_sym(expr)
     isa(expr, Expr) || error("Expecting a Symbol or Expr.")
     if expr.head === :curly
         gate = expr.args[1]
         if isa(gate, Symbol)
-            gate = _qualify_element_sym(gate)
+            gate = _dont_qualify_element_sym(gate)
         end
         return Expr(
             :call,
@@ -105,7 +108,7 @@ function _gate(expr)
         return Expr(
             :call,
             :(Qurt.Elements.WiresElement),
-            _qualify_element_sym(expr.args[1]),
+            _dont_qualify_element_sym(expr.args[1]),
             _parse_wires(expr.args[2:end])...,
         )
     end
@@ -115,7 +118,7 @@ function _gate(expr)
     return Expr(
         :call,
         :(Qurt.Elements.WiresParamElement),
-        _qualify_element_sym(expr.args[1].args[1]),
+        _dont_qualify_element_sym(expr.args[1].args[1]),
         Expr(:tuple, expr.args[1].args[2:end]...),
         _parse_wires(expr.args[2:end])...,
     )

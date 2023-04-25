@@ -151,6 +151,15 @@ struct WiresElement{QuWiresT,ClWiresT}
     clwires::ClWiresT
 end
 
+# Cleaner interface for sym(1,2) in a macro.
+# @gate macro can't know what a symbol is bound to
+# It assumes its an Element and calls WiresElement.
+# It may be wrong and this method is what was intended.
+# pe is a symbol bound to a ParamElement.
+function WiresElement(pe::ParamElement, quwires, clwires)
+    return WiresParamElement(pe.element, pe.params, quwires, clwires)
+end
+
 struct WiresElement2{WiresT, IntT}
     element::Element
     wires::WiresT

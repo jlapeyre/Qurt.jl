@@ -8,6 +8,7 @@ using .Elements: G1, G2, G3, G4, G5, G6, G7, G8
 @testset "symbolic params" begin
     using .Circuits: Circuit, param_table, remove_block!, check, remove_node!
     using .Interface: num_parameters
+    using .Elements: X, RX
 
     qc = Circuit(1)
     @test isempty(param_table(qc))

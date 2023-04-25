@@ -6,6 +6,7 @@
 
 @testset "insert_node!" begin
     using .Circuits: Circuit, insert_node!, add_node!, wireelements
+    using .Elements: X, Y, CX
     using .Interface: getelement
     qc = Circuit(2)
     (nx, ny) = @build qc X(1) Y(2)
