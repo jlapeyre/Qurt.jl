@@ -20,9 +20,11 @@ Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 GraphPlot = "a2cc645c-3eea-5389-862e-a155d0052231"
+PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 
 [extensions]
 GraphPlotExt = ["GraphPlot", "Compose", "Cairo", "Fontconfig"]
+PythonCallExt = ["PythonCall"]
 
 [compat]
 Cairo = "1.0"
@@ -35,6 +37,7 @@ GraphPlot = "0.5.2"
 Graphs = "1.8"
 GraphsExt = "^1.1.0"
 MEnums = "^0.6.2"
+PythonCall = "0.9"
 SnoopPrecompile = "1.0"
 StructArrays = "0.6"
 SymbolicUtils = "1"
@@ -49,6 +52,7 @@ Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
 Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
 GraphPlot = "a2cc645c-3eea-5389-862e-a155d0052231"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 

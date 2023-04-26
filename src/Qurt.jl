@@ -3,6 +3,8 @@ module Qurt
 # For compiling workflows for statically-compiled-like latency
 using SnoopPrecompile: @precompile_setup, @precompile_all_calls
 
+function draw end
+
 include("utils.jl")
 include("interface.jl")
 include("angle.jl")
