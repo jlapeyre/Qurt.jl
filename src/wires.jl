@@ -1,7 +1,29 @@
+"""
+    module WiresMod
+
+This module defines the struct `Wires`, which tracks data needed to
+identify wires and their input and output vertices.
+"""
 module WiresMod
 
 import ..Interface: num_qubits, num_clbits, num_wires
 
+"""
+    struct Wires
+
+This struct tracks data needed to identify wires and their input and output vertices.
+When possible, we don't distinguish between classical and quantum wires in the DAG.
+So, we don't number them separately. Qiskit supports adding and removing classical wires after the circuit is constructed.
+It would be simpler if we did not support this. But we do. So we keep an array holding the ordinal wire numbers of
+the quantum wires and another for the classical wires. We also keep four arrays, one to store each of input and output
+vertices for each of quantum and classical wires. For efficiency, we store all of the input and output vertices in
+two more arrays.
+
+These ordinal (or vertex) numbers are currently `Int` (usually `Int64`), but we could switch to `Int32`.
+Considering just the ``n`` qubits, we need storage for ``4n`` integers.
+
+It would be useful to simplify this structure and reduce storage requiremets.
+"""
 struct Wires
     qu_wires::Vector{Int} # wire numbers of qu wires
     cl_wires::Vector{Int} # wire numbers of cl wires

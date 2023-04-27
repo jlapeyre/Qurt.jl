@@ -9,6 +9,15 @@
 ## We could include these in the toplevel. For now, we wrap them in yet
 ## another module.
 
+"""
+    module Interface
+
+This module exports functions that have methods defined in more than
+one module. It may evolve into a module for functions in the highest API.
+It's also a bit of a dumping ground at the moment for functions that may better
+belong elsewhere. For convenience some of the heavily used functions are imported
+and reexported from the top level of this package.
+"""
 module Interface
 
 export num_qubits,
@@ -35,7 +44,30 @@ export num_qubits,
     isclifford,
     isinvolution,
     count_elements,
-    count_op_elements
+    count_op_elements,
+    to_qiskit,
+    draw
+
+
+"""
+    to_qiskit(qcircuit)
+
+Convert `qcircuit` to a Qiskit `QuantumCircuit`.
+
+
+You must add package `PythonCall` to your project and load it before using `to_qiskit`.
+Only a relatively small portion of `QuantumCircuit` is supported.
+"""
+function to_qiskit end
+
+"""
+    draw(qc::Circuit, args...)
+
+Use Python qiskit to draw `qc`.
+
+Some arguments `arg` will work as expected.
+"""
+function draw end
 
 ## TODO: we could include an export list for no reason than for the REPL to allow completion
 ## There must be another way to do this.
@@ -46,6 +78,8 @@ export num_qubits,
 
 Return the number of qubits associated with `obj` or with the `i`th
 element of the collection `objs`.
+
+This function should have a method for any object where it makes sense.
 """
 function num_qubits end
 
@@ -55,9 +89,20 @@ function num_qubits end
 
 Return the number of clbits associated with `obj` or with the `i`th
 element of the collection `objs`.
+
+This function should have a method for any object where it makes sense.
 """
 function num_clbits end
 
+"""
+    num_parameters(obj)
+    num_parameters(obj, i)
+
+Return the number of parameters associated with `obj` or with the `i`th
+element of the collection `objs`.
+
+This function should have a method for any object where it makes sense.
+"""
 function num_parameters end
 
 """
@@ -74,14 +119,36 @@ num_qu_cl_bits(args...) = (num_qubits(args...), num_clbits(args...)) # fallback 
 """
     num_wires(obj)
 
-Return the number of wires (quantum and classical) in `obj`.
+Return the number of wires (quantum and classical) in `obj` or in the `i`th
+element of the collection `objs`.
 """
 function num_wires end
 
+
+"""
+    num_inwires(obj)
+    num_inwires(obj, i)
+
+Return the number of incoming wires (quantum and classical) in `obj` or in the `i`th
+element of the collection `objs`.
+"""
 function num_inwires end
+
+"""
+    num_outwires(obj)
+    num_outwires(obj, i)
+
+Return the number of outgoing wires (quantum and classical) in `obj` or in the `i`th
+element of the collection `objs`.
+"""
 function num_outwires end
 
 # Return a count_map (`Dictionary`) of the ops in an object
+"""
+    count_ops(obj)
+
+Return a count_map (`Dictionary`) of the ops in an object.
+"""
 function count_ops end
 
 function count_ops_vertices end
@@ -89,8 +156,14 @@ function count_ops_vertices end
 function count_elements end
 
 function count_op_elements end
-# Return a count map the number of nodes with `(nqu, ncl)` qubits and classical bits
-# for each value of the `Tuple`.
+
+"""
+    count_wires(qcirc)
+    count_wires(obj)
+
+Return a count map the number of nodes with `(nqu, ncl)` qubits and classical bits
+for each value of the `Tuple`.
+"""
 function count_wires end
 
 # Check integrity of object. Throw error implies bad. Return `nothing` implies nothing. :)

@@ -1,19 +1,18 @@
 """
     module NodeStructs
 
-Manages data associated with vertices on a DAG. This includes node type, for example io, operator, etc.
+This module Manages data associated with vertices on a DAG. This includes node type, for example io, operator, etc.
 Also information on which wires pass through/terminate on the node/vertex and which neighboring vertices
 are on the wires.
 
 The types used here are `Node` for a single node, and `StructVector{<:Node}` for a "struct of arrays" collection.
 
-We also have a roll-your-own struct of arrays `NodeArray` in node_array.jl. It is a bit more performant in many cases. But
-requires more maintenance.
+We also have a roll-your-own struct of arrays `NodeArray` in node_array.jl. It is a bit more performant in many cases. But requires more maintenance.
 """
 module NodeStructs
 
 using StructArrays: StructArrays, StructArray, StructVector
-using ConcreteStructs: @concrete
+#using ConcreteStructs: @concrete
 using MEnums: MEnums
 using Dictionaries: Dictionaries
 using DictTools: DictTools
@@ -141,10 +140,15 @@ end
 unpackwires(node::Node) = unpackwires(getwires(node), num_qubits(node))
 getelement(node::Node) = node.element
 getwires(node::Node) = node.wires
+getquwires(node::Node) = node.wires[1:(node.numquwires)]
+# function getclwires(nodes::ANodeArrays, i)
+#     return nodes.wires[i][(nodes.numquwires[i] + 1):length(nodes.wires[i])]
+# end
 getwireselement(node::Node) = Elements.WiresElement(getelement(node), unpackwires(node)...)
 getparams(node::Node) = node.params
 getparam(node::Node, i::Integer) = getparams(node)[i]
 num_qubits(node::Node) = node.numquwires
+num_clbits(node::Node)= length(node.wires) - node.numquwires
 outneighbors(node::Node) = node.outwiremap
 inneighbors(node::Node) = node.inwiremap
 
@@ -456,7 +460,7 @@ num_qubits(nodes::ANodeArrays, i) = nodes.numquwires[i]
 num_clbits(nodes::ANodeArrays, i) = length(getwires(nodes, i)) - nodes.numquwires[i]
 num_wires(nodes::ANodeArrays, i) = length(getwires(nodes, i))
 num_inwires(nodes::ANodeArrays, i) = length(getinwiremap(nodes, i))
-num_outwires(nodes::ANodeArrays, i) = length(getinwiremap(nodes, i))
+num_outwires(nodes::ANodeArrays, i) = length(getoutwiremap(nodes, i))
 node(nodes::ANodeArrays, i::Integer) = nodes[i]
 node(nodes::ANodeArrays, inds::Integer...) = view(nodes, [inds...])
 node(nodes::ANodeArrays, inds::AbstractVector{<:Integer}) = view(nodes, inds)

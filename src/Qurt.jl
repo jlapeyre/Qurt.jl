@@ -1,9 +1,34 @@
+"""
+    module Qurt
+
+The toplevel module of the package `Qurt` for building and manipulating quantum
+circuits. Documentation for `Qurt` is found in submodules.
+
+There is apparently no way to include documentation from extension modules. There
+are two extension modules
+* `PythonCallExt` This extension will be loaded if you add `PythonCall` to your environment and load it.
+It defines methods [`to_qiskit`](@ref) and [`draw`](@ref) for `Qurt.Circuits.Circuit`. Some documentation has been added
+to [`Interfaces`](@ref) for this.
+* `GraphPlotExt` This extension will be loaded if you add `GraphPlot` to your environment and load it. It
+contains not-well-developed functions for drawing the `Qurt.Circuits.Circuit` as a DAG.
+"""
 module Qurt
 
 # For compiling workflows for statically-compiled-like latency
 using SnoopPrecompile: @precompile_setup, @precompile_all_calls
 
-function draw end
+# .Circuits
+export Circuit, global_phase, add_node!, insert_node!, remove_node!,  remove_block!, remove_blocks!
+
+# .Builders
+export @build, @gate
+
+# .Interface
+export num_qubits, num_clbits, getelement, getparams, getquwires, getclwires, getwires,
+    draw, to_qiskit
+
+# IOQDAGs
+export print_edges
 
 include("utils.jl")
 include("interface.jl")
@@ -25,62 +50,21 @@ include("builders.jl")
 include("compiler/coupling_map.jl")
 #include("quantum_info/two_qubit_decompose.jl")
 
+## For convenience we import some things to the toplevel.
+## This reduces boilerplate somewhat by reducing the number of import statements
+using .Circuits: Circuit, add_node!, insert_node!, global_phase, remove_node!, remove_block!, remove_blocks!
+using .Builders: @build, @gate
+using .Interface: num_qubits, num_clbits, getelement, getparams, getquwires, getclwires, getwires, draw,
+    to_qiskit
+using .IOQDAGs: print_edges
+
+# If do_precompile is `true`, then precompile some code paths to cache as
+# native code. If it is `false`, then the first startup will be faster because
+# this compilation does not happen.
 let do_precompile = true
     if do_precompile
-        @precompile_setup begin
-            # Putting some things in `setup` can reduce the size of the
-            # precompile file and potentially make loading faster.
-            nothing
-            using Qurt.Circuits
-            using Qurt.Circuits: two_qubit_ops, multi_qubit_ops
-            using Qurt.Elements
-            using Qurt.Builders
-            using Qurt.Passes
-            using Qurt.NodesGraphs
-            using Qurt.Parameters
-            using Qurt.Interface
-            using SymbolicUtils: SymbolicUtils, @syms, Sym
-            @precompile_all_calls begin
-                # all calls in this block will be precompiled, regardless of whether
-                # they belong to your package or not (on Julia 1.8 and higher)
-                qc = Circuits.Circuit(2)
-                Circuits.add_node!(qc, Elements.X, (1,))
-                Circuits.add_node!(qc, Elements.Y, (2,))
-                Circuits.add_node!(qc, Elements.CX, (1, 2))
-                IOQDAGs.print_edges(devnull, qc) # stdout would precompile more
-                Circuits.check(qc)
-                Circuits.remove_node!(qc, 5)
-                Circuits.remove_node!(qc, 5)
-                Circuits.remove_node!(qc, 5)
-                Circuits.add_node!(qc, (Elements.RX, 0.5), (1,))
-                count_ops(qc)
-                two_qubit_ops(qc)
-                multi_qubit_ops(qc)
-                qc = Circuits.Circuit(2)
-                Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(
-                    1, 2
-                )
-
-                depth(qc)
-                topological_vertices(qc)
-                topological_nodes(qc)
-
-                num_qubits(qc)
-                num_clbits(qc)
-                num_wires(qc)
-                qc == qc
-                qc == copy(qc)
-                compose(qc, qc)
-                find_runs_two_wires(qc, CX)
-                cx_cancellation!(qc)
-                (theta,) = Qurt.Parameters.@makesyms θ
-                qc = Circuits.Circuit(1)
-                add_node!(qc, (Elements.RX, theta), (1,))
-                t1 = Sym{Real}(:t1)
-                Builders.@build qc RZ{t1}(1)
-            end
-        end
-    end # let do_precompile =
-end # if do_precompile
+        include("precompile.jl")
+    end
+end
 
 end

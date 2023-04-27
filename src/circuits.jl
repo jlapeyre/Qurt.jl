@@ -1,3 +1,10 @@
+"""
+    module Circuits
+
+This module defines the struct `Circuit` to represent circuits and includes low-level
+functions for manipulating them. Functions in this module are often forwarded to, or
+use, functions in the module [`NodeStructs`](@ref).
+"""
 module Circuits
 
 using ConcreteStructs: @concrete
@@ -28,11 +35,15 @@ import ..Interface:
     num_qubits,
     num_clbits,
     num_wires,
+    num_inwires,
+    num_outwires,
     getelement,
     getparams,
     getparamelement,
     getparam,
     getwires,
+    getquwires,
+    getclwires,
     count_wires,
     count_ops,
     count_ops_vertices,
@@ -104,7 +115,8 @@ end
 """
     Circuit
 
-Structure for representing a quantum circuit as a DAG, plus auxiliary information.
+Structure for representing a quantum circuit as a DAG with data attached to
+vertices and edges.
 
 ### Fields
 
@@ -156,6 +168,14 @@ Create a circuit with `nqubits` qubits, `nclbits` clbits.
 
 Pairs of input and output nodes connected by an edges are created for each quantum
 and classical bit.
+
+# Examples
+```jldoctest
+julia> using Qurt.Circuits: Circuit
+
+julia> Circuit(2, 2)
+circuit {nq=2, ncl=2, nv=8, ne=4} Graphs.SimpleGraphs.SimpleDiGraph{Int64} Qurt.NodeStructs.Node{Int64}
+```
 """
 function Circuit(nqubits::Integer, nclbits::Integer=0; global_phase=0.0)
     return Circuit(
@@ -686,7 +706,7 @@ end
 """
     compose(qc_to::Circuit, qc_from::Circuit, quwires=1:num_wires(qc_from))
 
-Append `qc_from` to a copy of `qc_to`
+Append `qc_from` to a copy of `qc_to`.
 """
 function compose(qc::Circuit, qc2::Circuit, quwires=1:num_wires(qc2))
     return compose!(deepcopy(qc), qc2, quwires)
@@ -788,6 +808,9 @@ The return value is may or may not be a copy of node data.
 """
 quantum_successors(qc::Circuit, vert) = NodeStructs.quantum_successors(qc.nodes, vert)
 
+num_inwires(qc::Circuit, vert) = num_inwires(qc.nodes, vert)
+num_outwires(qc::Circuit, vert) = num_outwires(qc.nodes, vert)
+
 ###
 ### Forwarded methods
 ###
@@ -867,6 +890,14 @@ should be the number that are operation or instruction nodes.
 
 # Examples
 ```jldoctest
+julia> import Qurt
+
+julia> using Qurt.Circuits: Circuit, count_op_elements
+
+julia> using Qurt.Builders: @build
+
+julia> using Qurt.Elements: H, CX
+
 julia> qc = Circuit(2);
 
 julia> count_op_elements(qc)
@@ -892,6 +923,8 @@ The meaning of this in the presence of classical components is unclear.
 
 # Examples
 ```jldoctest
+julia> using Qurt.Circuits: Circuit, num_tensor_factors
+
 julia> num_tensor_factors(Circuit(3, 2))
 5
 ```

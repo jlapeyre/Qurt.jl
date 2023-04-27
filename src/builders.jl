@@ -1,13 +1,32 @@
 """
     module Builders
 
-Macro builder interface.
+This module contains circuit and gate builders implemented as macros
 
-Build gates and circuits with macros `@build`, `@gate`, and `@gates`.
+Build gates and circuits with macros [`@build`](@ref), [`@gate`](@ref),
+and [`@gates`](@ref).
+
+Note that `@gate` actually constructs not only gates, but any circuit element,
+such as `Measure` and `Barrier`.
+In particular, the following syntax applies to all circuit elements. (Perhaps
+`@gate` should be renamed)
+
+A structure representing a gate `G` applied at wires `(i, [j,...])` is constructed
+with the syntax `G(i, [j,...])`. Quantum and classical wires are separated with
+a semicolon. Gate parameters `(p1, [p2,...])` are associated with a gate via
+curly brackets like this `G{p1, [p2,...]}`. Both wires and parameters are associated
+by combining this syntax like this `G{p1, [p2,...]}(i, [j,...])`
+
+For example
+```julia
+@gate X(1)  # gate and wire
+@gate CX(2, 3) # gate and wires
+@gate RX{1.5}  # gate and parameters
+@gate RX{1.5}(2) # gate, parameters, and wire
+@gate Measure(1, 2; 3, 4) # Circuit element and quantum and classical wires
+```
 """
 module Builders
-
-# import ..Utils: _qualify_element_sym
 
 export @build, @gate, @gates
 
@@ -17,7 +36,7 @@ _dont_qualify_element_sym(x) = x
 function __parse_builds!(circ, addgates, ex)
     isa(ex, LineNumberNode) && return nothing
     if isa(ex, Symbol)
-        return push!(addgates, :(add_node!($circ, $ex)))
+        return push!(addgates, :(Qurt.Circuits.add_node!($circ, $ex)))
     end
     if !isa(ex, Expr)
         throw(ArgumentError("Expecting operation expression, got $(ex)"))
@@ -47,7 +66,7 @@ function __parse_builds!(circ, addgates, ex)
     end
     quwiretup = Expr(:tuple, wires...)
     clwiretup = Expr(:tuple, clwires...)
-    return push!(addgates, :(add_node!($circ, $gatetup, $quwiretup, $clwiretup)))
+    return push!(addgates, :(Qurt.Circuits.add_node!($circ, $gatetup, $quwiretup, $clwiretup)))
 end
 
 function __build(exprs)
@@ -72,7 +91,7 @@ end
 """
     @build qcircuit gate1 gate2 ...
 
-Add gates to `qcircuit`.
+Add circuit elements to `qcircuit`.
 """
 macro build(exprs...)
     return :($(esc(__build(exprs))))
@@ -136,10 +155,7 @@ end
 
 "Build" a gate.
 
-This macro actually packages information about applying a gate into a struct, which can then
-be unpacked and inserted into a circuit.
-
-`GateName::Element` does not need to be imported. The macro will qualify the name for you.
+There is no single object that represents a gate application. But it's convenient at times to work with a gate together with its parameters, or the wires that it is applied to. This macro actually packages this information about applying a gate into a struct, which can later be unpacked and inserted into a circuit. For example `add_node!` accepts types returned by `@gate`. See also [`@gates`](@ref)
 """
 macro gate(expr)
     return :($(esc(_gate(expr))))
@@ -149,7 +165,7 @@ end
     @gates gate1 gate2 ...
 
 Return a `Tuple` of gates where `gates1`, `gates2`, etc. follow the syntax
-required by `@gate`.
+required by `@gate`. See [`@gate`](@ref)
 """
 macro gates(exprs...)
     return :($(esc(_gates(exprs...))))
