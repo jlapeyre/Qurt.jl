@@ -32,6 +32,8 @@ julia> Pkg.add("Revise")
 julia> Pkg.add("BenchmarkTools")
 ```
 
+`Revise.jl` is an absolutely essential tool for developing. Do `using Revise` before loading code that you are working on.
+
 ## How to install
 
 The Julia general registry is similar to the pypi that you access via `pip`. The general registry is somewhat more gate-kept. `Qurt.jl` and a few of
@@ -76,47 +78,86 @@ julia> using Qurt
 
 ## How to use
 
-At the time I am writing this sentence the [test suite](./test/runtests.jl) passes. There is not much else
-for examples.
+The test suite is a good source of examples. At the time I am writing this sentence the
+[test suite](./test/runtests.jl) passes. You can run this with `Pkg.test()`.
 
-## My development environment
+The [online documentation](https://jlapeyre.github.io/Qurt.jl/dev/) is a somewhat organized (by
+`Documenter.jl`) dump of docstrings.
+
+Here is a [notebook](./QurtDesign.ipynb). The emphasis is on exposing the design.
+
+## Development environment
 
 This is optional, but easy to do.
 I put my development environment in this repo. These are lightweight to instantiate. In Julia, downloaded packages go
 in one place, your depot. Environments don't copy packages from there. They instead maintain `Manifest.toml` which points
 to the packages in the depot.
 
-The following installs package for the environment
+Clone this repo. In a terminal, change from the top level to the [`./devel`](./devel) directory and start Julia with the project
+defined in that directory activated.
+```shell
+shell> cd ./devel
+shell> julia --project="."
+julia> using Pkg
+julia> Pkg.instantiate() # Create Manifest.toml which creates a tree of dependencies and their locations.
+```
+Note that there are other ways to activate a project: Within Julia you can do `using Pkg; Pkg.activate(".")`.
+By default, the version of `Qurt` in the repository (which points to github) will be used by the project in `./devel`.
+To use the cloned version, which you can edit, do this, assuming your current directory is `./devel`.
 ```julia
-julia> # hit `;` to enter shell mode. This is a shell implmented in Julia
-shell> cd Dev # or you can cd to `./Dev` before you start julia
-shell> # hit backspace to return to Julia mode
-julia> # hit `]` to enter package mode
-(@v1.9) pkg> activate .
-(Dev) pkg> instantiate  # download and install packages specified in `./Dev/Project.toml`
+julia> using Pkg
+julia> Pkg.develop(path=abspath("..")) # abspath makes Manifest.toml relocatable, a slight convenience
 ```
 
-From the top level directory of your clone of `Qurt`
+You can load `Qurt` like this.
+```julia
+julia> using Revise # edits are tracked live for all subsequently loaded packages
+julia> using Qurt
+```
+
+### Python and Qiskit
+
+Python is a weak (i.e. optional dependency) at the moment. We assume that you have a Python environment with Qiskit and
+other desired packages installed. I keep a Python virtual environment under the top level directory of `Qurt`.
+This is not committed to the repository. This might work as follows, but you can also use your development installation of qiskit.
 ```shell
+shell> mkdir ./.venvs
+shell> python -m venv .venvs/env-3.11 # or whatever version you prefer
+shell> source ./.venvs/env-3.11/bin/activate
+shell> pip install qiskit-terra # or other qiskit components
+shell> cd ./devel
 shell> julia --project="."
 ```
-
-The following loads some packages from the `Dev` environment and imports some pieces of `Qurt`.
-I usually just start a session with this and then start working on `Qurt`.
 ```julia
-julia> include("devscripts/devandimport.jl")
+julia> include("usepkgs.jl") # Load both `Qurt` and optional Python dependency
+```
+See comments and docs in [`./devel/usepkgs.jl`](./devel/usepkgs.jl) and other files in that directory for more information.
+For convenience, you can load more symbols into the `Main` Julia namespace like this
+```julia
+julia> include("import.jl")
 ```
 
+### Other Julia packages
+You can add and remove packages from this development environment like this
+```julia
+julia> using Pkg; # in case it's not already loaded
+julia> Pkg.add("PackageName")
+julia> Pkg.rm("OtherPackageName")
+```
+As mentioned above these environments are lightweight because they don't copy from your package
+cache (called a "depot"), but rather point to the cache. In addition, they are relocatable. For
+example, changing the directory name won't invalidate them, although any explicit hardcoded links
+that you did with `Pkg.develop(path="path/to/package")` need to be repeated unless they used an absolute
+path.
 
 ## Examples
 
-Tallying occurences of things on nodes is pretty fast.
+Tallying occurrences of things on nodes is pretty fast.
 ```julia
 julia> using Qurt
 julia> using Qurt.Circuits
 julia> using Qurt.Elements
 julia> using Qurt.Interface
-
 
 julia> num_gates = 10^6
 1000000
@@ -183,3 +224,12 @@ julia> add_node!(qc, Measure, (1, 2), (3, 4)); print_edges(qc)
     11 => 7  Measure ((1, 2), (3, 4)) => ClOutput (3,)
     11 => 8  Measure ((1, 2), (3, 4)) => ClOutput (4,)
 ```
+
+<!--  LocalWords:  Qurt QA repo jl jill juliaup runtime py julia BenchmarkTools pypi cli toml devel
+<!--  LocalWords:  cd github abspath Qiskit qiskit mkdir venvs venv terra usepkgs namespace num qc
+<!--  LocalWords:  PackageName OtherPackageName hardcoded nq ncl nv ne Int64 foreach SX btime CX
+<!--  LocalWords:  IOQDAGs NodeStructOfVec ClInput ClOutput
+ -->
+ -->
+ -->
+ -->

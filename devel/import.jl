@@ -1,5 +1,7 @@
+## Bring a bunch of symbols into scope. This is meant for ease of
+## development or command line use.
+
 using Revise
-#@time_imports using Qurt
 using Qurt
 using Qurt.Circuits
 using Qurt.NodeStructs
@@ -18,7 +20,6 @@ import Qurt.Elements.@new_elements
 
 # To get all of the gates
 # using Qurt.Elements
-
 
 import Qurt.CompoundGates
 

@@ -12,7 +12,8 @@ import Qurt.Circuits: topological_vertices
 # Functions extended in this module
 import Qurt.Interface: to_qiskit
 
-import Qurt.Elements: I, X, Y, Z, H, S, T, P, CX, RX, RY, RZ, Measure, Barrier
+import Qurt.Elements: Element, I, X, Y, Z, H, S, T, P, CX, RX, RY, RZ,
+CCX, Measure, Barrier
 
 import Qurt.Elements: isionode
 
@@ -28,22 +29,17 @@ end
 Map Qurt circuit elements to Qiskit QuantumCircuit methods for
 adding circuit instructions.
 """
-const _gate_map = Dict(
-    I => :id,
-    X => :x,
-    Y => :y,
-    Z => :z,
-    H => :h,
-    S => :s,
-    T => :t,
-    P => :p,
-    CX => :cx,
-    RX => :rx,
-    RY => :ry,
-    RZ => :rz,
-    Measure => :measure,
-    Barrier => :barrier
-)
+const _gate_map = Dict{Element, Symbol}()
+
+for element in (I, X, Y, Z, H, S, T, P, CX, RX, RY, RZ, CCX,
+                Measure, Barrier)
+    _gate_map[element] = Symbol(lowercase(string(element)))
+end
+
+const _rev_gate_map = Dict{Symbol, Element}()
+for (el, sym) in _gate_map
+    _rev_gate_map[sym] = el
+end
 
 function unknown_gate(node)
     if isempty(node.params)
@@ -61,10 +57,16 @@ end
 
 # TODO: This will break in general if quantum and classical wires
 # are added or removed from the circuit after creation.
-function fix_wires(nq, _quwires, _clwires)
-    quwires = Int[w - 1 for w in _quwires]
-    clwires = Int[w - nq - 1 for w in _clwires]
-    return (quwires, clwires)
+"""
+    to_qiskit_wires(numqubits, quwires, clwires)
+
+Given `numqubits` and wire indices `quwires` and `clwires` for [`Circuit`](@ref), return wire
+indices for qiskit `QuantumCircuit`.
+"""
+function to_qiskit_wires(nq, quwires, clwires)
+    _quwires = Int[w - 1 for w in quwires]
+    _clwires = Int[w - nq - 1 for w in clwires]
+    return (_quwires, _clwires)
 end
 
 function to_qiskit(qc::Circuit; allow_unknown=false)
@@ -72,7 +74,7 @@ function to_qiskit(qc::Circuit; allow_unknown=false)
     for vert in topological_vertices(qc)
         element = getelement(qc, vert)
         isionode(element) && continue
-        (quwires, clwires) = fix_wires(
+        (quwires, clwires) = to_qiskit_wires(
             num_qubits(qc), getquwires(qc, vert), getclwires(qc, vert))
         qisk_gate = get(_gate_map, element, nothing)
         if isnothing(qisk_gate)

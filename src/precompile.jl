@@ -1,3 +1,15 @@
+## A native-code cache of the example workflow here will be created.  The shortest examples and
+## structures that exercise a codepath (with concrete types) are preferred. Barring invalidations,
+## these paths then execute the first time with performance comparable to statically compiled
+## languages. In the cases below few if any invalidations are observed. Compiling the code paths
+## below takes only a few milliseconds, so there is no compelling need to do it. But we are testing
+## this new feature.
+##
+##
+## This does not in itself prevent cache invalidation. Packages may be loaded with methods that
+## invalidate compiled code. Often these occur entirely within dependencies. I have not yet used any
+## tools to diagnose invalidations.
+
 @precompile_setup begin
     # Putting some things in `setup` can reduce the size of the
     # precompile file and potentially make loading faster.

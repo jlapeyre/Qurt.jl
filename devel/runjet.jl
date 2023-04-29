@@ -1,11 +1,18 @@
+## Run JET for static analysis and report errors.
+##
+## This code is intended to be the same (stay in sync with) the jet_test.jl in the test suite. But
+## it is sometimes more convenient to run it outside the test suite.
+##
+## Before using, activate an environment with required packages (the current directory has such an
+## environment.)
+## Usage:
+## include("runjet.jl")
+## (reports, filtered_reports) = run_reports()
+## See the docstring below for `run_reports`
+
 using Qurt
-
-include("./devutils.jl")
-
-activate_dev()
 using JET
 using Test
-activate_package()
 
 const package_to_analyze = Qurt
 
@@ -91,6 +98,18 @@ function print_report(report)
     return hasproperty(report, :vst) && println(report.vst)
 end
 
+"""
+    run_reports()
+
+Run JET and return both filtered and unfiltered results.
+
+Note that in JET, a "report" is just for a single error or item. A vector of
+these reports is returned.
+
+Run `(reports, filtered_reports) = run_reports()`. The first item `reports`
+contains all reports. `filtered_reports` is the same, but with some reports
+removed that matched our rules for exceptions.
+"""
 function run_reports()
     reports = analyze_package(package_to_analyze)
     somereports = filter_reports(reports, package_to_analyze)
@@ -103,8 +122,3 @@ function run_reports()
     end
     return (somereports, reports)
 end
-
-# @testset "jet" begin
-#     (somereports, reports) = run_reports()
-#     @test length(somereports) == 0
-# end # @testset "jet" begin
