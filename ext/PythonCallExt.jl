@@ -104,15 +104,14 @@ end
 
 # TODO: figure out how PythonCall does translation
 """
-    draw(qc::Circuit, args...)
+    draw(qc::Circuit, args...; kwargs...)
 
 Use Python qiskit to draw `qc`.
 
-Some arguments `arg` will work as expected.
+Most arguments will work as expected.
 """
 function Qurt.Interface.draw(qc::Circuit, args...; kwargs...)
-    qcqisk = to_qiskit(qc; allow_unknown=true)
-    return qcqisk.draw(args..., kwargs...)
+    return to_qiskit(qc; allow_unknown=true).draw(args...; kwargs...)
 end
 
 end # module PythonCallExt
