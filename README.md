@@ -137,6 +137,24 @@ For convenience, you can load more symbols into the `Main` Julia namespace like 
 julia> include("import.jl")
 ```
 
+Using the Python extension and Qiskit, you can do this
+```julia
+using Qurt.Elements: H, CX, Measure
+qc = Circuit(2, 2)
+@build qc H(1) CX(1, 2) Measure(1, 2; 3, 4)
+draw(qc)
+
+```
+```
+     ┌───┐     ┌─┐
+q_0: ┤ H ├──■──┤M├───
+     └───┘┌─┴─┐└╥┘┌─┐
+q_1: ─────┤ X ├─╫─┤M├
+          └───┘ ║ └╥┘
+c: 2/═══════════╩══╩═
+                0  1
+```
+
 ### Other Julia packages
 You can add and remove packages from this development environment like this
 ```julia
@@ -163,7 +181,7 @@ julia> num_gates = 10^6
 1000000
 
 julia> qc = Circuit(10)
-circuit {nq=10, ncl=0, nv=20, ne=10} Qurt.Nodes.NodeStructOfVec Int64 
+circuit {nq=10, ncl=0, nv=20, ne=10} Qurt.Nodes.NodeStructOfVec Int64
 
 julia> foreach(((gate, wire),) -> add_node!(qc, gate, (wire,)),
                  zip(rand(X:SX, num_gates), rand(1:10, num_gates)));
@@ -188,7 +206,7 @@ julia> using Qurt.IOQDAGs
 julia> using Qurt.Elements
 
 julia> qc = Circuit(2, 2)
-circuit {nq=2, ncl=2, nv=8, ne=4} Int64 NodeStructOfVec 
+circuit {nq=2, ncl=2, nv=8, ne=4} Int64 NodeStructOfVec
 
 julia> qc = Circuit(2, 2); print_edges(qc)
     1 => 3  Input (1,) => Output (1,)
