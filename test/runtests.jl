@@ -15,7 +15,7 @@ import Qurt:
 ## See https://discourse.julialang.org/t/macros-not-imported-within-blocks/47009
 ##
 import .Builders: @build, @gate, @gates
-using MEnums: @addinblock
+using BlockEnums: @addinblock
 
 include("jet_test.jl")
 include("qurt_test.jl")

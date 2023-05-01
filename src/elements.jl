@@ -9,7 +9,7 @@ gate.
 """
 module Elements
 
-using MEnums: MEnums, MEnum, @menum, @addinblock, inblock, ltblock
+using BlockEnums: BlockEnums, BlockEnum, @blockenum, @addinblock, inblock, ltblock
 using ..Angle: Angle
 import Qurt
 using ..Qurt: Qurt
@@ -21,9 +21,9 @@ import ..Utils: _qualify_element_sym
 # We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
 
 # Elements are ops, input/output, ... everything that lives on a vertex
-@menum (Element, blocklength=10^3, numblocks=50, compactshow=true)
+@blockenum (Element, blocklength=10^3, numblocks=50, compactshow=true)
 
-# TODO: Could move these two functions elsewhere. They are copied from MEnums.jl
+# TODO: Could move these two functions elsewhere. They are copied from BlockEnums.jl
 function _check_begin_block(syms)
     if length(syms) == 1 && syms[1] isa Expr && syms[1].head === :block
         syms = syms[1].args
@@ -49,10 +49,10 @@ julia> @new_elements MiscGates MyGate1 MyGate2
 macro new_elements(blockname, syms...)
     qsyms = _get_qsyms(syms)
     qualblock = _qualify_element_sym(blockname)
-    :(MEnums.add_in_block!(Qurt.Elements.Element, $(esc(qualblock)), $(qsyms...)))
+    :(BlockEnums.add_in_block!(Qurt.Elements.Element, $(esc(qualblock)), $(qsyms...)))
 end
 
-@menum OpBlock begin
+@blockenum OpBlock begin
     Q1NoParam = 1
     Q2NoParam
     Q3NoParam
@@ -97,14 +97,14 @@ end
 @addinblock Element IONodes ClInput ClOutput Input Output
 @addinblock Element ControlFlow Break Continue IfElse For While Case
 
-const Q1GateBlocks = (Q1NoParam, Q1Params1Float, Q1Params3Float)
+const Q1GateBlocks = (Q1NoParam, Q1Params1Float, Q1Params2Float, Q1Params3Float)
 const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 # Hmm. what if the op takes varying number of qubits. Like measure
 const Q1Blocks = (Q1GateBlocks..., IONodes)
 const Q2Blocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 
 function Interface.isgate(x::Element)
-    return MEnums.ltblock(x, QuCl)
+    return BlockEnums.ltblock(x, QuCl)
 end
 
 const Paulis = (I, X, Y, Z)
@@ -260,10 +260,10 @@ function Angle.isapprox_turn(x::ParamElement, y::ParamElement; kw...)
     return Angle.equal_turn(x, y, (a, b) -> Angle.isapprox_turn(a, b; kw...))
 end
 
-const IntT = MEnums.basetype(Element)
+const IntT = BlockEnums.basetype(Element)
 
 ### `rand(X:Z)` works if the following are defined. They probably allow other similar things.
-### These methods should be defined as an option in MEnums.jl. But for now, they are here.
+### These methods should be defined as an option in BlockEnums.jl. But for now, they are here.
 Base.convert(::Type{Element}, x::Integer) = Element(x)
 Base.convert(::Type{Element}, x::Element) = x
 Element(x::Element) = x

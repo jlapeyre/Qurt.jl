@@ -4,13 +4,13 @@ authors = ["John Lapeyre <jlapeyre@users.noreply.github.com> and contributors"]
 version = "0.0.1"
 
 [deps]
+BlockEnums = "7c338ca5-b20e-417b-9799-aae6c720705e"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DictTools = "6033591e-aae9-4c88-8f5f-a341f9ca5325"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 GraphsExt = "69a6172a-6e93-4cbc-8d73-93c06968df79"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MEnums = "7c338ca5-b20e-417b-9799-aae6c720705e"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
@@ -27,6 +27,7 @@ GraphPlotExt = ["GraphPlot", "Compose", "Cairo", "Fontconfig"]
 PythonCallExt = ["PythonCall"]
 
 [compat]
+BlockEnums = "1"
 Cairo = "1.0"
 Compose = "0.9"
 ConcreteStructs = "0.2.3"
@@ -36,7 +37,7 @@ Fontconfig = "0.4.1"
 GraphPlot = "0.5.2"
 Graphs = "1.8"
 GraphsExt = "^1.1.0"
-MEnums = "^0.6.2"
+PrecompileTools = "1"
 PythonCall = "0.9"
 StructArrays = "0.6"
 SymbolicUtils = "1"

@@ -133,7 +133,7 @@ end
     using Qurt.NodeStructs
     using Qurt.Interface
     using Dictionaries
-    using MEnums
+    using BlockEnums
     @addinblock Element UserNoParam MyGate
     for nodetype in (DefaultNodesType, NodeVector)
         qc = Circuit(DefaultGraphType, nodetype, 3)

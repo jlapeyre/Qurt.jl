@@ -13,7 +13,7 @@ module NodeStructs
 
 using StructArrays: StructArrays, StructArray, StructVector
 #using ConcreteStructs: @concrete
-using MEnums: MEnums
+using BlockEnums: BlockEnums
 using Dictionaries: Dictionaries
 using DictTools: DictTools
 # TODO: Import these symbols from elsewhere?
@@ -577,7 +577,7 @@ end
 # This is as fast as counting `Int32`s directly.
 function count_ops(nodes::ANodeArrays)
     isempty(nodes.element) && return Dictionaries.Dictionary{Element,Int}()
-    d = DictTools.count_map(reinterpret(MEnums.basetype(Element), nodes.element))
+    d = DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
     return Dictionaries.Dictionary(Element.(keys(d)), values(d))
 end
 
@@ -587,9 +587,9 @@ end
 Return a count map of elements on `vertices`.
 """
 function count_ops_vertices(nodes::ANodeArrays, vertices)
-#    intnodes = reinterpret(MEnums.basetype(Element), nodes.element)
-#    dict = Dictionaries.Dictionary{MEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(MEnums.basetype(Element), nodes.element))
-#    dict = Dict{MEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(MEnums.basetype(Element), nodes.element))
+#    intnodes = reinterpret(BlockEnums.basetype(Element), nodes.element)
+#    dict = Dictionaries.Dictionary{BlockEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
+#    dict = Dict{BlockEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
     dict = Dictionaries.Dictionary{Element,Int}()
     for v in vertices
         DictTools.add_counts!(dict, getelement(nodes, v))

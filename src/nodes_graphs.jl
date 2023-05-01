@@ -19,7 +19,7 @@ function _find_runs(qc::Circuit, element, nwires, checkfun::F) where {F}
     return _find_runs(qc.nodes, topological_sort(qc.graph), element, nwires, checkfun)
 end
 
-## Might as well make MEnums iterable since they are in a way numbers
+## Might as well make BlockEnums iterable since they are in a way numbers
 Base.iterate(x::Element) = (x, nothing)
 Base.iterate(x::Element, ::Any) = nothing
 

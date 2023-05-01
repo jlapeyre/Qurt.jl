@@ -3,9 +3,9 @@ module Durations
 ## We could use Unitful.jl. But it's a bit heavy
 ## In fact, untits play a minor role, I think.
 
-using MEnums: MEnums
+using BlockEnums: BlockEnums
 # May want to generate these in a scope
-MEnums.@menum Stretch
+BlockEnums.@blockenum Stretch
 # We may not need these at all
 abstract type Unit end
 struct NanoSecond <: Unit end
