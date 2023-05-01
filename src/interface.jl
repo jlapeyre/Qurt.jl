@@ -46,6 +46,7 @@ export num_qubits,
     count_elements,
     count_op_elements,
     to_qiskit,
+    to_qurt_circuit,
     draw
 
 
@@ -59,6 +60,13 @@ You must add package `PythonCall` to your project and load it before using `to_q
 Only a relatively small portion of `QuantumCircuit` is supported.
 """
 function to_qiskit end
+
+"""
+    to_qurt_circuit(qiskit_circuit)
+
+Convert the Python-qiskit `qiskit_circuit` to a `Qurt.Circuits.Circuit`.
+"""
+function to_qurt_circuit end
 
 """
     draw(qc::Circuit, args...)

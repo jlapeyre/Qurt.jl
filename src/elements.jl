@@ -72,12 +72,14 @@ end
     ControlFlow
 end
 
-@addinblock Element Q1NoParam I X Y Z H P SX S T
-@addinblock Element Q2NoParam CX CY CZ CH CP DCX ECR SWAP iSWAP
-@addinblock Element Q3NoParam CCX
+@addinblock Element Q1NoParam I X Y Z H SX SXDG S SDG T
+@addinblock Element Q2NoParam CX CY CZ CH CS CSDG DCX ECR SWAP iSWAP
+@addinblock Element Q3NoParam CCX RCCX
+@addinblock Element QNNoParam MCP
 # Why did ? Put `Float` here ?
-@addinblock Element Q1Params1Float RX RY RZ R
-@addinblock Element Q2Params1Float RXX RYY RZZ RZX
+@addinblock Element Q1Params1Float RX RY RZ P
+@addinblock Element Q2Params1Float RXX RYY RZZ RZX CP
+@addinblock Element Q1Params2Float R
 @addinblock Element Q2Params2Float XXmYY XXpYY
 @addinblock Element Q1Params3Float U
 # TODO: Better solution for namespace coll. than appending 'Op'

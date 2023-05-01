@@ -3,25 +3,17 @@ module PythonCallExt
 ENV["JULIA_CONDAPKG_BACKEND"] = "Null"
 
 import PythonCall
+using PythonCall: pyconvert
 import Qurt
 import Qurt: Circuit, num_qubits, num_clbits, global_phase,
     getelement, getparams, getquwires, getclwires, getwires,
-    getparams
+    getparams, add_node!
 import Qurt.Circuits: topological_vertices
 
 # Functions extended in this module
 import Qurt.Interface: to_qiskit
 
-import Qurt.Elements: Element, I, X, Y, Z, H, S, T, P, CX, RX, RY, RZ,
-CCX, Measure, Barrier
-
-import Qurt.Elements: isionode
-
-const _qiskit = PythonCall.pynew() # initially NULL
-
-function __init__()
-    PythonCall.pycopy!(_qiskit, PythonCall.pyimport("qiskit"))
-end
+import Qurt.Elements: isionode, Element
 
 """
     _gate_map
@@ -31,10 +23,20 @@ adding circuit instructions.
 """
 const _gate_map = Dict{Element, Symbol}()
 
-for element in (I, X, Y, Z, H, S, T, P, CX, RX, RY, RZ, CCX,
+import Qurt.Elements: Element, I, X, Y, Z, H, S, SX, SXDG, SDG, T, P, CP, CX, CS, CSDG, RX, RY, RZ,
+CCX, RCCX, MCP, SWAP, iSWAP, Measure, Barrier
+
+for element in (I, X, Y, Z, H, S, SX, SXDG, SDG, T, P, CP, CX, CS, CSDG, RX, RY, RZ, CCX, RCCX, MCP, SWAP, iSWAP,
                 Measure, Barrier)
     _gate_map[element] = Symbol(lowercase(string(element)))
 end
+
+const _qiskit = PythonCall.pynew() # initially NULL
+
+function __init__()
+    PythonCall.pycopy!(_qiskit, PythonCall.pyimport("qiskit"))
+end
+
 
 const _rev_gate_map = Dict{Symbol, Element}()
 for (el, sym) in _gate_map
@@ -113,5 +115,35 @@ Most arguments will work as expected.
 function Qurt.Interface.draw(qc::Circuit, args...; kwargs...)
     return to_qiskit(qc; allow_unknown=true).draw(args...; kwargs...)
 end
+
+_Int(obj) = PythonCall.pyconvert(Integer, obj)
+
+function Qurt.Interface.to_qurt_circuit(qqc::PythonCall.Py)
+    nq = _Int(qqc.num_qubits)
+    ncl = _Int(qqc.num_clbits)
+    gphase = pyconvert(Float64, qqc.global_phase)
+    qc = Circuit(nq, ncl; global_phase=gphase) # TODO: global phase
+    for inst in qqc.data
+        qubits = Tuple(_Int(q.index) + 1 for q in inst.qubits)
+        clbits = Tuple(_Int(q.index) + nq + 1 for q in inst.clbits)
+        optype = Symbol(inst.operation.name)
+        # TODO: got to be a cleaner more efficient way
+        _params = PythonCall.pyconvert(Vector, inst.operation.params)
+        if isempty(_params)
+            params = tuple()
+        else
+            params = Tuple(_params...,)
+        end
+        el = get(_rev_gate_map, optype, nothing)
+        isnothing(el) && error("Uknown circuit element $optype")
+        if isempty(params)
+            add_node!(qc, el, qubits, clbits)
+        else
+            add_node!(qc, (el, params), qubits, clbits)
+        end
+    end
+    return qc
+end
+
 
 end # module PythonCallExt

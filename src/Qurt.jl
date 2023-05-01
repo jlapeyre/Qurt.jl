@@ -7,15 +7,15 @@ circuits. Documentation for `Qurt` is found in submodules.
 There is apparently no way to include documentation from extension modules. There
 are two extension modules
 * `PythonCallExt` This extension will be loaded if you add `PythonCall` to your environment and load it.
-It defines methods [`to_qiskit`](@ref) and [`draw`](@ref) for `Qurt.Circuits.Circuit`. Some documentation has been added
+It defines methods for [`to_qiskit`](@ref) and [`draw`](@ref) for `Qurt.Circuits.Circuit`. Some documentation has been added
 to [`Interfaces`](@ref) for this.
-* `GraphPlotExt` This extension will be loaded if you add `GraphPlot` to your environment and load it. It
-contains not-well-developed functions for drawing the `Qurt.Circuits.Circuit` as a DAG.
+* `GraphPlotExt` This extension will be loaded if you add [`GraphPlot`](https://github.com/JuliaGraphs/GraphPlot.jl) to your environment and load it. It
+contains not-well-developed functions for drawing the [`Qurt.Circuits.Circuit`](@ref) as a DAG.
 """
 module Qurt
 
 # For compiling workflows for statically-compiled-like latency
-using SnoopPrecompile: @precompile_setup, @precompile_all_calls
+using PrecompileTools: @setup_workload, @compile_workload
 
 # .Circuits
 export Circuit, global_phase, add_node!, insert_node!, remove_node!,  remove_block!, remove_blocks!

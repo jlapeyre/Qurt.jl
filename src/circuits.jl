@@ -591,8 +591,7 @@ end
 """
     remove_node!(qc::Circuit, vind::Integer)
 
-Remove the node at vertex index `vind` and connect incoming and outgoing
-neighbors on each wire.
+Remove the node at vertex index `vind` and connect incoming and outgoing neighbors on each wire.
 """
 function remove_node!(qc::Circuit, vind::Integer)
     params = getparams(qc, vind) # qc.nodes.params[vind]

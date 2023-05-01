@@ -32,7 +32,8 @@ julia> Pkg.add("Revise")
 julia> Pkg.add("BenchmarkTools")
 ```
 
-`Revise.jl` is an absolutely essential tool for developing. Do `using Revise` before loading code that you are working on.
+[`Revise.jl`](https://github.com/timholy/Revise.jl) is an absolutely essential tool for
+developing. Do `using Revise` before loading code that you are working on.
 
 ## How to install
 
@@ -82,7 +83,7 @@ The test suite is a good source of examples. At the time I am writing this sente
 [test suite](./test/runtests.jl) passes. You can run this with `Pkg.test()`.
 
 The [online documentation](https://jlapeyre.github.io/Qurt.jl/dev/) is a somewhat organized (by
-`Documenter.jl`) dump of docstrings.
+[`Documenter.jl`](https://github.com/JuliaDocs/Documenter.jl)) dump of docstrings.
 
 Here is a [notebook](./QurtDesign.ipynb). The emphasis is on exposing the design.
 
@@ -90,8 +91,8 @@ Here is a [notebook](./QurtDesign.ipynb). The emphasis is on exposing the design
 
 This is optional, but easy to do.
 I put my development environment in this repo. These are lightweight to instantiate. In Julia, downloaded packages go
-in one place, your depot. Environments don't copy packages from there. They instead maintain `Manifest.toml` which points
-to the packages in the depot.
+in one place, your depot. Environments don't copy packages from there. They instead maintain [`Manifest.toml`](https://pkgdocs.julialang.org/v1/toml-files/#Manifest.toml)
+which points to the packages in the depot.
 
 Clone this repo. In a terminal, change from the top level to the [`./devel`](./devel) directory and start Julia with the project
 defined in that directory activated.
@@ -247,7 +248,4 @@ julia> add_node!(qc, Measure, (1, 2), (3, 4)); print_edges(qc)
 <!--  LocalWords:  cd github abspath Qiskit qiskit mkdir venvs venv terra usepkgs namespace num qc
 <!--  LocalWords:  PackageName OtherPackageName hardcoded nq ncl nv ne Int64 foreach SX btime CX
 <!--  LocalWords:  IOQDAGs NodeStructOfVec ClInput ClOutput
- -->
- -->
- -->
  -->
