@@ -485,7 +485,7 @@ end
     insert_node!(qcircuit::Circuit, op::Element, out_vertices, wires::NTuple{<:Any, IntT},
                    clwires=()) where {IntT <: Integer}
 
-    add_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
+    insert_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
                        out_vertices, wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
 
 Insert `op` or `(op, params)` to `qcircuit` before `out_vertices` on `wires` and `clwires`.
@@ -625,8 +625,9 @@ RemoveVertices.num_vertices(nodes::StructVector{<:Node{<:Integer}}) = length(nod
     remove_block!(qc::Circuit, vinds, [vmap])
 
 Remove the nodes in the block given by collection `vinds` and connect incoming and outgoing
-neighbors of the block on each wire. Assume the first and last elements are on incoming and outgoing
-wires to the block, respectively.
+neighbors of the block on each wire. It is assumed that all incoming wires to the block connect to
+the first element of `vinds` and all the outgoing wires from the block connect to the last element
+of `vinds`. And the interior elements of `vinds` are not connected to any nodes outside of the block.
 """
 function remove_block!(qc::Circuit, vinds, vmap=VertexMap(index_type(qc.graph)))
     isempty(vinds) && return vmap
@@ -656,32 +657,9 @@ function remove_block!(qc::Circuit, vinds, vmap=VertexMap(index_type(qc.graph)))
     return vmap
 end
 
-# function replace_block!(qc::Circuit, vinds, newvertex_1, newvertex_2,
-#                         vmap=VertexMap(index_type(qc.graph)))
-#     isempty(vinds) && return vmap
-#         # Nodes may have been removed since vinds were generated. mappedinds are current inds
-#     mappedinds = vmap.(vinds)
-#     # The table records nodes that have refs to params in table. Remove these records
-#     for mappedind in mappedinds
-#         Parameters.remove_paramrefs_group!(
-#             qc.param_table, getparams(qc, mappedind), mappedind
-#         )
-#     end
-#     # Assume that ends of block are first and last nodes. Add graph edges from inneighbors of
-#     # first node to be removed to outneighbors of last node to be removed.
-#     for (from, to) in zip(inneighbors(qc, mappedinds[1]), outneighbors(qc, mappedinds[end]))
-#         Graphs.add_edge!(qc.graph, from, to)
-#     end
-#     # Do the same with wires.
-#     NodeStructs.rewire_across_nodes!(qc.nodes, mappedinds[1], mappedinds[end])
-#     # Now remove all vertices
-#     RemoveVertices.remove_vertices!(qc, vinds, remove_vertex!, vmap)
-#     # Change indices in param table.
-#     for vind in vinds
-#         if vind <= length(qc)
-#             _reindex_param_table!(qc, vmap(vind, Val(:Reverse)), vind)
-#         end
-#     end
+# function replace_block!(qc::Circuit, vinds, ops, vmap=VertexMap(index_type(qc.graph)))
+#     (mapped_v_first, mapped_v_last) = (vmap(vinds[1]),  vmap(vinds[end]))
+#     remove_block!(qc, vinds, vmap)
 #     return vmap
 # end
 
@@ -694,6 +672,13 @@ function remove_vertex!(qc::Circuit, ind)
     return NodeStructs.rem_node!(qc.nodes, ind)
 end
 
+"""
+    remove_blocks!(qc::Circuit, blocks)
+
+Remove vertices in `blocks` from `qc`, where each block in `blocks` is a `Vector` of vertices.
+
+It is assumed that each block is as described in [`remove_block!`](@ref).
+"""
 function remove_blocks!(qc::Circuit, blocks)
     vmap = VertexMap(index_type(qc.graph))
     for block in blocks
@@ -711,24 +696,24 @@ function compose(qc::Circuit, qc2::Circuit, quwires=1:num_wires(qc2))
     return compose!(deepcopy(qc), qc2, quwires)
 end
 
-# TODO:
 """
     compose!(qc_to::Circuit, qc_from::Circuit, wireorder=1:num_wires(qc_from))
 
 Append `qc_from` to `qc_to`.
 
-`wireorder` specifies.
+`qc_from` must be narrower than, that is have fewer wires than, `qc_to`.  `wireorder` maps wires in
+`qc_from` to those in `qc_to`.
 """
-function compose!(qc::Circuit, qc2::Circuit, wireorder=1:num_wires(qc2))
-    num_qubits(qc2) <= num_qubits(qc) || error("Can't compose wider circuit.")
-    wiremap = Dict(zip(wireorder, 1:num_wires(qc2)))
-    for vert in topological_vertices(qc2)
-        el = getelement(qc2, vert)
+function compose!(qc_to::Circuit, qc_from::Circuit, wireorder=1:num_wires(qc_from))
+    num_qubits(qc_from) <= num_qubits(qc_to) || error("Can't compose wider circuit.")
+    wiremap = Dict(zip(wireorder, 1:num_wires(qc_from)))
+    for vert in topological_vertices(qc_from)
+        el = getelement(qc_from, vert)
         Elements.isionode(el) && continue
-        newwires = map(w -> wiremap[w], getwires(qc2, vert))
-        add_node!(qc, (el, getparams(qc2, vert)), newwires)
+        newwires = map(w -> wiremap[w], getwires(qc_from, vert))
+        add_node!(qc_to, (el, getparams(qc_from, vert)), newwires)
     end
-    return qc
+    return qc_to
 end
 
 function barrier(qc::Circuit, qubits=1:num_qubits(qc))

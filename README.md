@@ -4,8 +4,7 @@
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://jlapeyre.github.io/Qurt.jl/dev/)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![JET QA](https://img.shields.io/badge/JET.jl-%E2%9C%88%EF%B8%8F-%23aa4444)](https://github.com/aviatesk/JET.jl)
-
-<!-- [![Coverage](https://codecov.io/gh/jlapeyre/Qurt.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/jlapeyre/Qurt.jl) -->
+[![Coverage](https://codecov.io/gh/jlapeyre/Qurt.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/jlapeyre/Qurt.jl)
 
 ## Purpose of this repo
 
