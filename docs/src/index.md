@@ -40,9 +40,21 @@ Modules = [Qurt.Builders]
 Private = false
 ```
 
+## Passes
+```@autodocs
+Modules = [Qurt.Passes]
+Private = false
+```
+
+## CompoundGates
+```@autodocs
+Modules = [Qurt.CompoundGates]
+Private = false
+```
+
 ## Wires
 ```@autodocs
-Modules = [Qurt.Wires]
+Modules = [Qurt.WiresMod]
 Private = false
 ```
 
@@ -52,7 +64,12 @@ Modules = [Qurt.Angle]
 Private = false
 ```
 
-## Index
+## IOQDags
+```@autodocs
+Modules = [Qurt.IOQDAGs]
+Private = false
+```
 
+## Index
 ```@index
 ```

@@ -1,3 +1,12 @@
+"""
+    module IOQDAGs
+
+
+This module exports one function, [`print_edges`](@ref).
+
+An extension module that depends on `PythonCall` allows using Python qiskit to draw circuits
+with [`draw`](@ref).
+"""
 module IOQDAGs
 
 using Graphs: Graphs, edges
@@ -27,6 +36,11 @@ end
 
 # TODO:  NO! We could try  Gate(p1, p2; w1, w2) instead of Gate{p1, p2}(w1, w2)
 # We already use ; to separate qu and cl wires
+"""
+    print_edges([io::IO], qc::Circuit)
+
+Print some information on the edges of `qc`.
+"""
 function print_edges(io::IO, qc::Circuit)
     nodes = qc.nodes
     for edge in edges_topological(qc.graph)

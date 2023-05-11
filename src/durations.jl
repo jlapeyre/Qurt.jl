@@ -1,3 +1,8 @@
+"""
+    module Durations
+
+This module contains types an functions to represent and convert durations (time intervals).
+"""
 module Durations
 
 ## We could use Unitful.jl. But it's a bit heavy

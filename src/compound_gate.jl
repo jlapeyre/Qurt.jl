@@ -1,3 +1,8 @@
+"""
+    module CompoundGates
+
+This module exports the `struct` `CompoundGate`.
+"""
 module CompoundGates
 
 import ..Interface: num_qubits, num_clbits, getcircuit
@@ -5,6 +10,11 @@ import ..Circuits: Circuit
 
 export CompoundGate
 
+"""
+    CompoundGate{CircuitT}
+
+A gate represented by a unitary circuit.
+"""
 struct CompoundGate{CircuitT}
     qc::CircuitT
     function CompoundGate(qc::Circuit)

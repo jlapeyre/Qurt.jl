@@ -1,3 +1,9 @@
+"""
+    module Passes
+
+At present there are no passes and no pass manager. This module collects circuit transformation
+and analysis functions that would be used in compiler passes.
+"""
 module Passes
 
 using ..NodesGraphs: find_runs

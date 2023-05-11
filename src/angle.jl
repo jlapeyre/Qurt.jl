@@ -1,3 +1,8 @@
+"""
+    module Angle
+
+This module implements some functions for angles measured in *turns*. One turn is equal to 2π radians.
+"""
 module Angle
 
 export normalize_turn,

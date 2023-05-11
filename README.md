@@ -12,7 +12,7 @@ This package provides facilities for representing and manipulating quantum circu
 of Qiskit is implemented. This package is meant to be highly compatible with qiskit, in the sense that one can call the other
 to do circuit tranformations. But it is not a reimplementation of Qiskit circuits in Julia.
 
-MHere are some [notes on design considerations](./DesignConsiderations.md). The notes are ~~somewhat~~ out of date, as my understanding
+Here are some [notes on design considerations](./DesignConsiderations.md). The notes are ~~somewhat~~ out of date, as my understanding
 has evolved since I have been implementing `Qurt.jl`.
 
 ## Installing Julia
