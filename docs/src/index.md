@@ -40,6 +40,18 @@ Modules = [Qurt.Builders]
 Private = false
 ```
 
+## Wires
+```@autodocs
+Modules = [Qurt.Wires]
+Private = false
+```
+
+## Angle
+```@autodocs
+Modules = [Qurt.Angle]
+Private = false
+```
+
 ## Index
 
 ```@index

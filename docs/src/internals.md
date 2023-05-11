@@ -41,3 +41,9 @@ Public = false
 Modules = [Qurt.Builders]
 Public = false
 ```
+
+## GraphUtils internals
+```@autodocs
+Modules = [Qurt.Builders]
+Public = false
+```

@@ -11,6 +11,14 @@ end
 # returns the index of the new vertex.
 # Graphs.add_vertex! returns false on failure. We throw instead.
 # And return the vertex number
+"""
+    _add_vertex!(graph::AbstractGraph)
+
+Wrapper for `Graphs.add_vertex!` that throws exception on failure and returns
+the index of the new vertex.
+
+`Graphs.add_vertex!` returns `true` on success and `false` on failure.
+"""
 function _add_vertex!(graph::AbstractGraph)
     result = Graphs.add_vertex!(graph)
     result || throw(GraphUtilsError("Failed to add vertex to graph"))

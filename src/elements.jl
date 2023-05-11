@@ -23,7 +23,27 @@ import ..Utils: _qualify_element_sym
 # Elements are ops, input/output, ... everything that lives on a vertex
 @blockenum (Element, blocklength=10^3, numblocks=50, compactshow=true)
 
+"""
+    Element <: BlockEnum
+
+An enum representing circuit elements. These are gates, instructions, I/O nodes.
+
+The values of `Element` are in one-to-one correspondence with inteters and  are arranged in blocks
+that are assigned semantics corresponding to classes of circuit elements. For example this first block
+is for one-qubit, parameterless, builtin gates.
+"""
+Element
+
+
 # TODO: Could move these two functions elsewhere. They are copied from BlockEnums.jl
+"""
+    _check_begin_block(syms)
+
+Get the symbols from an expression captured by our macros.
+
+`syms` is either a sequence of symbols, or a sequence of symbols wrapped in
+a `begin`-`end` block. In either case, return just the sequence of symbols.
+"""
 function _check_begin_block(syms)
     if length(syms) == 1 && syms[1] isa Expr && syms[1].head === :block
         syms = syms[1].args
@@ -31,6 +51,13 @@ function _check_begin_block(syms)
     return syms
 end
 
+"""
+    _get_qsyms(syms)
+
+Get the symbols from the expression `syms` may contain extraneous items.
+
+Removes a possible enclosing block, and filters out any `LineNumberNode`.
+"""
 function _get_qsyms(syms)
     syms = _check_begin_block(syms)
     return (QuoteNode(sym) for sym in syms if ! isa(sym, LineNumberNode))
@@ -52,6 +79,11 @@ macro new_elements(blockname, syms...)
     :(BlockEnums.add_in_block!(Qurt.Elements.Element, $(esc(qualblock)), $(qsyms...)))
 end
 
+"""
+    OpBlock <: BlockEnum
+
+An enum that gives names to the blocks of values of `Element`.
+"""
 @blockenum OpBlock begin
     Q1NoParam = 1
     Q2NoParam
@@ -72,6 +104,7 @@ end
     ControlFlow
 end
 
+# Add names of values of `Element` in particular blocks
 @addinblock Element Q1NoParam I X Y Z H SX SXDG S SDG T
 @addinblock Element Q2NoParam CX CY CZ CH CS CSDG DCX ECR SWAP iSWAP
 @addinblock Element Q3NoParam CCX RCCX
@@ -97,6 +130,15 @@ end
 @addinblock Element IONodes ClInput ClOutput Input Output
 @addinblock Element ControlFlow Break Continue IfElse For While Case
 
+##
+## Group blocks that have a common property
+##
+
+"""
+    Q1GateBlocks
+
+A `Tuple` of block numbers of `Element` that contain one-qubit gates.
+"""
 const Q1GateBlocks = (Q1NoParam, Q1Params1Float, Q1Params2Float, Q1Params3Float)
 const Q2GateBlocks = (Q2NoParam, Q2Params1Float, Q2Params2Float)
 # Hmm. what if the op takes varying number of qubits. Like measure
@@ -109,6 +151,11 @@ end
 
 const Paulis = (I, X, Y, Z)
 
+"""
+    inblocks(elem::Element, blocks)
+
+Return `true` if `elem` is in any block in `blocks`.
+"""
 inblocks(elem, blocks) = any(block -> inblock(elem, Integer(block)), blocks)
 
 # TODO: Put conversion `Integer(.)` in Enums
@@ -136,17 +183,34 @@ isoutput(x::Element) = isquoutput(x) || iscloutput(x)
 isionode(x::Element) = isinput(x) || isoutput(x)
 
 # Element with parameters (not Julia parameters, params from the QC domain)
+"""
+    ParamElement{ParamsT}
+
+Struct representing a parameterized circuit element.
+
+`ParamElement` has two fields; the element and a tuple of parameters. This is
+not the fundamental structure representing parameterized circuit elements. Rather,
+it is a convenient grouping when both of these properties are needed but not others,
+namely the wires.
+"""
 struct ParamElement{ParamsT}
     element::Element
     params::ParamsT
 end
 
+# TODO: I think this is unused. Try removing it.
 struct NoParamElement
     element::Element
 end
 
 # TODO: packing and unpacking these Tuples of wires is pretty slow.
 # Try storing this as wires and nqu::Int instead.
+"""
+    WiresElement{QuWiresT,ClWiresT}
+
+Structure holding a circuit element `element::Element` and the quantum wires and
+classical wires in a circuit that it is connected to.
+"""
 struct WiresElement{QuWiresT,ClWiresT}
     element::Element
     quwires::QuWiresT
@@ -168,6 +232,12 @@ struct WiresElement2{WiresT, IntT}
     numq::IntT
 end
 
+"""
+    WiresParamElement{QuWiresT,ClWiresT,ParamsT}
+
+Structure holding a circuit element `element::Element`, its parameter, and the
+quantum wires and classical wires in a circuit that it is connected to.
+"""
 struct WiresParamElement{QuWiresT,ClWiresT,ParamsT}
     element::Element
     params::ParamsT

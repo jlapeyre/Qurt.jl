@@ -8,6 +8,8 @@ module WiresMod
 
 import ..Interface: num_qubits, num_clbits, num_wires
 
+# TODO: Find a way to reduce storage requirements
+# TODO: Probably don't want hardcoded `Int`
 """
     struct Wires
 
@@ -22,7 +24,7 @@ two more arrays.
 These ordinal (or vertex) numbers are currently `Int` (usually `Int64`), but we could switch to `Int32`.
 Considering just the ``n`` qubits, we need storage for ``4n`` integers.
 
-It would be useful to simplify this structure and reduce storage requiremets.
+It would be useful to simplify this structure and reduce storage requirements.
 """
 struct Wires
     qu_wires::Vector{Int} # wire numbers of qu wires
@@ -107,7 +109,18 @@ end
 function del_qu_wire end
 function del_cl_wire end
 
+"""
+    input_vertex(w::Wires, wireind::Integer)
+
+Return the circuit vertex holding the input `Element` for wire `wireind`.
+"""
 input_vertex(w::Wires, wireind::Integer) = w.input_vertices[wireind]
+
+"""
+    output_vertex(w::Wires, wireind::Integer)
+
+Return the circuit vertex holding the output `Element` for wire `wireind`.
+"""
 output_vertex(w::Wires, wireind::Integer) = w.output_vertices[wireind]
 
 end # module WiresMod

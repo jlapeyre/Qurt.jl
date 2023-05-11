@@ -20,6 +20,13 @@ export Turn  # normalize will conflict with LinearAlgebra
 ## implementations and modifications
 
 # Testing first if we need to mod is much faster if we don't need it.
+"""
+    normalize_turn(x)
+
+Return `x` mod `1`.
+
+The return value is in `[0,1)`. Fast exit if `x` is already in this range.
+"""
 normalize_turn(x) = zero(x) <= x < one(x) ? x : mod(x, one(x))
 
 """
@@ -29,10 +36,27 @@ Compute the cosine of `x`, an angle measured in "turns".
 """
 cos_turn(x) = cospi(2 * x)
 
+"""
+    sin_turn(x)
+
+Compute the sine of `x`, an angle measured in "turns".
+"""
 sin_turn(x) = sinpi(2 * x)
+
+
+"""
+    sincos_turn(x)
+
+Return a `Tuple` of the sine and cosine of `x`, an angle measured in "turns".
+"""
 sincos_turn(x) = sincospi(2 * x)
 
 # Sometimes this gives more accurate results for example tan_turn
+"""
+    tan_turn(x)
+
+Compute the tangent of `x`, an angle measured in "turns".
+"""
 function tan_turn(x)
     (s, c) = sincos_turn(x)
     return s / c
@@ -48,10 +72,15 @@ end
 
 Return `true` if `x` and `y` are equal mod 1.
 
-`x` and `y` are intended to be angular measures.
+`x` and `y` are intended to be angles measured in "turns".
 """
 equal_turn(x, y) = ==(normalize_turn(x), normalize_turn(y))
 
+"""
+    isapprox_turn(x, y; kw...)
+
+Return `true` if `x` and `y` are equal mod 1.
+"""
 isapprox_turn(x, y; kw...) = isapprox(normalize_turn(x), normalize_turn(y); kw...)
 
 ### Below here depends on above here, but not vice versa

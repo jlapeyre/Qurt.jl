@@ -16,7 +16,7 @@ end
 #     return HasO1GetIndexMeth(v) ? v : collect(v)
 # end
 
-# TODO: We don't need this I think
+# TODO: We no longer need this, I think
 # Why does Julia not have this?
 # itr must be indexable in this implementation
 """
@@ -54,6 +54,7 @@ macro node(expr)
     return :($(esc(_node(expr))))
 end
 
+# TODO: We stopped using this. May want to remove it.
 """
     _qualify_element_sym(sym::Symbol)
 
@@ -66,6 +67,5 @@ function _qualify_element_sym(sym::Symbol)
     oexpr.args[2] = QuoteNode(sym)
     return oexpr
 end
-
 
 end # module Utils
