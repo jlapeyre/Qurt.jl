@@ -40,9 +40,7 @@
         two_qubit_ops(qc)
         multi_qubit_ops(qc)
         qc = Circuits.Circuit(2)
-        Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(
-            1, 2
-        )
+        Builders.@build qc CX(1, 2) CX(1, 2) CX(1, 2) CX(2, 1) CX(2, 1) CX(1, 2) CX(1, 2)
 
         depth(qc)
         topological_vertices(qc)

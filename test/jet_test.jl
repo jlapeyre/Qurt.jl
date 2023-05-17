@@ -16,9 +16,17 @@ const SKIP_MATCHES = [
 const SKIP_REP_TESTS = [
     rep -> rep isa JET.NonBooleanCondErrorReport && rep.t == Any[Missing],
     rep -> rep isa JET.UncaughtExceptionReport,
-# Not accounting for `missing`, I think
-    rep -> isa(rep, JET.MethodErrorReport) && startswith(string(rep), "MethodErrorReport(no matching method found `iterate(::Nothing"),
-    rep -> isa(rep, JET.MethodErrorReport) && startswith(string(rep), "MethodErrorReport(no matching method found `convert(")  && endswith(string(rep.vst[1].file), "builders.jl")
+    # Not accounting for `missing`, I think
+    rep ->
+        isa(rep, JET.MethodErrorReport) && startswith(
+            string(rep), "MethodErrorReport(no matching method found `iterate(::Nothing"
+        ),
+    rep ->
+        isa(rep, JET.MethodErrorReport) &&
+            startswith(
+                string(rep), "MethodErrorReport(no matching method found `convert("
+            ) &&
+            endswith(string(rep.vst[1].file), "builders.jl"),
 ]
 
 ##
@@ -44,7 +52,7 @@ Return `true` if the message is `msg` and the first file in the stack trace is `
 `file` should be given relative to the `src` directory of `package`.
 """
 function match_report(package, report, msg::String, file::String)
-#function match_report(package, report::JET.InferenceErrorReport, msg::String, file::String)
+    #function match_report(package, report::JET.InferenceErrorReport, msg::String, file::String)
     hasproperty(report, :msg) || return false
     report.msg != msg && return false
     filepath = joinpath(dirname(pathof(package)), file)

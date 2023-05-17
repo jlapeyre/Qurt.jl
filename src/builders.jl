@@ -18,6 +18,7 @@ curly brackets like this `G{p1, [p2,...]}`. Both wires and parameters are associ
 by combining this syntax like this `G{p1, [p2,...]}(i, [j,...])`
 
 For example
+
 ```julia
 @gate X(1)  # gate and wire
 @gate CX(2, 3) # gate and wires
@@ -66,7 +67,9 @@ function __parse_builds!(circ, addgates, ex)
     end
     quwiretup = Expr(:tuple, wires...)
     clwiretup = Expr(:tuple, clwires...)
-    return push!(addgates, :(Qurt.Circuits.add_node!($circ, $gatetup, $quwiretup, $clwiretup)))
+    return push!(
+        addgates, :(Qurt.Circuits.add_node!($circ, $gatetup, $quwiretup, $clwiretup))
+    )
 end
 
 function __build(exprs)
@@ -116,10 +119,7 @@ function _gate(expr)
             gate = _dont_qualify_element_sym(gate)
         end
         return Expr(
-            :call,
-            :(Qurt.Elements.ParamElement),
-            gate,
-            Expr(:tuple, expr.args[2:end]...),
+            :call, :(Qurt.Elements.ParamElement), gate, Expr(:tuple, expr.args[2:end]...)
         )
     end
     expr.head === :call || error("Expecting parens or curlies.")

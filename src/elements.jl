@@ -11,11 +11,10 @@ module Elements
 
 using BlockEnums: BlockEnums, BlockEnum, @blockenum, @addinblock, inblock, ltblock
 using ..Angle: Angle
-import Qurt
+using Qurt: Qurt
 using ..Qurt: Qurt
 import ..Interface: Interface
 import ..Utils: _qualify_element_sym
-
 
 # Note that all creations, @addinblock, etc, put the new symbol on the export list.
 # We should disable this at some point. Explicitly doing `export X, Y, Z, H` here is redundant
@@ -33,7 +32,6 @@ that are assigned semantics corresponding to classes of circuit elements. For ex
 is for one-qubit, parameterless, builtin gates.
 """
 Element
-
 
 # TODO: Could move these two functions elsewhere. They are copied from BlockEnums.jl
 """
@@ -60,7 +58,7 @@ Removes a possible enclosing block, and filters out any `LineNumberNode`.
 """
 function _get_qsyms(syms)
     syms = _check_begin_block(syms)
-    return (QuoteNode(sym) for sym in syms if ! isa(sym, LineNumberNode))
+    return (QuoteNode(sym) for sym in syms if !isa(sym, LineNumberNode))
 end
 
 """
@@ -69,14 +67,18 @@ end
 Add new circuit element symbols to the block of elements named `BlockName`.
 
 # Examples
+
 ```julia-repl
 julia> @new_elements MiscGates MyGate1 MyGate2
+
 ```
 """
 macro new_elements(blockname, syms...)
     qsyms = _get_qsyms(syms)
     qualblock = _qualify_element_sym(blockname)
-    :(BlockEnums.add_in_block!(Qurt.Elements.Element, $(esc(qualblock)), $(qsyms...)))
+    return :(BlockEnums.add_in_block!(
+        Qurt.Elements.Element, $(esc(qualblock)), $(qsyms...)
+    ))
 end
 
 """
@@ -226,7 +228,7 @@ function WiresElement(pe::ParamElement, quwires, clwires)
     return WiresParamElement(pe.element, pe.params, quwires, clwires)
 end
 
-struct WiresElement2{WiresT, IntT}
+struct WiresElement2{WiresT,IntT}
     element::Element
     wires::WiresT
     numq::IntT
@@ -270,7 +272,15 @@ function Base.show(io::IO, we::WiresElement2)
     if nq == length(we.wires)
         print(io, we.element, '(', join(we.wires, ","), ')')
     else
-        print(io, we.element, '(', join(we.wires[1:nq], ","), "; ", join(we.wires[nq+1:end], ","), ')')
+        print(
+            io,
+            we.element,
+            '(',
+            join(we.wires[1:nq], ","),
+            "; ",
+            join(we.wires[(nq + 1):end], ","),
+            ')',
+        )
     end
 end
 

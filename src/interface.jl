@@ -49,12 +49,10 @@ export num_qubits,
     to_qurt_circuit,
     draw
 
-
 """
     to_qiskit(qcircuit)
 
 Convert `qcircuit` to a Qiskit `QuantumCircuit`.
-
 
 You must add package `PythonCall` to your project and load it before using `to_qiskit`.
 Only a relatively small portion of `QuantumCircuit` is supported.
@@ -131,7 +129,6 @@ Return the number of wires (quantum and classical) in `obj` or in the `i`th
 element of the collection `objs`.
 """
 function num_wires end
-
 
 """
     num_inwires(obj)

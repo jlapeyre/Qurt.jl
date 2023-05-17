@@ -48,7 +48,6 @@ Compute the sine of `x`, an angle measured in "turns".
 """
 sin_turn(x) = sinpi(2 * x)
 
-
 """
     sincos_turn(x)
 

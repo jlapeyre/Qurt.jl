@@ -170,6 +170,7 @@ Pairs of input and output nodes connected by an edges are created for each quant
 and classical bit.
 
 # Examples
+
 ```jldoctest
 julia> using Qurt.Circuits: Circuit
 
@@ -462,13 +463,13 @@ end
 ## This struct is just for packaging an iterator over wire,vertex pairs
 ## used when inserting an element before an output node.
 ## A less verbose solution to iterating would be nice
-struct WiresVerts{T, F}
+struct WiresVerts{T,F}
     wires::T
     vfunc::F
 end
 WiresVerts(qc::Circuit, wires::Tuple) = WiresVerts(wires, wire -> output_vertex(qc, wire))
 Base.length(wv::WiresVerts) = length(wv.wires)
-Base.eltype(::WiresVerts) = Tuple{Int, Int}
+Base.eltype(::WiresVerts) = Tuple{Int,Int}
 function Base.iterate(wv::WiresVerts, i=1)
     i > length(wv.wires) && return nothing
     wire = wv.wires[i]
@@ -497,7 +498,9 @@ function insert_node!(qc::Circuit, op::Element, out_vertices, wires, clwires=())
 end
 
 function insert_node!(qc::Circuit, wpe::WiresParamElement, out_vertices)
-    return insert_node!(qc, (wpe.element, wpe.params), out_vertices, wpe.quwires, wpe.clwires)
+    return insert_node!(
+        qc, (wpe.element, wpe.params), out_vertices, wpe.quwires, wpe.clwires
+    )
 end
 
 function insert_node!(qc::Circuit, we::WiresElement, out_vertices)
@@ -508,7 +511,9 @@ function insert_node!(qc::Circuit, pe::ParamElement, out_vertices, wires, clwire
     return insert_node!(qc, (pe.element, pe.params), out_vertices, wires, clwires)
 end
 
-function insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element, <:Any}, out_vertices, wires, clwires=())
+function insert_node!(
+    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, out_vertices, wires, clwires=()
+)
     allwires = (wires..., clwires...)
     vertex_wires = zip(allwires, out_vertices)
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
@@ -516,7 +521,14 @@ end
 
 # Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
 # second for inserting a node before specified vertices.
-function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires::F, wires, clwires, allwires) where {F}
+function _insert_node!(
+    qc::Circuit,
+    (op, _inparams)::Tuple{Element,<:Any},
+    vertex_wires::F,
+    wires,
+    clwires,
+    allwires,
+) where {F}
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
@@ -535,10 +547,12 @@ function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, verte
         wire in _wr || throw(CircuitError("Wire $wire is not in circuit"))
     end
     for (i, (wire, out_vertex)) in enumerate(vertex_wires)
-        # `out_vertex` is an output vertex and `wire` is its wire.
-        prev_vertex = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
+        # Get the inneighbor of `out_vertex` on wire `wire`.
+        prev_vertex = inneighbors(qc.nodes, out_vertex, wire)
         # Set the outneighbor of `prev_vertex` on `wire` to `new_vertex`.
-        set_outwire_vertex!(qc.nodes, prev_vertex, wireind(qc.nodes, prev_vertex, wire), new_vertex)
+        set_outwire_vertex!(
+            qc.nodes, prev_vertex, wireind(qc.nodes, prev_vertex, wire), new_vertex
+        )
         # Replace edge prev_vertex -> out_vertex with prev_vertex -> new_vertex -> out_vertex
         split_edge!(qc.graph, prev_vertex, out_vertex, new_vertex)
         # Set the only inneighbor of the output `out_vertex` to `new_vertex`.
@@ -722,7 +736,7 @@ function compose!(qc_to::Circuit, qc_from::Circuit, wireorder=1:num_wires(qc_fro
 end
 
 function barrier(qc::Circuit, qubits=1:num_qubits(qc))
-    add_node!(qc, Elements.Barrier, (qubits...,), ())
+    return add_node!(qc, Elements.Barrier, (qubits...,), ())
 end
 
 """
@@ -758,8 +772,6 @@ Start on `init_vertex`, if supplied, rather than the circuit input vertex.
 function wireelements(qc::Circuit, wire, init_vertex=input_vertex(qc, wire))
     return wireelements(qc.nodes, wire, init_vertex)
 end
-
-
 
 """
     wireelements(qc::Circuit,  wire::Integer, [init_vertex])
@@ -878,8 +890,9 @@ Return the number of circuit elements that are not IO nodes. This
 should be the number that are operation or instruction nodes.
 
 # Examples
+
 ```jldoctest
-julia> import Qurt
+julia> using Qurt: Qurt
 
 julia> using Qurt.Circuits: Circuit, count_op_elements
 
@@ -911,6 +924,7 @@ Return the number of tensor factors in an operator representation of `qc`.
 The meaning of this in the presence of classical components is unclear.
 
 # Examples
+
 ```jldoctest
 julia> using Qurt.Circuits: Circuit, num_tensor_factors
 

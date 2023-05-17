@@ -28,10 +28,17 @@ const SKIP_MATCHES = [
 const SKIP_REP_TESTS = [
     rep -> rep isa JET.NonBooleanCondErrorReport && rep.t == Any[Missing],
     rep -> rep isa JET.UncaughtExceptionReport,
-# Not accounting for `missing`, I think
-    rep -> isa(rep, JET.MethodErrorReport) && startswith(string(rep), "MethodErrorReport(no matching method found `iterate(::Nothing"),
-    rep -> isa(rep, JET.MethodErrorReport) && startswith(string(rep), "MethodErrorReport(no matching method found `convert(")  &&
-    endswith(string(rep.vst[1].file), "builders.jl")
+    # Not accounting for `missing`, I think
+    rep ->
+        isa(rep, JET.MethodErrorReport) && startswith(
+            string(rep), "MethodErrorReport(no matching method found `iterate(::Nothing"
+        ),
+    rep ->
+        isa(rep, JET.MethodErrorReport) &&
+            startswith(
+                string(rep), "MethodErrorReport(no matching method found `convert("
+            ) &&
+            endswith(string(rep.vst[1].file), "builders.jl"),
 ]
 
 ##

@@ -101,7 +101,7 @@ function unpackwires(wires, nqu::Integer)
     if nqu == length(wires)
         return (wires, ())
     else
-        return     ((wires[1:nqu]...,), (wires[nqu+1:end]...,))
+        return ((wires[1:nqu]...,), (wires[(nqu + 1):end]...,))
     end
 end
 # TODO: Fix these
@@ -148,7 +148,7 @@ getwireselement(node::Node) = Elements.WiresElement(getelement(node), unpackwire
 getparams(node::Node) = node.params
 getparam(node::Node, i::Integer) = getparams(node)[i]
 num_qubits(node::Node) = node.numquwires
-num_clbits(node::Node)= length(node.wires) - node.numquwires
+num_clbits(node::Node) = length(node.wires) - node.numquwires
 outneighbors(node::Node) = node.outwiremap
 inneighbors(node::Node) = node.inwiremap
 
@@ -329,7 +329,7 @@ The final output node is omitted.
 wirevertices(nodes, wire, init_vertex) = WireVertices(nodes, wire, init_vertex)
 
 # Iterate over vertices on a wire, calling `item_func` on each.
-struct ItemVertices{NodeT, F, RT}
+struct ItemVertices{NodeT,F,RT}
     nodes::NodeT
     wire::Int
     item_func::F
@@ -337,21 +337,25 @@ struct ItemVertices{NodeT, F, RT}
     return_type::RT
 end
 
-itemvertices(nodes, wire, item_func, init_vertex, return_type) =
-    ItemVertices(nodes, wire, item_func, init_vertex, return_type)
+function itemvertices(nodes, wire, item_func, init_vertex, return_type)
+    return ItemVertices(nodes, wire, item_func, init_vertex, return_type)
+end
 
-itemvertices(nodes, wire, item_func, init_vertex) =
-    ItemVertices(nodes, wire, item_func, init_vertex, Any)
+function itemvertices(nodes, wire, item_func, init_vertex)
+    return ItemVertices(nodes, wire, item_func, init_vertex, Any)
+end
 
 function Base.show(io::IO, wn::ItemVertices)
     return print(io, "itemvertices(wire=$(wn.wire), vert=$(wn.init_vertex))")
 end
 
-Base.eltype(iv::ItemVertices) =  iv.return_type
+Base.eltype(iv::ItemVertices) = iv.return_type
 
 function Base.iterate(wn::ItemVertices, vertex=wn.init_vertex)
     isempty(getoutwiremap(wn.nodes, vertex)) && return nothing # Ought to be an output node
-    return (wn.item_func(wn.nodes, vertex, wn.wire), outneighbors(wn.nodes, vertex, wn.wire)) # vertex, next_vertex
+    return (
+        wn.item_func(wn.nodes, vertex, wn.wire), outneighbors(wn.nodes, vertex, wn.wire)
+    ) # vertex, next_vertex
 end
 
 Base.IteratorSize(::Type{<:ItemVertices}) = Base.SizeUnknown()
@@ -360,12 +364,20 @@ Base.IteratorSize(::Type{<:ItemVertices}) = Base.SizeUnknown()
 Base.collect(iv::ItemVertices) = collect(x for x in iv)
 
 function wireelements(nodes::ANodeArrays, wire, init_vertex)
-    return itemvertices(nodes, wire, (n, v, w) -> getelement(nodes, v), init_vertex, Elements.Element)
+    return itemvertices(
+        nodes, wire, (n, v, w) -> getelement(nodes, v), init_vertex, Elements.Element
+    )
 end
 
 # Return type is as good as Any
 function wireparamelements(nodes::ANodeArrays, wire, init_vertex)
-    itemvertices(nodes, wire, (n, v, w) -> getparamelement(nodes, v), init_vertex, Union{Elements.ParamElement, Elements.Element})
+    return itemvertices(
+        nodes,
+        wire,
+        (n, v, w) -> getparamelement(nodes, v),
+        init_vertex,
+        Union{Elements.ParamElement,Elements.Element},
+    )
 end
 
 """
@@ -439,11 +451,15 @@ function getparamelement(nodes::ANodeArrays, ind)
     return Elements.ParamElement(element, params)
 end
 
-unpackwires(nodes::ANodeArrays, ind::Integer) = unpackwires(getwires(nodes, ind), num_qubits(nodes, ind))
+function unpackwires(nodes::ANodeArrays, ind::Integer)
+    return unpackwires(getwires(nodes, ind), num_qubits(nodes, ind))
+end
 
 function getwireselement(nodes::ANodeArrays, ind::Integer)
-    Elements.WiresElement2(getelement(nodes, ind), getwires(nodes, ind), num_qubits(nodes, ind))
-#    Elements.WiresElement(getelement(nodes, ind), unpackwires(nodes, ind)...)
+    return Elements.WiresElement2(
+        getelement(nodes, ind), getwires(nodes, ind), num_qubits(nodes, ind)
+    )
+    #    Elements.WiresElement(getelement(nodes, ind), unpackwires(nodes, ind)...)
 end
 
 # Get the `pos`th param from params at node `ind`.
@@ -593,17 +609,15 @@ end
 Return a count map of elements on `vertices`.
 """
 function count_ops_vertices(nodes::ANodeArrays, vertices)
-#    intnodes = reinterpret(BlockEnums.basetype(Element), nodes.element)
-#    dict = Dictionaries.Dictionary{BlockEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
-#    dict = Dict{BlockEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
+    #    intnodes = reinterpret(BlockEnums.basetype(Element), nodes.element)
+    #    dict = Dictionaries.Dictionary{BlockEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
+    #    dict = Dict{BlockEnums.basetype(Element),Int}() #  DictTools.count_map(reinterpret(BlockEnums.basetype(Element), nodes.element))
     dict = Dictionaries.Dictionary{Element,Int}()
     for v in vertices
         DictTools.add_counts!(dict, getelement(nodes, v))
     end
     return dict
 end
-
-
 
 function find_nodes(testfunc::F, nodes::ANodeArrays, fieldname::Symbol) where {F}
     return find_nodes(testfunc, nodes, Val((fieldname,)))
@@ -640,7 +654,6 @@ function find_nodes(testfunc::F, nodes::ANodeArrays, ::Val{fieldnames}) where {F
     nt = NamedTuple{fieldnames,typeof(tup)}(tup)
     return @view nodes[findall(testfunc, StructArray(nt))]
 end
-
 
 """
     count_elements(testfunc::F, nodes::ANodeArrays)

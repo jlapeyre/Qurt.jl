@@ -6,10 +6,11 @@ circuits. Documentation for `Qurt` is found in submodules.
 
 There is apparently no way to include documentation from extension modules. There
 are two extension modules
-* `PythonCallExt` This extension will be loaded if you add `PythonCall` to your environment and load it.
-It defines methods for [`to_qiskit`](@ref) and [`draw`](@ref) for `Qurt.Circuits.Circuit`. Some documentation has been added to [`Interface`](@ref) for this.
-* `GraphPlotExt` This extension will be loaded if you add [`GraphPlot`](https://github.com/JuliaGraphs/GraphPlot.jl) to your environment and load it. It
-contains not-well-developed functions for drawing the [`Qurt.Circuits.Circuit`](@ref) as a DAG.
+
+  - `PythonCallExt` This extension will be loaded if you add `PythonCall` to your environment and load it.
+    It defines methods for [`to_qiskit`](@ref) and [`draw`](@ref) for `Qurt.Circuits.Circuit`. Some documentation has been added to [`Interface`](@ref) for this.
+  - `GraphPlotExt` This extension will be loaded if you add [`GraphPlot`](https://github.com/JuliaGraphs/GraphPlot.jl) to your environment and load it. It
+    contains not-well-developed functions for drawing the [`Qurt.Circuits.Circuit`](@ref) as a DAG.
 """
 module Qurt
 
@@ -17,14 +18,15 @@ module Qurt
 using PrecompileTools: @setup_workload, @compile_workload
 
 # .Circuits
-export Circuit, global_phase, add_node!, insert_node!, remove_node!,  remove_block!, remove_blocks!
+export Circuit,
+    global_phase, add_node!, insert_node!, remove_node!, remove_block!, remove_blocks!
 
 # .Builders
 export @build, @gate
 
 # .Interface
-export num_qubits, num_clbits, getelement, getparams, getquwires, getclwires, getwires,
-    draw, to_qiskit
+export num_qubits,
+    num_clbits, getelement, getparams, getquwires, getclwires, getwires, draw, to_qiskit
 
 # IOQDAGs
 export print_edges
@@ -51,9 +53,24 @@ include("compiler/coupling_map.jl")
 
 ## For convenience we import some things to the toplevel.
 ## This reduces boilerplate somewhat by reducing the number of import statements
-using .Circuits: Circuit, add_node!, insert_node!, global_phase, remove_node!, remove_block!, remove_blocks!
+using .Circuits:
+    Circuit,
+    add_node!,
+    insert_node!,
+    global_phase,
+    remove_node!,
+    remove_block!,
+    remove_blocks!
 using .Builders: @build, @gate
-using .Interface: num_qubits, num_clbits, getelement, getparams, getquwires, getclwires, getwires, draw,
+using .Interface:
+    num_qubits,
+    num_clbits,
+    getelement,
+    getparams,
+    getquwires,
+    getclwires,
+    getwires,
+    draw,
     to_qiskit
 using .IOQDAGs: print_edges
 

@@ -1,7 +1,6 @@
 """
     module IOQDAGs
 
-
 This module exports one function, [`print_edges`](@ref).
 
 An extension module that depends on `PythonCall` allows using Python qiskit to draw circuits

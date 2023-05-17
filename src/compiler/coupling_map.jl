@@ -1,13 +1,19 @@
 module CouplingMaps
 
-using Graphs: Graphs, SimpleDiGraph,SimpleDiGraphFromIterator, SimpleEdge, has_edge, add_edge!,
+using Graphs:
+    Graphs,
+    SimpleDiGraph,
+    SimpleDiGraphFromIterator,
+    SimpleEdge,
+    has_edge,
+    add_edge!,
     AbstractGraph
 import Graphs: edges, connected_components
 import LinearAlgebra: issymmetric
 import ..Interface: num_qubits
 
-export CouplingMap, issymmetric, symmetrize!, symmetrize, _path_digraph,
-    line_map, connected_submaps
+export CouplingMap,
+    issymmetric, symmetrize!, symmetrize, _path_digraph, line_map, connected_submaps
 
 abstract type AbstractCouplingMap{IntT} end
 
@@ -26,7 +32,7 @@ struct CouplingMap{IntT} <: AbstractCouplingMap{IntT}
     graph::SimpleDiGraph{IntT}
 end
 
-struct CouplingMapReInd{IntT, IndT} <: AbstractCouplingMap{IntT}
+struct CouplingMapReInd{IntT,IndT} <: AbstractCouplingMap{IntT}
     graph::SimpleDiGraph{IntT}
     verts::IndT
 end
@@ -79,7 +85,7 @@ function symmetrize!(graph::AbstractGraph)
     for edge in edges(graph)
         dst = Graphs.dst(edge)
         src = Graphs.src(edge)
-        if ! has_edge(graph, dst, src)
+        if !has_edge(graph, dst, src)
             add_edge!(graph, dst, src)
         end
     end
@@ -126,7 +132,7 @@ end
 ### SimpleDiGraphRe{IntT, IndT}
 ###
 
-struct SimpleDiGraphRe{IntT, IndT} <: AbstractGraph{IntT}
+struct SimpleDiGraphRe{IntT,IndT} <: AbstractGraph{IntT}
     graph::SimpleDiGraph{IntT}
     verts::IndT
 end

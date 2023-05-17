@@ -2,12 +2,21 @@ module PythonCallExt
 
 ENV["JULIA_CONDAPKG_BACKEND"] = "Null"
 
-import PythonCall
+using PythonCall: PythonCall
 using PythonCall: pyconvert
-import Qurt
-import Qurt: Circuit, num_qubits, num_clbits, global_phase,
-    getelement, getparams, getquwires, getclwires, getwires,
-    getparams, add_node!
+using Qurt: Qurt
+import Qurt:
+    Circuit,
+    num_qubits,
+    num_clbits,
+    global_phase,
+    getelement,
+    getparams,
+    getquwires,
+    getclwires,
+    getwires,
+    getparams,
+    add_node!
 import Qurt.Circuits: topological_vertices
 
 # Functions extended in this module
@@ -21,24 +30,73 @@ import Qurt.Elements: isionode, Element
 Map Qurt circuit elements to Qiskit QuantumCircuit methods for
 adding circuit instructions.
 """
-const _gate_map = Dict{Element, Symbol}()
+const _gate_map = Dict{Element,Symbol}()
 
-import Qurt.Elements: Element, I, X, Y, Z, H, S, SX, SXDG, SDG, T, P, CP, CX, CS, CSDG, RX, RY, RZ,
-CCX, RCCX, MCP, SWAP, iSWAP, Measure, Barrier
+import Qurt.Elements:
+    Element,
+    I,
+    X,
+    Y,
+    Z,
+    H,
+    S,
+    SX,
+    SXDG,
+    SDG,
+    T,
+    P,
+    CP,
+    CX,
+    CS,
+    CSDG,
+    RX,
+    RY,
+    RZ,
+    CCX,
+    RCCX,
+    MCP,
+    SWAP,
+    iSWAP,
+    Measure,
+    Barrier
 
-for element in (I, X, Y, Z, H, S, SX, SXDG, SDG, T, P, CP, CX, CS, CSDG, RX, RY, RZ, CCX, RCCX, MCP, SWAP, iSWAP,
-                Measure, Barrier)
+for element in (
+    I,
+    X,
+    Y,
+    Z,
+    H,
+    S,
+    SX,
+    SXDG,
+    SDG,
+    T,
+    P,
+    CP,
+    CX,
+    CS,
+    CSDG,
+    RX,
+    RY,
+    RZ,
+    CCX,
+    RCCX,
+    MCP,
+    SWAP,
+    iSWAP,
+    Measure,
+    Barrier,
+)
     _gate_map[element] = Symbol(lowercase(string(element)))
 end
 
 const _qiskit = PythonCall.pynew() # initially NULL
 
 function __init__()
-    PythonCall.pycopy!(_qiskit, PythonCall.pyimport("qiskit"))
+    return PythonCall.pycopy!(_qiskit, PythonCall.pyimport("qiskit"))
 end
 
-
-const _rev_gate_map = Dict{Symbol, Element}()
+const _rev_gate_map = Dict{Symbol,Element}()
 for (el, sym) in _gate_map
     _rev_gate_map[sym] = el
 end
@@ -51,10 +109,10 @@ function unknown_gate(node)
     end
     if num_clbits(node) > 0
         return _qiskit.circuit.instruction.Instruction(
-            string(node.element), num_qubits(node), num_clbits(node), params)
+            string(node.element), num_qubits(node), num_clbits(node), params
+        )
     end
-    return _qiskit.circuit.gate.Gate(
-    string(node.element), num_qubits(node), params)
+    return _qiskit.circuit.gate.Gate(string(node.element), num_qubits(node), params)
 end
 
 # TODO: This will break in general if quantum and classical wires
@@ -77,7 +135,8 @@ function to_qiskit(qc::Circuit; allow_unknown=false)
         element = getelement(qc, vert)
         isionode(element) && continue
         (quwires, clwires) = to_qiskit_wires(
-            num_qubits(qc), getquwires(qc, vert), getclwires(qc, vert))
+            num_qubits(qc), getquwires(qc, vert), getclwires(qc, vert)
+        )
         qisk_gate = get(_gate_map, element, nothing)
         if isnothing(qisk_gate)
             allow_unknown ||
@@ -96,9 +155,9 @@ function to_qiskit(qc::Circuit; allow_unknown=false)
             continue
         end
         if isempty(params)
-            getproperty(qcqisk, qisk_gate)(quwires...,)
+            getproperty(qcqisk, qisk_gate)(quwires...)
         else
-            getproperty(qcqisk, qisk_gate)(params..., quwires...,)
+            getproperty(qcqisk, qisk_gate)(params..., quwires...)
         end
     end
     return qcqisk
@@ -132,7 +191,7 @@ function Qurt.Interface.to_qurt_circuit(qqc::PythonCall.Py)
         if isempty(_params)
             params = tuple()
         else
-            params = Tuple(_params...,)
+            params = Tuple(_params...)
         end
         el = get(_rev_gate_map, optype, nothing)
         isnothing(el) && error("Uknown circuit element $optype")
@@ -144,6 +203,5 @@ function Qurt.Interface.to_qurt_circuit(qqc::PythonCall.Py)
     end
     return qc
 end
-
 
 end # module PythonCallExt

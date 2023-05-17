@@ -7,7 +7,7 @@
 ENV["JULIA_CONDAPKG_BACKEND"] = "Null"
 
 # Loading PythonCall before Qurt seems faster than other way.
-import PythonCall
+using PythonCall: PythonCall
 
 # Because PythonCall is loaded, the extensions to Qurt for Qiskit will be loaded automatically
 using Qurt

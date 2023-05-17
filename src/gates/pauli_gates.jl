@@ -2,7 +2,7 @@ module PauliGates
 
 import ..Elements: Element, I, X, Y, Z, Paulis, MiscGates, @new_elements
 import ..Interface: num_qubits, num_clbits, isinvolution
-import ..Qurt # for call to  @new_elements
+using ..Qurt: Qurt # for call to  @new_elements
 import BlockEnums: @addinblock
 
 # TODO: What is a good way to represent this? As a String?
