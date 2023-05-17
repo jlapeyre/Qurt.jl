@@ -478,8 +478,12 @@ end
 
 function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
     allwires = (wires..., clwires...)
+    _wire_inds = wire_indices(qc)
+    for wire in allwires
+        wire in _wire_inds || throw(CircuitError("Wire $wire is not in circuit"))
+    end
     vertex_wires = WiresVerts(qc, allwires)
-    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
+    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
 """
@@ -515,20 +519,19 @@ function insert_node!(
     qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, out_vertices, wires, clwires=()
 )
     allwires = (wires..., clwires...)
+    _wire_inds = wire_indices(qc)
+    for wire in allwires
+        wire in _wire_inds || throw(CircuitError("Wire $wire is not in circuit"))
+    end
     vertex_wires = zip(allwires, out_vertices)
-    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
+    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
 # Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
 # second for inserting a node before specified vertices.
 function _insert_node!(
-    qc::Circuit,
-    (op, _inparams)::Tuple{Element,<:Any},
-    vertex_wires::F,
-    wires,
-    clwires,
-    allwires,
-) where {F}
+    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires, wires, clwires
+)
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
@@ -538,14 +541,9 @@ function _insert_node!(
     end
     new_vertex = _add_vertex!(qc.graph)
     # A Vector of the inwires for `new_vertex`.
-    inwiremap = Vector{Int}(undef, length(allwires))
+    inwiremap = Vector{Int}(undef, length(vertex_wires))
     # A Vector of the outwires for `new_vertex`.
-    outwiremap = Vector{Int}(undef, length(allwires))
-    # Each wire terminates at an output node.
-    _wr = wire_indices(qc)
-    for wire in allwires
-        wire in _wr || throw(CircuitError("Wire $wire is not in circuit"))
-    end
+    outwiremap = Vector{Int}(undef, length(vertex_wires))
     for (i, (wire, out_vertex)) in enumerate(vertex_wires)
         # Get the inneighbor of `out_vertex` on wire `wire`.
         prev_vertex = inneighbors(qc.nodes, out_vertex, wire)
