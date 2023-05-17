@@ -60,8 +60,8 @@ import ..NodeStructs:
     wireind,
     outneighborind,
     inneighborind,
-    setoutwire_ind,
-    setinwire_ind,
+    set_outwire_vertex!,
+    set_inwire_vertex!,
     wirevertices,
     wireelements,
     wireparamelements,
@@ -514,32 +514,37 @@ function insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element, <:Any}, out_v
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires, allwires)
 end
 
-# This function does work for both add_node! and insert_node!, the first for inserting a node at the end, the
+# Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
 # second for inserting a node before specified vertices.
 function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires::F, wires, clwires, allwires) where {F}
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
         params = _inparams
-    else
+    else # Make a single param into a 1-tuple
         params = (_inparams,) # Won't catch mistake [p1, p2] for (p1, p2)
     end
-    new_vert = _add_vertex!(qc.graph)
+    new_vertex = _add_vertex!(qc.graph)
+    # A Vector of the inwires for `new_vertex`.
     inwiremap = Vector{Int}(undef, length(allwires))
+    # A Vector of the outwires for `new_vertex`.
     outwiremap = Vector{Int}(undef, length(allwires))
     # Each wire terminates at an output node.
-    wr = wire_indices(qc)
+    _wr = wire_indices(qc)
     for wire in allwires
-        wire in wr || throw(CircuitError("Wire $wire is not in circuit"))
+        wire in _wr || throw(CircuitError("Wire $wire is not in circuit"))
     end
     for (i, (wire, out_vertex)) in enumerate(vertex_wires)
-        # out_vertex = output_vertex(qc, wire) # Output node for wire
-        prev = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
-        setoutwire_ind(qc.nodes, prev, wireind(qc.nodes, prev, wire), new_vert)
-        # Replace prev -> out_vertex with prev -> new_vert -> out_vertex
-        split_edge!(qc.graph, prev, out_vertex, new_vert)
-        setinwire_ind(qc.nodes, out_vertex, 1, new_vert)
-        inwiremap[i] = prev
+        # `out_vertex` is an output vertex and `wire` is its wire.
+        prev_vertex = only(Graphs.inneighbors(qc.graph, out_vertex)) # Output node has one inneighbor
+        # Set the outneighbor of `prev_vertex` on `wire` to `new_vertex`.
+        set_outwire_vertex!(qc.nodes, prev_vertex, wireind(qc.nodes, prev_vertex, wire), new_vertex)
+        # Replace edge prev_vertex -> out_vertex with prev_vertex -> new_vertex -> out_vertex
+        split_edge!(qc.graph, prev_vertex, out_vertex, new_vertex)
+        # Set the only inneighbor of the output `out_vertex` to `new_vertex`.
+        set_inwire_vertex!(qc.nodes, out_vertex, 1, new_vertex)
+        # For `new_vertex` set the input and output vertices on `wire` to `prev_vertex` and `out_vertex`.
+        inwiremap[i] = prev_vertex
         outwiremap[i] = out_vertex
     end
     # Much of the following if/else block is probably pretty slow.
@@ -551,7 +556,7 @@ function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, verte
             newparams = params
         else
             _newparams = Any[x for x in params]
-            new_node_ind = new_vert #  length(qc.nodes) + 1 # not happy with doing this
+            new_node_ind = new_vertex #  length(qc.nodes) + 1 # not happy with doing this
             for i in syminds
                 param_ind = Parameters.getornew(qc.param_table.parammap, params[i])
                 param_ref = ParamRef(param_ind)
@@ -564,7 +569,7 @@ function _insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, verte
     new_node_ind = NodeStructs.add_node!(
         qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
     )
-    return new_vert
+    return new_vertex
 end
 
 # reindexing after node reindexing has happened.
@@ -839,8 +844,8 @@ for f in (
     :count_wires,
     :outneighborind,
     :inneighborind,
-    :setoutwire_ind,
-    :setinwire_ind,
+    :set_outwire_vertex!,
+    :set_inwire_vertex!,
     :isinput,
     :isoutput,
     :isquinput,

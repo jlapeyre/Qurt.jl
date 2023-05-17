@@ -54,8 +54,8 @@ export Node,
     wireind,
     outneighborind,
     inneighborind,
-    setoutwire_ind,
-    setinwire_ind,
+    set_outwire_vertex!,
+    set_inwire_vertex!,
     two_qubit_ops,
     multi_qubit_ops,
     n_qubit_ops,
@@ -216,24 +216,30 @@ Return the index of wire number `wire` in the list of wires for node `node_ind`.
     return wire_ind
 end
 
-# TODO: Rename this to make it clear this value written is a vertex number
-function setoutwire_ind(
-    nodes::ANodeArrays, vind_src::Integer, wireind::Integer, vind_dst::Integer
+"""
+    set_outwire_vertex!(nodes, src_vertex, wireind, dst_vertex)
+
+Set the outneighbor of `src_vertex` on `wireind` to `dst_vertex`.
+
+Change the outwire map of vertex `src_vertex` so that `wireind` maps to `dst_vertex`.
+"""
+function set_outwire_vertex!(
+    nodes::ANodeArrays, src_vertex::Integer, wireind::Integer, dst_vertex::Integer
 )
-    return nodes.outwiremap[vind_src][wireind] = vind_dst
+    return nodes.outwiremap[src_vertex][wireind] = dst_vertex
 end
 
 """
-    setinwire_ind(nodes, vind_src, wireind, vind_dst)
+    set_inwire_vertex!(nodes, src_vertex, wireind, dst_vertex)
 
-Set the inwire map of vertex `vind_src` on wire `wireind` to point to `vind_dst`.
+Set the inneighbor of `src_vertex` on `wireind` to `dst_vertex`.
 
-Set the inneighbor of `vind_src` on `wireind` to `vind_dst`.
+Change the inwire map of vertex `src_vertex` so that `wireind` maps to `dst_vertex`.
 """
-function setinwire_ind(
-    nodes::ANodeArrays, vind_src::Integer, wireind::Integer, vind_dst::Integer
+function set_inwire_vertex!(
+    nodes::ANodeArrays, src_vertex::Integer, wireind::Integer, dst_vertex::Integer
 )
-    return nodes.inwiremap[vind_src][wireind] = vind_dst
+    return nodes.inwiremap[src_vertex][wireind] = dst_vertex
 end
 
 # 1wire and 2wire are ≈ 5ns. 3wire and greater use generic branch: 380ns
@@ -494,8 +500,8 @@ function rewire_across_node!(nodes::ANodeArrays, vind::Integer)
     for wire in getwires(nodes, vind)
         from = inneighborind(nodes, vind, wire)
         to = outneighborind(nodes, vind, wire)
-        setoutwire_ind(nodes, from.vi, from.wi, to.vi)
-        setinwire_ind(nodes, to.vi, to.wi, from.vi)
+        set_outwire_vertex!(nodes, from.vi, from.wi, to.vi)
+        set_inwire_vertex!(nodes, to.vi, to.wi, from.vi)
     end
     return nothing
 end
@@ -510,8 +516,8 @@ function rewire_across_nodes!(nodes::ANodeArrays, vind1::Integer, vind2::Integer
     for wire in wires
         from = inneighborind(nodes, vind1, wire)
         to = outneighborind(nodes, vind2, wire)
-        setoutwire_ind(nodes, from.vi, from.wi, to.vi)
-        setinwire_ind(nodes, to.vi, to.wi, from.vi)
+        set_outwire_vertex!(nodes, from.vi, from.wi, to.vi)
+        set_inwire_vertex!(nodes, to.vi, to.wi, from.vi)
     end
     empty!(nodes.inwiremap[vind1])
     empty!(nodes.outwiremap[vind2])
@@ -534,11 +540,11 @@ function _move_wires!(nodes::ANodeArrays, src::Integer, dst::Integer)
             (length(nodes.wires[src]) == length(nodes.inwiremap[src]))
             from = inneighborind(nodes, src, wire)
             if !isempty(outneighbors(nodes, from.vi))
-                setoutwire_ind(nodes, from.vi, from.wi, dst)
+                set_outwire_vertex!(nodes, from.vi, from.wi, dst)
             end
             if !isempty(outneighbors(nodes, src))
                 to = outneighborind(nodes, src, wire)
-                setinwire_ind(nodes, to.vi, to.wi, dst)
+                set_inwire_vertex!(nodes, to.vi, to.wi, dst)
             end
         end
     end
