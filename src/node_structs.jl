@@ -127,6 +127,13 @@ function __empty_node_storage()
     )
 end
 
+"""
+    _new_wiremap(n::Integer)
+
+Allocate storage for `inwiremap` or `outwiremap`.
+"""
+_new_wiremap(n) = Vector{Int}(undef, n)
+
 function Base.:(==)(n1::Node, n2::Node)
     n1.element == n2.element || return false
     n1.wires == n2.wires || return false

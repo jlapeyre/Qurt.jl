@@ -70,7 +70,8 @@ import ..NodeStructs:
     two_qubit_ops,
     multi_qubit_ops,
     n_qubit_ops,
-    find_nodes
+    find_nodes,
+    _new_wiremap
 
 using GraphsExt: GraphsExt, split_edge!, dag_longest_path
 using GraphsExt.RemoveVertices: RemoveVertices, remove_vertices!, index_type, VertexMap
@@ -460,9 +461,9 @@ function add_node!(qc::Circuit, pe::ParamElement, wires, clwires=())
     return add_node!(qc, (pe.element, pe.params), wires, clwires)
 end
 
-## This struct is just for packaging an iterator over wire,vertex pairs
-## used when inserting an element before an output node.
-## A less verbose solution to iterating would be nice
+## This struct is just for packaging an iterator over wire,vertex pairs used when
+## inserting an element before an output node.  A less verbose solution to iterating would
+## be nice.
 struct WiresVerts{T,F}
     wires::T
     vfunc::F
@@ -486,17 +487,9 @@ function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, cl
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
-"""
-    insert_node!(qcircuit::Circuit, op::Element, out_vertices, wires::NTuple{<:Any, IntT},
-                   clwires=()) where {IntT <: Integer}
+## Several methods for insert_node! that dispatch to the one that calls _insert_nodes! to
+## do the work.
 
-    insert_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
-                       out_vertices, wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
-
-Insert `op` or `(op, params)` to `qcircuit` before `out_vertices` on `wires` and `clwires`.
-
-`op` is wired into the circuit at pairs in `zip((wires..., clwires...), out_vertices)`
-"""
 function insert_node!(qc::Circuit, op::Element, out_vertices, wires, clwires=())
     return insert_node!(qc, (op, nothing), out_vertices, wires, clwires)
 end
@@ -515,6 +508,17 @@ function insert_node!(qc::Circuit, pe::ParamElement, out_vertices, wires, clwire
     return insert_node!(qc, (pe.element, pe.params), out_vertices, wires, clwires)
 end
 
+"""
+    insert_node!(qcircuit::Circuit, op::Element, out_vertices, wires::NTuple{<:Any, IntT},
+                   clwires=()) where {IntT <: Integer}
+
+    insert_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
+                       out_vertices, wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
+
+Insert `op` or `(op, params)` in `qcircuit` before `out_vertices` on `wires` and `clwires`.
+
+`op` is wired into the circuit at pairs in `zip((wires..., clwires...), out_vertices)`
+"""
 function insert_node!(
     qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, out_vertices, wires, clwires=()
 )
@@ -528,7 +532,8 @@ function insert_node!(
 end
 
 # Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
-# second for inserting a node before specified vertices.
+# second for inserting a node before specified vertices. Note that in both cases, we are inserting
+# a node *before* something rather than *after* something.
 function _insert_node!(
     qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires, wires, clwires
 )
@@ -540,10 +545,9 @@ function _insert_node!(
         params = (_inparams,) # Won't catch mistake [p1, p2] for (p1, p2)
     end
     new_vertex = _add_vertex!(qc.graph)
-    # A Vector of the inwires for `new_vertex`.
-    inwiremap = Vector{Int}(undef, length(vertex_wires))
-    # A Vector of the outwires for `new_vertex`.
-    outwiremap = Vector{Int}(undef, length(vertex_wires))
+    # Empty Vector's of the inwires and outwires for `new_vertex`.
+    inwiremap = _new_wiremap(length(vertex_wires))
+    outwiremap = _new_wiremap(length(vertex_wires))
     for (i, (wire, out_vertex)) in enumerate(vertex_wires)
         # Get the inneighbor of `out_vertex` on wire `wire`.
         prev_vertex = inneighbors(qc.nodes, out_vertex, wire)
