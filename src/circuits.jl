@@ -478,12 +478,7 @@ function Base.iterate(wv::WiresVerts, i=1)
 end
 
 function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
-    allwires = (wires..., clwires...)
-    _wire_inds = wire_indices(qc)
-    for wire in allwires
-        wire in _wire_inds || throw(CircuitError("Wire $wire is not in circuit"))
-    end
-    vertex_wires = WiresVerts(qc, allwires)
+    vertex_wires = WiresVerts(qc, (wires..., clwires...))
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
@@ -522,12 +517,7 @@ Insert `op` or `(op, params)` in `qcircuit` before `out_vertices` on `wires` and
 function insert_node!(
     qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, out_vertices, wires, clwires=()
 )
-    allwires = (wires..., clwires...)
-    _wire_inds = wire_indices(qc)
-    for wire in allwires
-        wire in _wire_inds || throw(CircuitError("Wire $wire is not in circuit"))
-    end
-    vertex_wires = zip(allwires, out_vertices)
+    vertex_wires = zip((wires..., clwires...), out_vertices)
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
