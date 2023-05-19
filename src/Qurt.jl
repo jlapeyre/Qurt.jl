@@ -31,6 +31,8 @@ export num_qubits,
 # IOQDAGs
 export print_edges
 
+## We could use python-like FromFile.jl instead of a stack of includes.
+## But it's not clear that would be better on the whole.
 include("utils.jl")
 include("interface.jl")
 include("angle.jl")
@@ -74,13 +76,6 @@ using .Interface:
     to_qiskit
 using .IOQDAGs: print_edges
 
-# If do_precompile is `true`, then precompile some code paths to cache as
-# native code. If it is `false`, then the first startup will be faster because
-# this compilation does not happen.
-let do_precompile = true
-    if do_precompile
-        include("precompile.jl")
-    end
-end
+include("precompile.jl")
 
 end
