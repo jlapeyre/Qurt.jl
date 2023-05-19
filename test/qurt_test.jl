@@ -26,11 +26,19 @@
 
     qc2 = Circuit(2)
     @build qc2 CX(1, 2) CZ(1, 2)
-    # Circuits are equivalent but nodes entered in different orders.
-    # We can't detect this equivalence at present. Exponentially hard in general.
-    # So we check nodes on wires.
     @test collect(wireelements(qc, 1)) == collect(wireelements(qc2, 1))
     @test collect(wireelements(qc, 2)) == collect(wireelements(qc2, 2))
+
+    # Test inserting before a gate with more than one wire, with less trivial wire map.
+    # Fixes unfiled bug.
+    qc = Circuit(2)
+    ncz = @build qc CZ(1, 2)
+    insert_node!(qc, @gate(CX(2, 1)), (ncz, ncz))
+
+    qc2 = Circuit(2)
+    @build qc2 CX(2, 1) CZ(1, 2)
+    @test collect(wireelements(qc, 1)) == collect(wireelements(qc2, 2))
+    @test collect(wireelements(qc, 2)) == collect(wireelements(qc2, 1))
 end
 
 @testset "barrier" begin
