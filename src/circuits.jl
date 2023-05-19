@@ -553,8 +553,8 @@ function _insert_node!(
         )
         # Replace edge prev_vertex -> out_vertex with prev_vertex -> new_vertex -> out_vertex
         split_edge!(qc.graph, prev_vertex, out_vertex, new_vertex)
-        # Set the only inneighbor of the output `out_vertex` to `new_vertex`.
-        set_inwire_vertex!(qc.nodes, out_vertex, 1, new_vertex)
+        # Set the inneighbor of `out_vertex` to `new_vertex`.
+        set_inwire_vertex!(qc.nodes, out_vertex, wireind(qc.nodes, out_vertex, wire), new_vertex)
         # For `new_vertex` set the input and output vertices on `wire` to `prev_vertex` and `out_vertex`.
         inwiremap[i] = prev_vertex
         outwiremap[i] = out_vertex
