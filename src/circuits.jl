@@ -85,6 +85,7 @@ export Circuit,
     nodes,
     add_node!,
     insert_node!,
+    insert_nodes!,
     remove_node!,
     remove_block!,
     remove_blocks!,
@@ -482,7 +483,7 @@ function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, cl
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
-## Several methods for insert_node! that dispatch to the one that calls _insert_nodes! to
+## Several methods for insert_node! that dispatch to the one that calls _insert_node! to
 ## do the work.
 
 function insert_node!(qc::Circuit, op::Element, out_vertices, wires, clwires=())
@@ -521,6 +522,8 @@ function insert_node!(
     return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
 end
 
+_insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires, wires::Integer, clwires) =
+    throw(CircuitError("Argument `wires` must be a collection, got wires::$(typeof(wires))."))
 # Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
 # second for inserting a node before specified vertices. Note that in both cases, we are inserting
 # a node *before* something rather than *after* something.
@@ -553,6 +556,14 @@ function _insert_node!(
         inwiremap[i] = prev_vertex
         outwiremap[i] = out_vertex
     end
+    newparams = _move_symbolic_params_to_table!(qc, new_vertex, params)
+    new_node_ind = NodeStructs.add_node!(
+        qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
+    )
+    return new_vertex
+end
+
+function _move_symbolic_params_to_table!(qc, vertex, params)
     # Much of the following if/else block is probably pretty slow.
     if isempty(params)
         newparams = params
@@ -562,7 +573,7 @@ function _insert_node!(
             newparams = params
         else
             _newparams = Any[x for x in params]
-            new_node_ind = new_vertex #  length(qc.nodes) + 1 # not happy with doing this
+            new_node_ind = vertex #  length(qc.nodes) + 1 # not happy with doing this
             for i in syminds
                 param_ind = Parameters.getornew(qc.param_table.parammap, params[i])
                 param_ref = ParamRef(param_ind)
@@ -572,13 +583,32 @@ function _insert_node!(
             newparams = (_newparams...,)
         end
     end
-    new_node_ind = NodeStructs.add_node!(
-        qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
-    )
-    return new_vertex
+    return newparams
 end
 
-# reindexing after node reindexing has happened.
+## Insert several nodes on a set of wires
+function insert_nodes!(
+    qc::Circuit, ops, params_vec, wires_vec, clwires_vec, wire_vert_map
+)
+    for v in (params_vec, wires_vec, clwires_vec)
+        length(ops) == length(v) ||
+            throw(DimensionMismatch("Vectors specifying ops to insert are not all of the same length."))
+    end
+    new_vertices = Int[] # TODO: Again, Index type?
+    for i in eachindex(ops)
+        all_wires = (wires_vec[i]..., clwires_vec[i]...)
+        out_vertices = [wire_vert_map[wire] for wire in all_wires]
+        vertex_wires = zip(all_wires, out_vertices)
+        new_vertex = _insert_node!(qc, (ops[i], params_vec[i]), vertex_wires, wires_vec[i], clwires_vec[i])
+        for wire in all_wires
+            wire_vert_map[wire] = new_vertex
+        end
+        push!(new_vertices, new_vertex)
+    end
+    return new_vertices
+end
+
+# Reindexing after node reindexing has happened. Used when removing vertices.
 function _reindex_param_table!(qc::Circuit, from_vert, to_vert)
     from_vert == to_vert && return nothing
     params = getparams(qc, to_vert)

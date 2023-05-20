@@ -59,6 +59,7 @@ using .Circuits:
     Circuit,
     add_node!,
     insert_node!,
+    insert_nodes!,
     global_phase,
     remove_node!,
     remove_block!,
