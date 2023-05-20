@@ -480,7 +480,7 @@ end
 
 function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
     vertex_wires = WiresVerts(qc, (wires..., clwires...))
-    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
+    return _insert_node!(qc, op, _inparams, vertex_wires, wires, clwires)
 end
 
 ## Several methods for insert_node! that dispatch to the one that calls _insert_node! to
@@ -519,17 +519,15 @@ function insert_node!(
     qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, out_vertices, wires, clwires=()
 )
     vertex_wires = zip((wires..., clwires...), out_vertices)
-    return _insert_node!(qc, (op, _inparams), vertex_wires, wires, clwires)
+    return _insert_node!(qc, op, _inparams, vertex_wires, wires, clwires)
 end
 
-_insert_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires, wires::Integer, clwires) =
+_insert_node!(qc::Circuit, op::Element, _inparams::Any, vertex_wires, wires::Integer, clwires) =
     throw(CircuitError("Argument `wires` must be a collection, got wires::$(typeof(wires))."))
 # Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
 # second for inserting a node before specified vertices. Note that in both cases, we are inserting
 # a node *before* something rather than *after* something.
-function _insert_node!(
-    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, vertex_wires, wires, clwires
-)
+function _insert_node!(qc::Circuit, op::Element, _inparams::Any, vertex_wires, wires, clwires)
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
@@ -599,7 +597,7 @@ function insert_nodes!(
         all_wires = (wires_vec[i]..., clwires_vec[i]...)
         out_vertices = [wire_vert_map[wire] for wire in all_wires]
         vertex_wires = zip(all_wires, out_vertices)
-        new_vertex = _insert_node!(qc, (ops[i], params_vec[i]), vertex_wires, wires_vec[i], clwires_vec[i])
+        new_vertex = _insert_node!(qc, ops[i], params_vec[i], vertex_wires, wires_vec[i], clwires_vec[i])
         for wire in all_wires
             wire_vert_map[wire] = new_vertex
         end
