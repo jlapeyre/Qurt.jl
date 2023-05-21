@@ -10,7 +10,7 @@
     using .Interface: getelement
     qc = Circuit(2)
     (nx, ny) = @build qc X(1) Y(2)
-    insert_node!(qc, @gate(CX(1, 2)), (nx, ny))
+    insert_node!(qc, (nx, ny), @gate(CX(1, 2)))
     qc2 = Circuit(2)
     @build qc2 CX(1, 2) Y(2) X(1)
     # Circuits are equivalent but nodes entered in different orders.
@@ -22,7 +22,7 @@
     # Test inserting before a gate with more than one wire.
     qc = Circuit(2)
     ncz = @build qc CZ(1, 2)
-    insert_node!(qc, @gate(CX(1, 2)), (ncz, ncz))
+    insert_node!(qc, (ncz, ncz), @gate(CX(1, 2)))
 
     qc2 = Circuit(2)
     @build qc2 CX(1, 2) CZ(1, 2)
@@ -33,7 +33,7 @@
     # Fixes unfiled bug.
     qc = Circuit(2)
     ncz = @build qc CZ(1, 2)
-    insert_node!(qc, @gate(CX(2, 1)), (ncz, ncz))
+    insert_node!(qc, (ncz, ncz), @gate(CX(2, 1)))
 
     qc2 = Circuit(2)
     @build qc2 CX(2, 1) CZ(1, 2)

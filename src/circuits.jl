@@ -480,54 +480,59 @@ end
 
 function add_node!(qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=())
     vertex_wires = WiresVerts(qc, (wires..., clwires...))
-    return _insert_node!(qc, op, _inparams, vertex_wires, wires, clwires)
+    return _insert_node!(qc, vertex_wires, op, _inparams, wires, clwires)
 end
 
 ## Several methods for insert_node! that dispatch to the one that calls _insert_node! to
 ## do the work.
 
-function insert_node!(qc::Circuit, op::Element, out_vertices, wires, clwires=())
-    return insert_node!(qc, (op, nothing), out_vertices, wires, clwires)
+function insert_node!(qc::Circuit, out_vertices, op::Element, wires, clwires=())
+    return insert_node!(qc, out_vertices, (op, nothing), wires, clwires)
 end
 
-function insert_node!(qc::Circuit, wpe::WiresParamElement, out_vertices)
+function insert_node!(qc::Circuit, out_vertices, wpe::WiresParamElement)
     return insert_node!(
-        qc, (wpe.element, wpe.params), out_vertices, wpe.quwires, wpe.clwires
+        qc, out_vertices, (wpe.element, wpe.params), wpe.quwires, wpe.clwires
     )
 end
 
-function insert_node!(qc::Circuit, we::WiresElement, out_vertices)
-    return insert_node!(qc, we.element, out_vertices, we.quwires, we.clwires)
+function insert_node!(qc::Circuit, out_vertices, we::WiresElement)
+    return insert_node!(qc, out_vertices, we.element, we.quwires, we.clwires)
 end
 
-function insert_node!(qc::Circuit, pe::ParamElement, out_vertices, wires, clwires=())
-    return insert_node!(qc, (pe.element, pe.params), out_vertices, wires, clwires)
+function insert_node!(qc::Circuit, out_vertices, pe::ParamElement, wires, clwires=())
+    return insert_node!(qc, out_vertices, (pe.element, pe.params), wires, clwires)
 end
 
 """
-    insert_node!(qcircuit::Circuit, op::Element, out_vertices, wires::NTuple{<:Any, IntT},
+    insert_node!(qcircuit::Circuit, out_vertices, op::Element, wires::NTuple{<:Any, IntT},
                    clwires=()) where {IntT <: Integer}
 
-    insert_node!(qcircuit::Circuit, (op, params)::Tuple{Element, <:Any},
-                       out_vertices, wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
+    insert_node!(qcircuit::Circuit, out_vertices, (op, params)::Tuple{Element, <:Any},
+                           wires::NTuple{<:Any, IntT}, clwires=()) where {IntT <: Integer}
 
 Insert `op` or `(op, params)` in `qcircuit` before `out_vertices` on `wires` and `clwires`.
 
 `op` is wired into the circuit at pairs in `zip((wires..., clwires...), out_vertices)`
+
+Alternatively, `out_vertices` may be a `Dict` mapping wires to vertices. In this case, the vertices to
+insert in front of are determined applying this map to `wires` and `clwires`. Furthermore, `out_vertices`
+will be modified by remapping `wires` and `clwires` to the newly-created vertex. In this way, `out_vertices`
+may be reused in subsequent calls to continue inserting in front of newly-created vertices.
 """
 function insert_node!(
-    qc::Circuit, (op, _inparams)::Tuple{Element,<:Any}, out_vertices, wires, clwires=()
+    qc::Circuit, out_vertices, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=()
 )
     vertex_wires = zip((wires..., clwires...), out_vertices)
-    return _insert_node!(qc, op, _inparams, vertex_wires, wires, clwires)
+    return _insert_node!(qc, vertex_wires, op, _inparams, wires, clwires)
 end
 
-_insert_node!(qc::Circuit, op::Element, _inparams::Any, vertex_wires, wires::Integer, clwires) =
+_insert_node!(qc::Circuit, vertex_wires, op::Element, _inparams::Any, wires::Integer, clwires) =
     throw(CircuitError("Argument `wires` must be a collection, got wires::$(typeof(wires))."))
 # Does the work for both add_node! and insert_node!, the first for inserting a node at the end, the
 # second for inserting a node before specified vertices. Note that in both cases, we are inserting
 # a node *before* something rather than *after* something.
-function _insert_node!(qc::Circuit, op::Element, _inparams::Any, vertex_wires, wires, clwires)
+function _insert_node!(qc::Circuit, vertex_wires, op::Element, _inparams::Any, wires, clwires)
     if isnothing(_inparams)
         params = tuple()
     elseif isa(_inparams, Tuple)
@@ -553,8 +558,10 @@ function _insert_node!(qc::Circuit, op::Element, _inparams::Any, vertex_wires, w
         # For `new_vertex` set the input and output vertices on `wire` to `prev_vertex` and `out_vertex`.
         inwiremap[i] = prev_vertex
         outwiremap[i] = out_vertex
+        __remap_wire!(vertex_wires, wire, new_vertex)
     end
     newparams = _move_symbolic_params_to_table!(qc, new_vertex, params)
+    # TODO: This is unused, but it should be == new_vertex. Check? Don't bind?
     new_node_ind = NodeStructs.add_node!(
         qc.nodes, op, packwires(wires, clwires), inwiremap, outwiremap, newparams
     )
@@ -584,9 +591,53 @@ function _move_symbolic_params_to_table!(qc, vertex, params)
     return newparams
 end
 
+## Iterate over key value pairs of `wmap`. But restrict keys
+## to those in `wires`.
+## Copies WiresVert instead of using it, because an
+## anomymous function with a captured Dict makes a very slow iterator
+struct WiresDict{T,M}
+    wires::T
+    wmap::M
+end
+Base.length(wv::WiresDict) = length(wv.wires)
+Base.eltype(::WiresDict) = Tuple{Int,Int}
+function Base.iterate(wv::WiresDict, i=1)
+    i > length(wv.wires) && return nothing
+    wire = wv.wires[i]
+    return ((wire, wv.wmap[wire]), i + 1)
+end
+Base.setindex!(wd::WiresDict, wire, vertex) = wd.wmap[wire] = vertex
+
+# Remap wires so that subsequent node data is inserted in front of the new vertex.
+__remap_wire!(wd::WiresDict, wire, vertex) =  wd[wire] = vertex
+__remap_wire!(::Any, ::Any, ::Any) = nothing
+
+function insert_node!(
+    qc::Circuit, wires_dict::Dict, (op, _inparams)::Tuple{Element,<:Any}, wires, clwires=()
+)
+    vertex_wires = WiresDict((wires..., clwires...), wires_dict)
+    return _insert_node!(qc, vertex_wires, op, _inparams, wires, clwires)
+end
+
 ## Insert several nodes on a set of wires
+## This method takes the node data in a struct-of-vectors-like form.
+## For example, ops::Vector{Element}
+"""
+    insert_nodes!(qc::Circuit, wire_vert_map::Dict, ops, params_vec, wires_vec, clwires_vec)
+
+Insert a sequence of nodes in front of the nodes determined by `wire_vert_map`.
+
+* `ops` -- the `Elements` typically of type `ops::Vector{Element}`.
+* `params_vec` -- A sequence of collections of parameters (or `nothing`).
+* `wires_vec` -- A sequence of collections of quantum wires
+* `clwires_vec` -- A sequence of collections of classical wires
+* `wire_vert_map` -- A map from wires to vertices that determines the initial vertex to be inserted
+   in front of for each wire. This map will be modified by remapping the input wires to the newly-created vertex.
+
+A `Vector` of the newly created vertices is returned.
+"""
 function insert_nodes!(
-    qc::Circuit, ops, params_vec, wires_vec, clwires_vec, wire_vert_map
+    qc::Circuit, wire_vert_map::Dict, ops, params_vec, wires_vec, clwires_vec
 )
     for v in (params_vec, wires_vec, clwires_vec)
         length(ops) == length(v) ||
@@ -594,16 +645,18 @@ function insert_nodes!(
     end
     new_vertices = Int[] # TODO: Again, Index type?
     for i in eachindex(ops)
-        all_wires = (wires_vec[i]..., clwires_vec[i]...)
-        out_vertices = [wire_vert_map[wire] for wire in all_wires]
-        vertex_wires = zip(all_wires, out_vertices)
-        new_vertex = _insert_node!(qc, ops[i], params_vec[i], vertex_wires, wires_vec[i], clwires_vec[i])
-        for wire in all_wires
-            wire_vert_map[wire] = new_vertex
-        end
+        new_vertex = insert_node!(qc, wire_vert_map, (ops[i], params_vec[i]), wires_vec[i], clwires_vec[i])
         push!(new_vertices, new_vertex)
     end
     return new_vertices
+end
+
+function insert_nodes!(qc::Circuit, wire_vert_map::Dict, nodes)
+    new_vertices = Int[] # TODO: Again, Index type?
+    for node in nodes
+        new_vertex = insert_node!(qc, wire_vert_map, node...)
+        push!(new_vertices, new_vertex)
+    end
 end
 
 # Reindexing after node reindexing has happened. Used when removing vertices.
