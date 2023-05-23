@@ -26,8 +26,7 @@
 
     qc2 = Circuit(2)
     @build qc2 CX(1, 2) CZ(1, 2)
-    @test collect(wireelements(qc, 1)) == collect(wireelements(qc2, 1))
-    @test collect(wireelements(qc, 2)) == collect(wireelements(qc2, 2))
+    @test Circuits.same(qc, qc2)
 
     # Test inserting before a gate with more than one wire, with less trivial wire map.
     # Fixes unfiled bug.
@@ -37,9 +36,12 @@
 
     qc2 = Circuit(2)
     @build qc2 CX(2, 1) CZ(1, 2)
-    @test collect(wireelements(qc, 1)) == collect(wireelements(qc2, 2))
-    @test collect(wireelements(qc, 2)) == collect(wireelements(qc2, 1))
+    @test Circuits.same(qc, qc2)
 end
+
+
+# @testset "insert_nodes!" begin
+# end
 
 @testset "barrier" begin
     using .Circuits: Circuit, barrier, outdegree, indegree

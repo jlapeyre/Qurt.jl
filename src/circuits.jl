@@ -238,6 +238,28 @@ function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     return true
 end
 
+"""
+    same(qc1::Circuit, qc2::Circuit)
+
+Return `true` if `qc1` and `qc2` in some sense represent the same circuit.
+
+Return `true` if the sequence of operations (including parameters) on each wire is the
+same for `qc1` and `qc2`.
+
+How many such concepts and exactly what they are has not been determined.
+"""
+function same(qc1::Circuit, qc2::Circuit)
+    qc1 == qc2 && return true
+    nw = num_wires(qc1)
+    nw == num_wires(qc2) || return false
+    for wire in 1:nw
+        for (op1, op2) in zip(wireparamelements(qc1, wire), wireparamelements(qc2, wire))
+            op1 == op2 || return false
+        end
+    end
+    return true
+end
+
 function Base.show(io::IO, ::MIME"text/plain", qc::Circuit)
     nq = num_qubits(qc)
     ncl = num_clbits(qc)
@@ -606,7 +628,7 @@ function Base.iterate(wv::WiresDict, i=1)
     wire = wv.wires[i]
     return ((wire, wv.wmap[wire]), i + 1)
 end
-Base.setindex!(wd::WiresDict, wire, vertex) = wd.wmap[wire] = vertex
+Base.setindex!(wd::WiresDict, vertex, wire) = wd.wmap[wire] = vertex
 
 # Remap wires so that subsequent node data is inserted in front of the new vertex.
 __remap_wire!(wd::WiresDict, wire, vertex) =  wd[wire] = vertex
@@ -654,7 +676,11 @@ end
 function insert_nodes!(qc::Circuit, wire_vert_map::Dict, nodes)
     new_vertices = Int[] # TODO: Again, Index type?
     for node in nodes
-        new_vertex = insert_node!(qc, wire_vert_map, node...)
+        if node isa Tuple
+            new_vertex = insert_node!(qc, wire_vert_map, node...)
+        else
+            new_vertex = insert_node!(qc, wire_vert_map, node)
+        end
         push!(new_vertices, new_vertex)
     end
 end
@@ -847,10 +873,11 @@ function wireelements(qc::Circuit, wire, init_vertex=input_vertex(qc, wire))
 end
 
 """
-    wireelements(qc::Circuit,  wire::Integer, [init_vertex])
+    wireparamelements(qc::Circuit,  wire::Integer, [init_vertex])
 
-Return an iterator over elements on `wire`.
+Return an iterator over elements and parameters on `wire`.
 
+Each item is of type `ParamElement` or `Element`.
 Start on `init_vertex`, if supplied, rather than the circuit input vertex.
 """
 function wireparamelements(qc::Circuit, wire, init_vertex=input_vertex(qc, wire))
