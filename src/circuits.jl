@@ -227,14 +227,11 @@ param_map(qc::Circuit) = qc.param_table.parammap
 
 function Base.:(==)(c1::T, c2::T) where {T<:Circuit}
     c1 === c2 && return true
-    for field in fieldnames(T)
-        (f1, f2) = (getfield(c1, field), getfield(c2, field))
-        if field in (:global_phase,)
-            f1[] == f2[] || return false
-        else
-            f1 == f2 || return false
-        end
-    end
+    c1.global_phase[] == c2.global_phase[] || return false
+    c1.graph == c2.graph || return false
+    c1.nodes == c2.nodes || return false
+    c1.wires == c2.wires || return false
+    c1.param_table == c2.param_table || return false
     return true
 end
 

@@ -5,7 +5,7 @@
 # end
 
 @testset "insert_node!" begin
-    using .Circuits: Circuit, insert_node!, add_node!, wireelements
+    using .Circuits: Circuit, insert_node!, add_node!
     using .Elements: X, Y, CX, CZ
     using .Interface: getelement
     qc = Circuit(2)
@@ -16,8 +16,7 @@
     # Circuits are equivalent but nodes entered in different orders.
     # We can't detect this equivalence at present. Exponentially hard in general.
     # So we check nodes on wires.
-    @test collect(wireelements(qc, 1)) == collect(wireelements(qc2, 1))
-    @test collect(wireelements(qc, 2)) == collect(wireelements(qc2, 2))
+    @test Circuits.same(qc, qc2)
 
     # Test inserting before a gate with more than one wire.
     qc = Circuit(2)
