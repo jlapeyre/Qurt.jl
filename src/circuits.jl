@@ -642,16 +642,24 @@ end
 ## This method takes the node data in a struct-of-vectors-like form.
 ## For example, ops::Vector{Element}
 """
+    insert_nodes!(qc::Circuit, wire_vert_map::Dict, nodes)
     insert_nodes!(qc::Circuit, wire_vert_map::Dict, ops, params_vec, wires_vec, clwires_vec)
 
-Insert a sequence of nodes in front of the nodes determined by `wire_vert_map`.
+Insert the sequence of nodes `nodes` in front of the nodes determined by `wire_vert_map`.
+
+Each node is inserted before the preceding node.
+
+* `nodes` -- a sequence (eg `Vector` or `Tuple`) of nodes. Each node can be specified by a `Tuple` of the same arguments
+   accepted by `insert_node!`, or by a single argument accepted by `insert_node!`.
+* `wire_vert_map` -- A map from wires to vertices that determines the initial vertex to be inserted
+   in front of for each wire. This map will be modified by remapping the input wires to the newly-created vertex.
+
+In the second form, the nodes are specified the following `Vectors` of equal length
 
 * `ops` -- the `Elements` typically of type `ops::Vector{Element}`.
 * `params_vec` -- A sequence of collections of parameters (or `nothing`).
 * `wires_vec` -- A sequence of collections of quantum wires
 * `clwires_vec` -- A sequence of collections of classical wires
-* `wire_vert_map` -- A map from wires to vertices that determines the initial vertex to be inserted
-   in front of for each wire. This map will be modified by remapping the input wires to the newly-created vertex.
 
 A `Vector` of the newly created vertices is returned.
 """

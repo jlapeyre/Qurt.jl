@@ -7,7 +7,6 @@
 @testset "insert_node!" begin
     using .Circuits: Circuit, insert_node!, add_node!
     using .Elements: X, Y, CX, CZ
-    using .Interface: getelement
     qc = Circuit(2)
     (nx, ny) = @build qc X(1) Y(2)
     insert_node!(qc, (nx, ny), @gate(CX(1, 2)))
@@ -38,9 +37,25 @@
     @test Circuits.same(qc, qc2)
 end
 
+@testset "insert_nodes!" begin
+    using .Circuits: Circuit, insert_nodes!, same
+    using .Elements: X, CX, CY, CZ
+    qc = Circuit(3)
+    (nx, ncy) = @build qc X(1) CY(2, 3)
+    vertdict = Dict(1 => nx, 2 => ncy, 3 => ncy)
+    insert_nodes!(qc, vertdict, [(CZ, (1, 2)), (CX, (3, 2))])
 
-# @testset "insert_nodes!" begin
-# end
+    qc_exp = Circuit(3)
+    @build qc_exp CX(3, 2) CZ(1, 2) X(1) CY(2, 3)
+    @test Circuits.same(qc, qc_exp)
+
+    # Test using @gates with insert_nodes!
+    qc2 = Circuit(3)
+    (nx, ncy) = @build qc2 X(1) CY(2, 3)
+    vertdict = Dict(1 => nx, 2 => ncy, 3 => ncy)
+    insert_nodes!(qc2, vertdict, @gates CZ(1, 2) CX(3, 2))
+    @test qc == qc2
+ end
 
 @testset "barrier" begin
     using .Circuits: Circuit, barrier, outdegree, indegree
